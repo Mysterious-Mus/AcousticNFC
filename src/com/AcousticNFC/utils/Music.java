@@ -5,7 +5,7 @@ public class Music {
     private final double duration = 1.5; // 4seconds for each chord
     private final float amplitude = 0.1f;
     private final float[] rootNotes = {261.63F, 220.00F, 174.61F, 196.00F};
-    private float[] frequencies = new float[] {0, 1046.50F, 1174.66F, 1318.51F, 1396.91F, 1567.98F, 1760.00F, 1975.53F};
+    private float[] frequencies = new float[] {0, 523.25F, 587.33F, 659.25F, 698.46F, 783.99F, 880.00F, 987.77F};
     private int[][] notes = new int[][] {{1,3,5}, {7,2,5}, {6,1,3}, {5,1,3}, {4,6,1}, {3,5,1}, {2,4,6}, {4,5,6,1}};
 
     private enum Chord {
