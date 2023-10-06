@@ -6,6 +6,7 @@ import java.io.IOException;
 public class Recorder {
 
     private float[] recordings; // the recordings
+    private final float maxAmplitude = 0.2f;
 
     public Recorder() {
         super();
@@ -21,11 +22,32 @@ public class Recorder {
         recordings = newRecordings;
     }
 
+    public void gain_recordings() {
+        // find the max amplitude in the recording
+        float max = 0;
+        for (int i = 0; i < recordings.length; i++) {
+            if (Math.abs(recordings[i]) > max) {
+                max = Math.abs(recordings[i]);
+            }
+        }
+
+        // compute and print the gain ratio
+        float gain = maxAmplitude / max;
+        System.out.println("Gain ratio: " + maxAmplitude / max);
+
+        // gain the recordings
+        for (int i = 0; i < recordings.length; i++) {
+            recordings[i] = recordings[i] * gain;
+        }
+    }
+
     public float[] getRecordings() {
+        gain_recordings();
         return recordings;
     }
 
     public void outputRecordings(String fileName) {
+        gain_recordings();
         try {
             FileWriter writer = new FileWriter(fileName + ".csv");
             for (int i = 0; i < recordings.length; i++) {

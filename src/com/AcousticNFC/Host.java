@@ -199,16 +199,20 @@ public class Host extends JFrame implements AsioDriverListener {
     for (int i = 0; i < asioDriver.getNumChannelsOutput(); i++)
     {
       AsioChannel asioChannel = asioDriver.getChannelOutput(i);
+      // print channel name
+      System.out.println("Output channel: " + asioChannel.getChannelName());
       activeChannels.add(asioChannel);
-      break;
+      // break;
     }
 
     // activate input channels
     for (int i = 0; i < asioDriver.getNumChannelsInput(); i++)
     {
       AsioChannel asioChannel = asioDriver.getChannelInput(i);
+      // print channel name
+      System.out.println("Input channel: " + asioChannel.getChannelName());
       activeChannels.add(asioChannel);
-      break;
+      // break;
     }
 
     sampleIndex = 0;
