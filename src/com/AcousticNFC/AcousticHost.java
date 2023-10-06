@@ -18,7 +18,7 @@
  *
  */
 
-package com.AcousticNFC;
+package com.acousticnfc;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -37,17 +37,16 @@ import javax.swing.WindowConstants;
 // AsioDriverListener
 import com.synthbot.jasiohost.AsioDriverListener;
 import com.synthbot.jasiohost.AsioDriverState;
+import com.acousticnfc.utils.Music;
+import com.acousticnfc.utils.Player;
+import com.acousticnfc.utils.Recorder;
 import com.synthbot.jasiohost.AsioChannel;
 import com.synthbot.jasiohost.AsioDriver;
-
-import com.AcousticNFC.utils.Recorder;  // Recorder
-import com.AcousticNFC.utils.Player;    // Player
-import com.AcousticNFC.utils.Music;     // Music
 
 /**
  * The <code>Host</code> is a GUI for all the functionalities of AcousticNFC
  */
-public class Host extends JFrame implements AsioDriverListener {
+public class AcousticHost extends JFrame implements AsioDriverListener {
   
   private static final long serialVersionUID = 1L;
   
@@ -77,7 +76,7 @@ public class Host extends JFrame implements AsioDriverListener {
   
   final AsioDriverListener host = this;
 
-  public Host() {
+  public AcousticHost() {
     // the title
     super("Acoustic NFC");
     
@@ -349,7 +348,7 @@ public class Host extends JFrame implements AsioDriverListener {
   
   public static void main(String[] args) {
     @SuppressWarnings("unused")
-    Host host = new Host();
+    AcousticHost host = new AcousticHost();
   }
 
 }

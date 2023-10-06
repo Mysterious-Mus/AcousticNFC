@@ -1,4 +1,4 @@
-package com.AcousticNFC.utils;
+package com.acousticnfc.utils;
 
 public class Music {
     private final double sampleRate;
