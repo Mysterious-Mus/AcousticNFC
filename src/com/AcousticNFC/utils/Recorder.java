@@ -1,4 +1,4 @@
-package com.AcousticNFC.utils;
+package com.acousticnfc.utils;
 
 import java.io.FileWriter;
 import java.io.IOException;
