@@ -18,7 +18,7 @@
  *
  */
 
-package com.acousticnfc;
+package com.AcousticNFC;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -37,16 +37,17 @@ import javax.swing.WindowConstants;
 // AsioDriverListener
 import com.synthbot.jasiohost.AsioDriverListener;
 import com.synthbot.jasiohost.AsioDriverState;
-import com.acousticnfc.utils.Music;
-import com.acousticnfc.utils.Player;
-import com.acousticnfc.utils.Recorder;
 import com.synthbot.jasiohost.AsioChannel;
 import com.synthbot.jasiohost.AsioDriver;
+
+import com.AcousticNFC.utils.Recorder;  // Recorder
+import com.AcousticNFC.utils.Player;    // Player
+import com.AcousticNFC.utils.Music;     // Music
 
 /**
  * The <code>Host</code> is a GUI for all the functionalities of AcousticNFC
  */
-public class AcousticHost extends JFrame implements AsioDriverListener {
+public class Host extends JFrame implements AsioDriverListener {
   
   private static final long serialVersionUID = 1L;
   
@@ -76,7 +77,7 @@ public class AcousticHost extends JFrame implements AsioDriverListener {
   
   final AsioDriverListener host = this;
 
-  public AcousticHost() {
+  public Host() {
     // the title
     super("Acoustic NFC");
     
@@ -198,20 +199,16 @@ public class AcousticHost extends JFrame implements AsioDriverListener {
     for (int i = 0; i < asioDriver.getNumChannelsOutput(); i++)
     {
       AsioChannel asioChannel = asioDriver.getChannelOutput(i);
-      // print channel name
-      System.out.println("Output channel: " + asioChannel.getChannelName());
       activeChannels.add(asioChannel);
-      // break;
+      break;
     }
 
     // activate input channels
     for (int i = 0; i < asioDriver.getNumChannelsInput(); i++)
     {
       AsioChannel asioChannel = asioDriver.getChannelInput(i);
-      // print channel name
-      System.out.println("Input channel: " + asioChannel.getChannelName());
       activeChannels.add(asioChannel);
-      // break;
+      break;
     }
 
     sampleIndex = 0;
@@ -352,7 +349,7 @@ public class AcousticHost extends JFrame implements AsioDriverListener {
   
   public static void main(String[] args) {
     @SuppressWarnings("unused")
-    AcousticHost host = new AcousticHost();
+    Host host = new Host();
   }
 
 }

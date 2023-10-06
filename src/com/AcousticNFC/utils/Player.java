@@ -1,4 +1,4 @@
-package com.acousticnfc.utils;
+package com.AcousticNFC.utils;
 
 public class Player {
     
