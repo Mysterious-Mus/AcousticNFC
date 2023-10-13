@@ -33,6 +33,11 @@ import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.WindowConstants;
+import javax.swing.JProgressBar;
+import javax.swing.JLabel;
+
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 
 // AsioDriverListener
 import com.synthbot.jasiohost.AsioDriverListener;
@@ -73,7 +78,9 @@ public class Host extends JFrame implements AsioDriverListener {
   final JButton buttonStop = new JButton("Stop");
   final JButton buttonControlPanel = new JButton("Control Panel");
   final JButton buttonReplay = new JButton("Replay");
-  final JButton buttonRecordAndPlay = new JButton("Record and Play");
+  final JButton buttonRecordAndPlay = new JButton("Play music and record");
+  final JProgressBar progressBar = new JProgressBar();
+  final JLabel stateLabel = new JLabel("Idle                 ");
   
   final AsioDriverListener host = this;
 
@@ -87,7 +94,7 @@ public class Host extends JFrame implements AsioDriverListener {
     recorder = new Recorder();
 
     // init workstate
-    state = State.IDLE;
+    setState(State.IDLE);
 
     // button callbacks
     setButtonCallbacks();
@@ -104,33 +111,54 @@ public class Host extends JFrame implements AsioDriverListener {
     this.setLayout(new BoxLayout(this.getContentPane(), BoxLayout.Y_AXIS));
 
     // Line 1
-    this.add(comboBox);
-
-    // Line 2
-    JPanel panel = new JPanel();
-    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-    panel.add(buttonRecord);
-    panel.add(buttonStop);
-    panel.add(buttonReplay);
-    panel.add(buttonControlPanel);
-    this.add(panel);
-
-    // Line 3
-    this.add(buttonRecordAndPlay);
-
-    this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-    this.addWindowListener(new WindowAdapter() {
-      @Override
-      public void windowClosing(WindowEvent event) {
-        if (asioDriver != null) {
-          asioDriver.shutdownAndUnloadDriver();
-        }
-      }
-    });
+    JPanel panel1 = new JPanel();
+    BoxLayout boxLayout = new BoxLayout(panel1, BoxLayout.X_AXIS);
+    panel1.setLayout(boxLayout);
+    panel1.add(comboBox);
+    stateLabel.setText("Idle                                                                          ");
+    stateLabel.setPreferredSize(stateLabel.getPreferredSize());
+    stateLabel.setMinimumSize(stateLabel.getPreferredSize());
+    panel1.add(stateLabel);
+    this.add(panel1);
     
-    this.setSize(400, 150);
+    // Line 2
+    JPanel panel2 = new JPanel();
+    boxLayout = new BoxLayout(panel2, BoxLayout.X_AXIS);
+    panel2.setLayout(boxLayout);
+    panel2.setLayout(new BoxLayout(panel2, BoxLayout.X_AXIS));
+    panel2.add(buttonRecord);
+    panel2.add(buttonRecordAndPlay);
+    panel2.add(buttonStop);
+    panel2.add(buttonReplay);
+    panel2.add(buttonControlPanel);
+    this.add(panel2);
+
+    this.setSize(600, 100);
     this.setResizable(false);
     this.setVisible(true);
+  }
+
+  // state switch wrapper
+  private void setState(State state) {
+    this.state = state;
+    // the mapper from state to label
+    switch (state) {
+      case IDLE:
+        stateLabel.setText("Idle");
+        break;
+      case RECORDING:
+        stateLabel.setText("Recording");
+        break;
+      case PLAYING:
+        stateLabel.setText("Playing");
+        break;
+      case RECORDING_PLAYING:
+        stateLabel.setText("Recording and Playing");
+        break;
+      default:
+        stateLabel.setText("Unknown");
+        break;
+    }
   }
 
   // button callback
@@ -140,7 +168,7 @@ public class Host extends JFrame implements AsioDriverListener {
         // restart the driver to sync the new setting
         driverShutdown();
         driverInit();
-        state = State.RECORDING;
+        setState(State.RECORDING);
         // restart the recorder
         recorder = new Recorder();
       }
@@ -148,7 +176,8 @@ public class Host extends JFrame implements AsioDriverListener {
     
     buttonStop.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent event) {
-        state = State.IDLE;
+        setState(State.IDLE);
+        stateLabel.setText("Idle");
         // print the length of the recording
         System.out.println("Recording length: " + recorder.getRecordings().length);
         // output the recordings as a csv file
@@ -161,7 +190,7 @@ public class Host extends JFrame implements AsioDriverListener {
         // set content to play: the recordings
         player = new Player(recorder.getRecordings());
         // set work state
-        state = State.PLAYING;
+        setState(State.PLAYING);
       }
     });
 
@@ -179,7 +208,7 @@ public class Host extends JFrame implements AsioDriverListener {
         // restart the driver to sync the new setting
         driverShutdown();
         driverInit();
-        state = State.RECORDING_PLAYING;
+        setState(State.RECORDING_PLAYING);
         // restart the recorder
         recorder = new Recorder();
         // generate music
@@ -246,7 +275,7 @@ public class Host extends JFrame implements AsioDriverListener {
         // print error
         System.out.println("No active input channel found.");
         // stop recording
-        state = State.IDLE;
+        setState(State.IDLE);
         return;
       }
       // print channel name
@@ -278,14 +307,14 @@ public class Host extends JFrame implements AsioDriverListener {
         // print error
         System.out.println("No active output channel found.");
         // stop playing
-        state = State.IDLE;
+        setState(State.IDLE);
         return;
       }
       output = new float[bufferSize];
       // play
       if (!player.playContent(bufferSize, output)) {
         // if this call handles the last buffer
-        state = State.IDLE;
+        setState(State.IDLE);
       }
       // write to the output channel
       outputChannel.write(output);
