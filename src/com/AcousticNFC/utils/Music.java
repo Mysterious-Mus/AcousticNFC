@@ -2,11 +2,12 @@ package com.AcousticNFC.utils;
 
 public class Music {
     private final double sampleRate;
-    private final double duration = 1.5; // 4seconds for each chord
+    private final double duration = 1.5; // seconds for each chord
     private final float amplitude = 0.1f;
     private final float[] rootNotes = {261.63F, 220.00F, 174.61F, 196.00F};
     private float[] frequencies = new float[] {0, 523.25F, 587.33F, 659.25F, 698.46F, 783.99F, 880.00F, 987.77F};
     private int[][] notes = new int[][] {{1,3,5}, {7,2,5}, {6,1,3}, {5,1,3}, {4,6,1}, {3,5,1}, {2,4,6}, {4,5,6,1}};
+    private final double duration_pj1pt2 = 5; // seconds for playing the sound
 
     private enum Chord {
         MAJOR, MINOR, DIMINISHED, AUGMENTED
@@ -78,6 +79,25 @@ public class Music {
             System.arraycopy(samples, 0, newSamples, 0, samples.length);
             System.arraycopy(chordSamples, 0, newSamples, samples.length, chordSamples.length);
             samples = newSamples;
+        }
+        return samples;
+    }
+
+    public float soundFunctionPj1Pt2(double sec) {
+        float[] freq_list = {1000F, 10000F};
+        float amplitude = 0.1f;
+        return amplitude * (float) Math.sin(2 * Math.PI * freq_list[0] * sec) + 
+               amplitude * (float) Math.sin(2 * Math.PI * freq_list[1] * sec);
+    }
+    
+    public float[] generateProj1Pt2Sound() {
+        // determine the sound function on the continuous domain
+
+        // generate the sound samples
+        int n = (int) (sampleRate * duration_pj1pt2);
+        float[] samples = new float[n];
+        for (int i = 0; i < n; i++) {
+            samples[i] = soundFunctionPj1Pt2(i / sampleRate);
         }
         return samples;
     }
