@@ -79,8 +79,8 @@ public class Host extends JFrame implements AsioDriverListener {
   final JButton buttonControlPanel = new JButton("Control Panel");
   final JButton buttonReplay = new JButton("Replay");
   final JButton buttonRecordAndPlay = new JButton("Play music and record");
-  final JProgressBar progressBar = new JProgressBar();
   final JLabel stateLabel = new JLabel("Idle                 ");
+  final JButton buttonPj1Pt2 = new JButton("Project 1 Part 2: Generate Correct Sound");
   
   final AsioDriverListener host = this;
 
@@ -133,7 +133,14 @@ public class Host extends JFrame implements AsioDriverListener {
     panel2.add(buttonControlPanel);
     this.add(panel2);
 
-    this.setSize(600, 100);
+    // Line 3
+    JPanel panel3 = new JPanel();
+    boxLayout = new BoxLayout(panel3, BoxLayout.X_AXIS);
+    panel3.setLayout(boxLayout);
+    panel3.add(buttonPj1Pt2);
+    this.add(panel3);
+
+    this.setSize(600, 120);
     this.setResizable(false);
     this.setVisible(true);
   }
@@ -215,6 +222,19 @@ public class Host extends JFrame implements AsioDriverListener {
         music = new Music(sampleRate);
         // set player to play the music
         player = new Player(music.generateChordProgression());
+      }
+    });
+
+    buttonPj1Pt2.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent event) {
+        // restart the driver to sync the new setting
+        driverShutdown();
+        driverInit();
+        setState(State.PLAYING);
+        // generate music
+        music = new Music(sampleRate);
+        // set player to play the music
+        player = new Player(music.generateProj1Pt2Sound());
       }
     });
   }
