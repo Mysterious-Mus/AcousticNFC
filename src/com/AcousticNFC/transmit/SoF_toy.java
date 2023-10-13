@@ -2,28 +2,36 @@ package com.AcousticNFC.transmit;
 
 /* Dataframe SoF generator
  * The SoF is a 1ms long sound that is used to indicate the start of a dataframe
- * The SoF is a chirp signal that starts at 18kHz and ends at 22kHz
+ * The SoF is a chirp signal in Dhwani's implementation, the formulation
+ * can be found in notes.ipynb
  */
 public class SoF_toy {
     double sampleRate;
-    double duration = 1; // duration of SoF, seconds
+    double T = 0.006; // duration of SoF, seconds
     // frequencies of SoF
-    float freq_start = 400;
-    float freq_end = 2000;
+    float fmax = 16000;
+    float fmin = 6000;
 
     public SoF_toy(double sampleRate) {
         this.sampleRate = sampleRate;
     }
 
     public float[] generateSoF() {
-        int numSamples = (int) (duration * sampleRate);
+        int numSamples = (int) (2 * T * sampleRate);
         float[] samples = new float[numSamples];
-        for (int i = 0; i < numSamples; i++) {
+        float a = (float)((fmax - fmin) / T);
+        float phi0 = (float)(Math.PI * a * T * T);
+        // stage 1
+        for (int i = 0; i < numSamples / 2; i++) {
             float time = (float) i / (float) sampleRate;
-            float phase = (float) (2 * Math.PI * 
-                (freq_start * time + 
-                (freq_end - freq_start) / (2 * duration) * time * time ));
-            samples[i] = (float) Math.sin(phase);
+            float phase = (float) (Math.PI * a * time * time);
+            samples[i] = (float) Math.cos(phase);
+        }
+        // stage 2
+        for (int i = numSamples / 2; i < numSamples; i++) {
+            float t = (float) i / (float) sampleRate;
+            float phase = (float) (phi0 + fmax*(t-T) - Math.PI * a * (t-T) * (t-T));
+            samples[i] = (float) Math.cos(phase);
         }
         return samples;
     }
