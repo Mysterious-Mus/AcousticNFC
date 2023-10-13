@@ -9,10 +9,7 @@ public class Player {
         super();
 
         this.playerBuffer = playerBuffer;
-        // apply gain
-        for (int i = 0; i < playerBuffer.length; i++) {
-            playerBuffer[i] *= gain;
-        }
+        
         this.playerBufferIndex = 0;
     }
 
