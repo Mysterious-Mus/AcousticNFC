@@ -4,7 +4,6 @@ public class Player {
     
     private float[] playerBuffer;
     private int playerBufferIndex;
-    private float gain = 1;
 
     public Player(float[] playerBuffer) {
         super();
