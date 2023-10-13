@@ -48,6 +48,8 @@ import com.synthbot.jasiohost.AsioDriver;
 import com.AcousticNFC.utils.Recorder;  // Recorder
 import com.AcousticNFC.utils.Player;    // Player
 import com.AcousticNFC.utils.Music;     // Music
+import com.AcousticNFC.transmit.SoF;    // SoF
+import com.AcousticNFC.transmit.SoF_toy;// Toy SoF
 
 /**
  * The <code>Host</code> is a GUI for all the functionalities of AcousticNFC
@@ -81,6 +83,7 @@ public class Host extends JFrame implements AsioDriverListener {
   final JButton buttonRecordAndPlay = new JButton("Play music and record");
   final JLabel stateLabel = new JLabel("Idle                 ");
   final JButton buttonPj1Pt2 = new JButton("Project 1 Part 2: Generate Correct Sound");
+  final JButton buttonPlayToySoF = new JButton("Play Toy SoF");
   
   final AsioDriverListener host = this;
 
@@ -138,6 +141,7 @@ public class Host extends JFrame implements AsioDriverListener {
     boxLayout = new BoxLayout(panel3, BoxLayout.X_AXIS);
     panel3.setLayout(boxLayout);
     panel3.add(buttonPj1Pt2);
+    panel3.add(buttonPlayToySoF);
     this.add(panel3);
 
     this.setSize(600, 120);
@@ -235,6 +239,19 @@ public class Host extends JFrame implements AsioDriverListener {
         music = new Music(sampleRate);
         // set player to play the music
         player = new Player(music.generateProj1Pt2Sound());
+      }
+    });
+
+    buttonPlayToySoF.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent event) {
+        // restart the driver to sync the new setting
+        driverShutdown();
+        driverInit();
+        setState(State.PLAYING);
+        // generate SoF
+        SoF_toy toysof = new SoF_toy(sampleRate);
+        // set player to play the music
+        player = new Player(toysof.generateSoF());
       }
     });
   }
