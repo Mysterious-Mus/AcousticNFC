@@ -51,6 +51,8 @@ import com.AcousticNFC.utils.Music;
 import com.AcousticNFC.transmit.SoF;
 import com.AcousticNFC.transmit.SoF_toy;
 import com.AcousticNFC.utils.BitString;
+import com.AcousticNFC.transmit.OFDM;
+import com.AcousticNFC.transmit.Framer;
 
 /**
  * The <code>Host</code> is a GUI for all the functionalities of AcousticNFC
@@ -86,6 +88,8 @@ public class Host extends JFrame implements AsioDriverListener {
   final JButton buttonPj1Pt2 = new JButton("Project 1 Part 2: Generate Correct Sound");
   final JButton buttonPlayToySoF = new JButton("Play Toy SoF");
   final JButton loadBitString = new JButton("Load Bit String");
+  final JButton initOFDM = new JButton("Init OFDM");
+  final JButton buttonTransmit = new JButton("Transmit Bit String");
   
   final AsioDriverListener host = this;
 
@@ -145,9 +149,17 @@ public class Host extends JFrame implements AsioDriverListener {
     panel3.add(buttonPj1Pt2);
     panel3.add(buttonPlayToySoF);
     panel3.add(loadBitString);
+    panel3.add(initOFDM);
     this.add(panel3);
 
-    this.setSize(600, 120);
+    // Line 4
+    JPanel panel4 = new JPanel();
+    boxLayout = new BoxLayout(panel4, BoxLayout.X_AXIS);
+    panel4.setLayout(boxLayout);
+    panel4.add(buttonTransmit);
+    this.add(panel4);
+
+    this.setSize(600, 140);
     this.setResizable(false);
     this.setVisible(true);
   }
@@ -261,6 +273,28 @@ public class Host extends JFrame implements AsioDriverListener {
     loadBitString.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent event) {
         BitString bitString = new BitString("bit_string.txt");
+      }
+    });
+
+    initOFDM.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent event) {
+        // init OFDM
+        OFDM ofdm = new OFDM(sampleRate);
+      }
+    });
+
+    buttonTransmit.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent event) {
+        // restart the driver to sync the new setting
+        driverShutdown();
+        driverInit();
+        setState(State.PLAYING);
+        // init framer
+        Framer framer = new Framer(sampleRate);
+        // load bit string
+        BitString bitString = new BitString("bit_string.txt");
+        // set player
+        player = new Player(framer.pack(bitString.getBitString()));
       }
     });
   }

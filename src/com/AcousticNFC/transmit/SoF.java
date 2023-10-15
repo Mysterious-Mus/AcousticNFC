@@ -35,4 +35,8 @@ public class SoF {
         }
         return samples;
     }
+
+    public int NSample() {
+        return (int) (2 * T * sampleRate);
+    }
 }

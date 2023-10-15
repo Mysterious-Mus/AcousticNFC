@@ -35,4 +35,8 @@ public class BitString {
         // print length
         System.out.println("\nLength of " + filename + ": " + bitString.length);
     }
+
+    public int[] getBitString() {
+        return bitString;
+    }
 }
