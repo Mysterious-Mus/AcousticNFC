@@ -106,13 +106,18 @@ public class Host extends JFrame implements AsioDriverListener {
   
   final AsioDriverListener host = this;
 
+  final Lock BufferIntrLock = new ReentrantLock();
+
   class SoFCalcThread extends Thread {
     public void run() {
       while(true) {
         try {
+          // acquire the lock
+          BufferIntrLock.lock();
           // update the correlations
           receiver.process();
-          System.out.print("");
+          // release the lock
+          BufferIntrLock.unlock();
         } catch(Exception e) {
             e.printStackTrace();  // Log the exception
             break;  // Break the loop if an exception occurs
@@ -523,8 +528,12 @@ public class Host extends JFrame implements AsioDriverListener {
       float[] input = new float[bufferSize];
       // read from the input channel
       inputChannel.read(input);
+      // lock
+      BufferIntrLock.lock();
       // receive
       receiver.feedSamples(input);
+      // unlock
+      BufferIntrLock.unlock();
     }
   }
   

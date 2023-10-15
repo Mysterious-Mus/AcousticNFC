@@ -21,7 +21,7 @@ public class SoFDetector {
 
     int lastSoFIdx = -1000;
 
-    int stdFactor = 20;
+    int stdFactor = 200;
 
     Receiver receiver;
     /* The correlation between the samples and the SoF
