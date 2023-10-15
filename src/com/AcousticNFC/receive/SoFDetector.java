@@ -10,10 +10,15 @@ public class SoFDetector {
     float[] sofSamples;
     int sofNSamples;
 
+    /* By warmup, it means the SoF detector already has enough samples to calculate
+     * The std of the correlations, thus can start to detect correlation peaks */
+    boolean warmup;
+    double corrStd;
+    final int warmupLength = 300;
+
     Receiver receiver;
     /* The correlation between the samples and the SoF
-     * correlations[i] is the correlation between the samples[i-L+1:i+1] and the SoF
-     */
+     * correlations[i] is the correlation between the samples[i-L+1:i+1] and the SoF */
     double[] correlations;
 
     public SoFDetector(double sampleRate, Receiver receiver) {
@@ -23,6 +28,7 @@ public class SoFDetector {
         sofNSamples = sof.NSample();
         correlations = new double[sofNSamples];
         this.receiver = receiver;
+        warmup = false;
     }
 
     public int getLength() {
@@ -49,7 +55,20 @@ public class SoFDetector {
 
         // calculate the new correlations
         for (int i = correlations.length; i < newCorrelations.length; i++) {
+            if (i == warmupLength) {
+                warmup = true;
+                corrStd = 0;
+                for (int j = 0; j < i; j++) {
+                    corrStd += newCorrelations[j] * newCorrelations[j];
+                }
+                corrStd = Math.sqrt(corrStd / i);
+            }
             newCorrelations[i] = correlation(receiver.getSamples(i, sofNSamples));
+            if (warmup) {
+                if (newCorrelations[i] > corrStd * 20) {
+                    System.out.println("SoF end detected at " + i);
+                }
+            }
         }
 
         correlations = newCorrelations;

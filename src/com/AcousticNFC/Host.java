@@ -78,6 +78,8 @@ public class Host extends JFrame implements AsioDriverListener {
   // music generator
   private Music music;
   // working state
+  private Framer framer;
+  private BitString bitString;
   private enum State { IDLE, RECORDING, PLAYING, RECORDING_PLAYING};
   private State state;
   private enum ReceiverState { IDLE, RECEIVING};
@@ -119,6 +121,11 @@ public class Host extends JFrame implements AsioDriverListener {
 
     // init driver
     driverInit();
+
+    // init framer
+    framer = new Framer(sampleRate);
+    // get the bit string
+    bitString = new BitString("bit_string.txt");
   
     // layout panel
     layoutPanel();
@@ -323,10 +330,6 @@ public class Host extends JFrame implements AsioDriverListener {
           driverInit();
         }
         setState(State.PLAYING);
-        // init framer
-        Framer framer = new Framer(sampleRate);
-        // load bit string
-        BitString bitString = new BitString("bit_string.txt");
         // set player
         player = new Player(framer.pack(bitString.getBitString()));
       }
