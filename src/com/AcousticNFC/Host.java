@@ -56,6 +56,8 @@ import com.AcousticNFC.transmit.OFDM;
 import com.AcousticNFC.transmit.Framer;
 import com.AcousticNFC.receive.Receiver;
 
+import java.util.concurrent.locks.*;
+
 /**
  * The <code>Host</code> is a GUI for all the functionalities of AcousticNFC
  */
@@ -104,9 +106,35 @@ public class Host extends JFrame implements AsioDriverListener {
   
   final AsioDriverListener host = this;
 
+  class SoFCalcThread extends Thread {
+    public void run() {
+      while(true) {
+        try {
+          // update the correlations
+          receiver.process();
+          System.out.print("");
+        } catch(Exception e) {
+            e.printStackTrace();  // Log the exception
+            break;  // Break the loop if an exception occurs
+        }
+      }
+    }
+  }
+
   public Host() {
     // the title
     super("Acoustic NFC");
+
+    this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+    this.addWindowListener(new WindowAdapter() {
+        @Override
+        public void windowClosing(WindowEvent e) {
+            // Your custom logic here
+            System.out.println("Window is closing");
+            // call System.exit(0) or dispose() as required
+            System.exit(0);
+        }
+    });
     
     activeChannels = new HashSet<AsioChannel>();
 
@@ -129,6 +157,17 @@ public class Host extends JFrame implements AsioDriverListener {
   
     // layout panel
     layoutPanel();
+
+    // init receiver
+    receiver = new Receiver(sampleRate);
+
+    // launch the SoF calculation thread
+    SoFCalcThread soFCalcThread = new SoFCalcThread();
+    soFCalcThread.start();
+    // while (true) {
+    //   receiver.process();
+    //   System.out.print("");
+    // }
   }
 
   // layout panel
@@ -487,7 +526,6 @@ public class Host extends JFrame implements AsioDriverListener {
       // receive
       receiver.feedSamples(input);
     }
-
   }
   
   public void bufferSizeChanged(int bufferSize) {

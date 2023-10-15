@@ -1,44 +1,38 @@
 package com.AcousticNFC.receive;
 
+import java.util.ArrayList;
+
 import com.AcousticNFC.receive.SoFDetector;
 import com.AcousticNFC.utils.FileOp;
 
 public class Receiver {
     
     double sampleRate;
-    float[] samples;
+    ArrayList<Float> samples;
 
     SoFDetector sofDetector;
 
     public Receiver(double sampleRate) {
         this.sampleRate = sampleRate;
-        samples = new float[0];
+        samples = new ArrayList<Float>();
         sofDetector = new SoFDetector(sampleRate, this);
     }
 
     public int getLength() {
-        return samples.length;
+        return samples.size();
     }
 
-    /* Get samples {i-L+1, ..., i} */
-    public float[] getSamples(int i, int L) {
-        // Sanity check
-        if (i < L - 1) {
-            throw new IllegalArgumentException("i must be greater than or equal to L - 1");
-        }
-
-        float[] result = new float[L];
-        System.arraycopy(samples, i - L + 1, result, 0, L);
-        return result;
+    /* Get samples */
+    public ArrayList<Float> getSamples() {
+        return samples;
     }
 
     /* Add the samples to the receiver */
     public void feedSamples(float[] samples) {
         // add the new samples to back
-        float[] newSamples = new float[this.samples.length + samples.length];
-        System.arraycopy(this.samples, 0, newSamples, 0, this.samples.length);
-        System.arraycopy(samples, 0, newSamples, this.samples.length, samples.length);
-        this.samples = newSamples;
+        for (int i = 0; i < samples.length; i++) {
+            this.samples.add(samples[i]);
+        }
     }
     
     /* Do the computation heavy operations */
@@ -52,6 +46,6 @@ public class Receiver {
         sofDetector.updateCorrelations();
         FileOp fileOp = new FileOp();
         fileOp.outputFloatSeq(samples, "samples.csv");
-        fileOp.outputFloatSeq(sofDetector.getCorrelations(), "correlations.csv");
+        fileOp.outputDoubleArray(sofDetector.getCorrelations(), "correlations.csv");
     }
 }
