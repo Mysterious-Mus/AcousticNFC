@@ -24,6 +24,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.image.RescaleOp;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -53,6 +54,7 @@ import com.AcousticNFC.transmit.SoF_toy;
 import com.AcousticNFC.utils.BitString;
 import com.AcousticNFC.transmit.OFDM;
 import com.AcousticNFC.transmit.Framer;
+import com.AcousticNFC.receive.Receiver;
 
 /**
  * The <code>Host</code> is a GUI for all the functionalities of AcousticNFC
@@ -69,6 +71,8 @@ public class Host extends JFrame implements AsioDriverListener {
   private float[] output;
   // recordings
   private Recorder recorder;
+  // receiver
+  private Receiver receiver;
   // play contents
   private Player player;
   // music generator
@@ -76,6 +80,8 @@ public class Host extends JFrame implements AsioDriverListener {
   // working state
   private enum State { IDLE, RECORDING, PLAYING, RECORDING_PLAYING};
   private State state;
+  private enum ReceiverState { IDLE, RECEIVING};
+  private ReceiverState receiverState;
 
   // UI
   final JComboBox comboBox = new JComboBox(AsioDriver.getDriverNames().toArray());
@@ -84,12 +90,15 @@ public class Host extends JFrame implements AsioDriverListener {
   final JButton buttonControlPanel = new JButton("Control Panel");
   final JButton buttonReplay = new JButton("Replay");
   final JButton buttonRecordAndPlay = new JButton("Play music and record");
-  final JLabel stateLabel = new JLabel("Idle                 ");
+  final JLabel  stateLabel = new JLabel("Idle                 ");
   final JButton buttonPj1Pt2 = new JButton("Project 1 Part 2: Generate Correct Sound");
   final JButton buttonPlayToySoF = new JButton("Play Toy SoF");
   final JButton loadBitString = new JButton("Load Bit String");
   final JButton initOFDM = new JButton("Init OFDM");
   final JButton buttonTransmit = new JButton("Transmit Bit String");
+  final JLabel  receiverStateLabel = new JLabel("Receiver State: Idle");
+  final JButton buttonReceive = new JButton("Receive");
+  final JButton buttonStopReceive = new JButton("Stop Receiving");
   
   final AsioDriverListener host = this;
 
@@ -157,6 +166,12 @@ public class Host extends JFrame implements AsioDriverListener {
     boxLayout = new BoxLayout(panel4, BoxLayout.X_AXIS);
     panel4.setLayout(boxLayout);
     panel4.add(buttonTransmit);
+    receiverStateLabel.setText("Receiver State: Idle      ");
+    receiverStateLabel.setPreferredSize(receiverStateLabel.getPreferredSize());
+    receiverStateLabel.setMinimumSize(receiverStateLabel.getPreferredSize());
+    panel4.add(receiverStateLabel);
+    panel4.add(buttonReceive);
+    panel4.add(buttonStopReceive);
     this.add(panel4);
 
     this.setSize(600, 140);
@@ -183,6 +198,23 @@ public class Host extends JFrame implements AsioDriverListener {
         break;
       default:
         stateLabel.setText("Unknown");
+        break;
+    }
+  }
+
+  // receiveState switch wrapper
+  private void setReceiverState(ReceiverState state) {
+    this.receiverState = state;
+    // the mapper from state to label
+    switch (state) {
+      case IDLE:
+        receiverStateLabel.setText("Receiver State: Idle");
+        break;
+      case RECEIVING:
+        receiverStateLabel.setText("Receiver State: Receiving");
+        break;
+      default:
+        receiverStateLabel.setText("Unknown");
         break;
     }
   }
@@ -285,9 +317,11 @@ public class Host extends JFrame implements AsioDriverListener {
 
     buttonTransmit.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent event) {
-        // restart the driver to sync the new setting
-        driverShutdown();
-        driverInit();
+        // restart the driver to sync the new setting if idle
+        if (state == State.IDLE && receiverState == ReceiverState.IDLE) {
+          driverShutdown();
+          driverInit();
+        }
         setState(State.PLAYING);
         // init framer
         Framer framer = new Framer(sampleRate);
@@ -295,6 +329,28 @@ public class Host extends JFrame implements AsioDriverListener {
         BitString bitString = new BitString("bit_string.txt");
         // set player
         player = new Player(framer.pack(bitString.getBitString()));
+      }
+    });
+
+    buttonReceive.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent event) {
+        // restart the driver to sync the new setting
+        driverShutdown();
+        driverInit();
+        setReceiverState(ReceiverState.RECEIVING);
+        // init receiver
+        receiver = new Receiver(sampleRate);
+      }
+    });
+
+    buttonStopReceive.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent event) {
+        setReceiverState(ReceiverState.IDLE);
+        receiverStateLabel.setText("Receiver State: Idle");
+        // print the length of the recording
+        System.out.println("Receiving length: " + receiver.getLength());
+        // output the recordings as a csv file
+        receiver.dumpResults();
       }
     });
   }
@@ -336,20 +392,34 @@ public class Host extends JFrame implements AsioDriverListener {
     }
   }
 
-  // IO handler below
-  public void bufferSwitch(long systemTime, long samplePosition, Set<AsioChannel> channels) {
-    // if we need to record
-    if (state == State.RECORDING || state == State.RECORDING_PLAYING) {
-      // pick the first active input channel
-      AsioChannel inputChannel = null;
-      // loop through the channels
-      for (AsioChannel channel : channels) {
-        // check if the channel is an input channel and is active
-        if (channel.isActive() && channel.isInput()) {
-          // get the input channel
-          inputChannel = channel;
+  private enum ChannelType { INPUT, OUTPUT };
+  private AsioChannel findAsioChannel(ChannelType type, Set<AsioChannel> channels) {
+    // loop through the channels
+    for (AsioChannel channel : channels) {
+      // check if the channel is an input channel and is active
+      if (channel.isActive()) {
+        // get the input channel
+        if (type == ChannelType.INPUT && channel.isInput()) {
+          return channel;
+        }
+        else if (type == ChannelType.OUTPUT && !channel.isInput()) {
+          return channel;
         }
       }
+    }
+
+    return null;
+  }
+
+  // IO handler below, should be fast
+  public void bufferSwitch(long systemTime, long samplePosition, Set<AsioChannel> channels) {
+    // pick the first active input channel
+    AsioChannel inputChannel = findAsioChannel(ChannelType.INPUT, channels);
+    // pick the first active output channel
+    AsioChannel outputChannel = findAsioChannel(ChannelType.OUTPUT, channels);
+
+    // if we need to record
+    if (state == State.RECORDING || state == State.RECORDING_PLAYING) {
       // if not found
       if (inputChannel == null) {
         // print error
@@ -358,30 +428,16 @@ public class Host extends JFrame implements AsioDriverListener {
         setState(State.IDLE);
         return;
       }
-      // print channel name
-      System.out.println("Input channel: " + inputChannel.getChannelName());
       // buffer tmp
       float[] input = new float[bufferSize];
       // read from the input channel
       inputChannel.read(input);
-      // print some input points
-      System.out.println("Sample: " + input[0] + " " + input[bufferSize / 2] + " " + input[bufferSize - 1]);
       // record
       recorder.record(input);
     }
 
     // If we need to play
     if (state == State.PLAYING || state == State.RECORDING_PLAYING) {
-      // pick the first active output channel
-      AsioChannel outputChannel = null;
-      // loop through the channels
-      for (AsioChannel channel : channels) {
-        // check if the channel is an output channel and is active
-        if (channel.isActive() && !channel.isInput()) {
-          // get the output channel
-          outputChannel = channel;
-        }
-      }
       // if not found
       if (outputChannel == null) {
         // print error
@@ -398,25 +454,11 @@ public class Host extends JFrame implements AsioDriverListener {
       }
       // write to the output channel
       outputChannel.write(output);
-      // print replay info
-      System.out.println("Replay: " + player.getBufferIndex() + " / " + player.getBufferLength());
-      // print some points of the sample
-      System.out.println("Sample: " + output[0] + " " + output[bufferSize / 2] + " " + output[bufferSize - 1]);
     }
     else {
       // not playing, send 0
       for (int i = 0; i < bufferSize; i++) {
         output[i] = 0;
-      }
-      // pick the first active output channel
-      AsioChannel outputChannel = null;
-      // loop through the channels
-      for (AsioChannel channel : channels) {
-        // check if the channel is an output channel and is active
-        if (channel.isActive() && !channel.isInput()) {
-          // get the output channel
-          outputChannel = channel;
-        }
       }
       // if found
       if (outputChannel != null) {
@@ -424,6 +466,25 @@ public class Host extends JFrame implements AsioDriverListener {
         outputChannel.write(output);
       }
     }
+
+    // if we need to receive
+    if (receiverState == ReceiverState.RECEIVING) {
+      // if not found
+      if (inputChannel == null) {
+        // print error
+        System.out.println("No active input channel found.");
+        // stop recording
+        setReceiverState(ReceiverState.IDLE);
+        return;
+      }
+      // buffer tmp
+      float[] input = new float[bufferSize];
+      // read from the input channel
+      inputChannel.read(input);
+      // receive
+      receiver.feedSamples(input);
+    }
+
   }
   
   public void bufferSizeChanged(int bufferSize) {

@@ -3,7 +3,7 @@ package com.AcousticNFC.transmit;
 /* Use OFDM to modulate a bit string
  * Always padded with 0s, the length of the modulated signal will be a multiple of:
  * keyingCapacity * numSubCarriers
- * The maximum amplitude of the modulated signal is 1
+ * The maximum amplitude of the modulated signal is 0.2
  */
 public class OFDM {
     
@@ -63,7 +63,7 @@ public class OFDM {
     }
 
     /* Applies PSK modulation to a binary string of length 'keyingCapacity'. 
-     * Here, the maximum amplitude is 1.
+     * Here, the maximum amplitude is 0.2.
      * The Cyclical Prefix is not added.
      * Bits are kept in their original order: the first bit is the most significant bit,
      * to create a 'key' index.
@@ -90,7 +90,7 @@ public class OFDM {
         for (int i = 0; i < symbolNSamples; i++) {
             double t = (double) i / sampleRate;
             // use cos because we use complex representation
-            modulatedSignal[i] = (float) Math.cos(2 * Math.PI * carrierFreq * t + phase);
+            modulatedSignal[i] = 0.2F * (float) Math.cos(2 * Math.PI * carrierFreq * t + phase);
         }
 
         return modulatedSignal;
@@ -99,7 +99,7 @@ public class OFDM {
     /* Generate an OFDM symbol 
      * The input length should be numSubCarriers * keyingCapacity
      * The subcarriers with lower frequencies transmit the former bits
-     * Maximum amplitude is 1
+     * Maximum amplitude is 0.2
      * Cyclical Prefix is added before the data
     */
     public float[] symbolGen(int[] data) {
@@ -142,7 +142,7 @@ public class OFDM {
      * The actual output is padded with 0s to make the length a multiple of
      * keyingCapacity * numSubCarriers = symbolCapacity
      * So make sure the packet length is known by the receiver.
-     * The maximum amplitude is 1.
+     * The maximum amplitude is 0.2.
      * Cyclical Prefix is added before each symbol.
      */
     public float[] modulate(int[] data) {
