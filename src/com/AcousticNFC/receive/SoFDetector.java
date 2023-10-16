@@ -13,19 +13,13 @@ public class SoFDetector {
     float[] sofSamples;
     int sofNSamples;
 
-    /* By warmup, it means the SoF detector already has enough samples to calculate
-     * The std of the correlations, thus can start to detect correlation peaks */
-    boolean warmup;
-    double corrStd;
-    final int warmupLength = 2000;
-
     int lastSoFIdx = -1000;
 
-    int stdFactor = 200;
+    float corrThreshold = 0.06f;
 
     Receiver receiver;
     /* The correlation between the samples and the SoF
-     * correlations[i] is the correlation between the samples[i-L+1:i+1] and the SoF */
+     * correlations[i] is the correlation between the samples[i:i+L-1] and the SoF */
     ArrayList<Double> correlations;
 
     public SoFDetector(double sampleRate, Receiver receiver) {
@@ -35,7 +29,6 @@ public class SoFDetector {
         sofNSamples = sof.NSample();
         correlations = new ArrayList<Double>();
         this.receiver = receiver;
-        warmup = false;
     }
 
     public int getLength() {
@@ -63,22 +56,16 @@ public class SoFDetector {
         // calculate the new correlations
         for (int startingIdx = correlations.size(); 
             startingIdx < receiver.getLength() - sofNSamples + 1; startingIdx++) {
-            if (startingIdx == warmupLength) {
-                warmup = true;
-                corrStd = 0;
-                for (int j = 0; j < startingIdx; j++) {
-                    corrStd += correlations.get(j) * correlations.get(j);
-                }
-                corrStd = Math.sqrt(corrStd / warmupLength);
-                // log
-                System.out.println("Correlation std: " + corrStd);
-            }
             correlations.add(correlation(receiver.getSamples(), startingIdx));
-            if (warmup) {
-                if (correlations.get(startingIdx) > stdFactor * corrStd
+            if (!receiver.unpacking) {
+                if (correlations.get(startingIdx) > corrThreshold
                     && startingIdx - lastSoFIdx > sofNSamples) {
-                    System.out.println("SoF end detected at " + startingIdx);
-                    lastSoFIdx = startingIdx;
+                    int endIdx = startingIdx + sofNSamples;
+                    System.out.println("SoF end detected at " + endIdx);
+                    // send message to start demodulation
+                    receiver.unpacking = true;
+                    receiver.tickDone = endIdx;
+                    lastSoFIdx = endIdx;
                 }
             }
         }

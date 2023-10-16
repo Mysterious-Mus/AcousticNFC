@@ -7,7 +7,7 @@ package com.AcousticNFC.transmit;
  */
 public class SoF {
     double sampleRate;
-    double T = 0.003; // duration of SoF, seconds
+    double T = 0.01; // duration of SoF, seconds
     float amplitude = 0.7f;
     // frequencies of SoF
     float fmax = 16000;

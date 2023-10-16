@@ -6,7 +6,7 @@ import java.util.ArrayList;
 
 public class FileOp {
     
-    public void outputFloatSeq(double[] Data, String fileName) {
+    public static void outputFloatSeq(double[] Data, String fileName) {
         try {
             FileWriter writer = new FileWriter(fileName);
             for (int i = 0; i < Data.length; i++) {
@@ -20,7 +20,7 @@ public class FileOp {
         }
     }
 
-    public void outputFloatSeq(float[] Data, String fileName) {
+    public static void outputFloatSeq(float[] Data, String fileName) {
         try {
             FileWriter writer = new FileWriter(fileName);
             for (int i = 0; i < Data.length; i++) {
@@ -34,7 +34,7 @@ public class FileOp {
         }
     }
 
-    public void outputDoubleArray(ArrayList<Double> Data, String fileName) {
+    public static void outputDoubleArray(ArrayList<Double> Data, String fileName) {
         try {
             FileWriter writer = new FileWriter(fileName);
             for (Double d: Data) {
@@ -48,7 +48,7 @@ public class FileOp {
         }
     }
 
-    public void outputFloatSeq(ArrayList<Float> Data, String fileName) {
+    public static void outputFloatSeq(ArrayList<Float> Data, String fileName) {
         try {
             FileWriter writer = new FileWriter(fileName);
             for (Float d: Data) {

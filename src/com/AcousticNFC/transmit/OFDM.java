@@ -9,9 +9,9 @@ public class OFDM {
     
     double sampleRate;
 
-    int subCarrierWidth = 171; // Hz
+    int subCarrierWidth = 172; // Hz
     double symbolLength; // seconds
-    int symbolNSamples; // only the data part, without the cyclic prefix
+    public int symbolNSamples; // only the data part, without the cyclic prefix
 
     int bandWidthLow = 6000; // Hz
     int bandWidthHigh = 7000; // Hz
@@ -21,7 +21,7 @@ public class OFDM {
     int symbolCapacity; // bits per symbol
 
     double cyclicPrefixLength = 0.004; // seconds
-    int cyclicPrefixNSamples;
+    public int cyclicPrefixNSamples;
 
     int keyingCapacity = 1; // bits per subcarrier
 
@@ -40,6 +40,8 @@ public class OFDM {
 
         // determine the number of samples per symbol
         symbolNSamples = (int) (sampleRate * symbolLength);
+        // round down to the nearest power of 2
+        symbolNSamples = Integer.highestOneBit(symbolNSamples);
 
         // determine the number of samples per cyclic prefix
         cyclicPrefixNSamples = (int) (sampleRate * cyclicPrefixLength);
@@ -90,7 +92,7 @@ public class OFDM {
         for (int i = 0; i < symbolNSamples; i++) {
             double t = (double) i / sampleRate;
             // use cos because we use complex representation
-            modulatedSignal[i] = 0.2F * (float) Math.cos(2 * Math.PI * carrierFreq * t + phase);
+            modulatedSignal[i] = 0.5F * (float) Math.cos(2 * Math.PI * carrierFreq * t + phase);
         }
 
         return modulatedSignal;

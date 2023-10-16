@@ -426,6 +426,10 @@ public class Host extends JFrame implements AsioDriverListener {
     sampleIndex = 0;
     bufferSize = asioDriver.getBufferPreferredSize();
     sampleRate = asioDriver.getSampleRate();
+    // if sample rate is not 44100, throw warning
+    if (Math.abs(sampleRate - 44100) > 1e-6) {
+      System.out.println("Warning: sample rate is not 44100. System will probably fail.");
+    }
     output = new float[bufferSize];
     asioDriver.createBuffers(activeChannels);
     asioDriver.start();

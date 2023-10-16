@@ -3,6 +3,7 @@ package com.AcousticNFC.receive;
 import java.util.ArrayList;
 
 import com.AcousticNFC.receive.SoFDetector;
+import com.AcousticNFC.receive.Demodulator;
 import com.AcousticNFC.utils.FileOp;
 
 public class Receiver {
@@ -12,10 +13,20 @@ public class Receiver {
 
     SoFDetector sofDetector;
 
+    boolean unpacking;
+    int tickDone;
+    Demodulator demodulator;
+
+    ArrayList<Boolean> receiveBuffer;
+
     public Receiver(double sampleRate) {
         this.sampleRate = sampleRate;
         samples = new ArrayList<Float>();
         sofDetector = new SoFDetector(sampleRate, this);
+        unpacking = false;
+        tickDone = 0;
+        demodulator = new Demodulator(this);
+        receiveBuffer = new ArrayList<Boolean>();
     }
 
     public int getLength() {
@@ -39,6 +50,9 @@ public class Receiver {
     public void process() {
         // update the correlations
         sofDetector.updateCorrelations();
+
+        // demodulation
+        demodulator.demodulate_test();
     }
     
     public void dumpResults() {
