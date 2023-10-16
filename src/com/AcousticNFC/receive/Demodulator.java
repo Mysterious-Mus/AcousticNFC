@@ -1,19 +1,18 @@
 package com.AcousticNFC.receive;
 
-import com.AcousticNFC.receive.FFT;
+import com.AcousticNFC.utils.FFT;
+import com.AcousticNFC.utils.Complex;
 import com.AcousticNFC.receive.Receiver;
 import com.AcousticNFC.transmit.OFDM;
 import com.AcousticNFC.utils.FileOp;
 
 public class Demodulator {
     
-    FFT fft;
     Receiver receiver;
     OFDM ofdm_info;
     int symbolLength;
 
     public Demodulator(Receiver receiver) {
-        fft = new FFT();
         this.receiver = receiver;
 
         // init a OFDM for demodulation info
@@ -37,17 +36,19 @@ public class Demodulator {
         receiver.tickDone += symbolLength;
 
         // do the FFT
-        FFT.fft(samples);
+        Complex[] fftResult = FFT.fft(samples);
 
         // calculate all amplitudes
-        float[] amplitudes = new float[symbolLength / 2];
-        for (int i = 0; i < symbolLength / 2; i++) {
-            amplitudes[i] = (float) Math.sqrt(
-                samples[2 * i] * samples[2 * i] + samples[2 * i + 1] * samples[2 * i + 1]);
+        float[] amplitudes = new float[symbolLength];
+        for (int i = 0; i < symbolLength; i++) {
+            amplitudes[i] = (float) fftResult[i].abs();
         }
 
         // dump the amplitudes
         FileOp.outputFloatSeq(amplitudes, "amplitudes.csv");
+
+        // dump the symbol samples
+        FileOp.outputFloatSeq(samples, "symbol.csv");
     }
 
     /* Demodulate all to demodulate */

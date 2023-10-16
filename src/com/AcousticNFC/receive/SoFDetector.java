@@ -47,11 +47,24 @@ public class SoFDetector {
         return sum / sofNSamples;
     }
 
+    boolean testdone = false;
+
     public void updateCorrelations() {
         // if nothing yet
         if (receiver.getLength() < sofNSamples) {
             return;
         }
+
+        // test: force detect
+        // if (receiver.getLength() > 150000 && !testdone) {
+        //     int endIdx = receiver.getLength();
+        //     System.out.println("SoF end detected at " + endIdx);
+        //     // send message to start demodulation
+        //     receiver.unpacking = true;
+        //     receiver.tickDone = endIdx;
+        //     lastSoFIdx = endIdx;
+        //     testdone = true;
+        // }
 
         // calculate the new correlations
         for (int startingIdx = correlations.size(); 
