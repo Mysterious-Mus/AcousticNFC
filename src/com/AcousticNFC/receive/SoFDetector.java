@@ -15,7 +15,7 @@ public class SoFDetector {
 
     int lastSoFIdx = -1000;
 
-    float corrThreshold = 0.04f;
+    float corrThreshold = 0.001f;
 
     Receiver receiver;
     /* The correlation between the samples and the SoF
