@@ -107,6 +107,7 @@ public class Host extends JFrame implements AsioDriverListener {
   final AsioDriverListener host = this;
 
   final Lock BufferIntrLock = new ReentrantLock();
+  final Lock PlayContentLock = new ReentrantLock();
 
   class SoFCalcThread extends Thread {
     public void run() {
@@ -368,6 +369,8 @@ public class Host extends JFrame implements AsioDriverListener {
 
     buttonTransmit.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent event) {
+        // acquire lock
+        PlayContentLock.lock();
         // restart the driver to sync the new setting if idle
         if (state == State.IDLE && receiverState == ReceiverState.IDLE) {
           driverShutdown();
@@ -376,6 +379,8 @@ public class Host extends JFrame implements AsioDriverListener {
         setState(State.PLAYING);
         // set player
         player = new Player(framer.pack(bitString.getBitString()));
+        // release lock
+        PlayContentLock.unlock();
       }
     });
 
@@ -497,6 +502,9 @@ public class Host extends JFrame implements AsioDriverListener {
         setState(State.IDLE);
         return;
       }
+
+      // lock play content
+      PlayContentLock.lock();
       output = new float[bufferSize];
       // play
       if (!player.playContent(bufferSize, output)) {
@@ -505,6 +513,8 @@ public class Host extends JFrame implements AsioDriverListener {
       }
       // write to the output channel
       outputChannel.write(output);
+      // release lock
+      PlayContentLock.unlock();
     }
     else {
       // not playing, send 0

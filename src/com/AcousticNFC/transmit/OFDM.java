@@ -9,14 +9,14 @@ import com.AcousticNFC.receive.Receiver;
  */
 public class OFDM {
     
-    double sampleRate;
+    public double sampleRate;
 
     public double subCarrierWidth; // Hz
     double symbolLength; // seconds
     public int symbolNSamples = (int) Math.pow(2, 8); // only the data part, without the cyclic prefix
 
-    public double bandWidthLow = 6000; // Hz
-    public double bandWidthHigh = 7000; // Hz
+    public double bandWidthLow = 1000; // Hz
+    public double bandWidthHigh = 12000; // Hz
 
     public int numSubCarriers;
 
@@ -92,7 +92,7 @@ public class OFDM {
         for (int i = 0; i < symbolNSamples; i++) {
             double t = (double) i / sampleRate;
             // use cos because we use complex representation
-            modulatedSignal[i] = 0.1F * (float) Math.cos(2 * Math.PI * carrierFreq * t + phase);
+            modulatedSignal[i] = 0.8F * (float) Math.cos(2 * Math.PI * carrierFreq * t + phase);
         }
 
         return modulatedSignal;

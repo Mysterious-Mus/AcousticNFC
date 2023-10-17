@@ -42,7 +42,7 @@ public class Receiver {
     public void feedSamples(float[] samples) {
         // add the new samples to back
         for (int i = 0; i < samples.length; i++) {
-            this.samples.add(samples[i]);
+           this.samples.add(samples[i]);
         }
     }
     

@@ -5,12 +5,14 @@ import com.AcousticNFC.utils.Complex;
 import com.AcousticNFC.receive.Receiver;
 import com.AcousticNFC.transmit.OFDM;
 import com.AcousticNFC.utils.FileOp;
+import com.AcousticNFC.utils.Highpass;
 
 public class Demodulator {
     
     Receiver receiver;
     OFDM ofdm_info;
     int symbolLength;
+    Highpass highpass;
 
     public Demodulator(Receiver receiver) {
         this.receiver = receiver;
@@ -28,9 +30,11 @@ public class Demodulator {
         // skip the cyclic prefix
         receiver.tickDone += ofdm_info.cyclicPrefixNSamples;
 
+        highpass = new Highpass((float) receiver.sampleRate);
         // get the samples of the symbol
         float[] samples = new float[symbolLength];
         for (int i = 0; i < symbolLength; i++) {
+            // samples[i] = highpass.filter(receiver.samples.get(receiver.tickDone + i));
             samples[i] = receiver.samples.get(receiver.tickDone + i);
         }
         receiver.tickDone += symbolLength;
@@ -52,9 +56,10 @@ public class Demodulator {
 
         // calculate the phases of the subcarriers
         float[] subCarrierPhases = new float[ofdm_info.numSubCarriers];
-        int startingBin = (int) Math.round(ofdm_info.bandWidthLow / ofdm_info.subCarrierWidth);
         for (int i = 0; i < ofdm_info.numSubCarriers; i++) {
-            subCarrierPhases[i] = phases[startingBin + i];
+            subCarrierPhases[i] = phases[
+                (int) Math.round((ofdm_info.bandWidthLow + i * ofdm_info.subCarrierWidth) / 
+                    ofdm_info.sampleRate * symbolLength)];
         }
 
         // dump the amplitudes

@@ -15,12 +15,17 @@ public class SoFDetector {
 
     int lastSoFIdx = -1000;
 
-    float corrThreshold = 0.06f;
+    float corrThreshold = 0.04f;
 
     Receiver receiver;
     /* The correlation between the samples and the SoF
      * correlations[i] is the correlation between the samples[i:i+L-1] and the SoF */
     ArrayList<Double> correlations;
+
+    /* Optimize: when the corr reach thresh, still wait a while and find
+     * the max corr in the following samples
+     */
+    int waitNSamples = 1000;
 
     public SoFDetector(double sampleRate, Receiver receiver) {
         this.sampleRate = sampleRate;
@@ -71,14 +76,22 @@ public class SoFDetector {
             startingIdx < receiver.getLength() - sofNSamples + 1; startingIdx++) {
             correlations.add(correlation(receiver.getSamples(), startingIdx));
             if (!receiver.unpacking) {
-                if (correlations.get(startingIdx) > corrThreshold
-                    && startingIdx - lastSoFIdx > sofNSamples) {
-                    int endIdx = startingIdx + sofNSamples;
-                    System.out.println("SoF end detected at " + endIdx);
-                    // send message to start demodulation
-                    receiver.unpacking = true;
-                    receiver.tickDone = endIdx;
-                    lastSoFIdx = endIdx;
+                if (startingIdx >= waitNSamples) {
+                    if (correlations.get(startingIdx - waitNSamples) > corrThreshold
+                        && startingIdx - lastSoFIdx > sofNSamples) {
+                        int bestStartingIdx = startingIdx - waitNSamples;
+                        for (int i = startingIdx - waitNSamples + 1; i < startingIdx; i++) {
+                            if (correlations.get(i) > correlations.get(bestStartingIdx)) {
+                                bestStartingIdx = i;
+                            }
+                        }
+                        int endIdx = bestStartingIdx + sofNSamples;
+                        System.out.println("SoF end detected at " + endIdx);
+                        // send message to start demodulation
+                        receiver.unpacking = true;
+                        receiver.tickDone = endIdx;
+                        lastSoFIdx = endIdx;
+                    }
                 }
             }
         }
