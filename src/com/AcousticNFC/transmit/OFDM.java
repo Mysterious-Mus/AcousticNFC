@@ -1,5 +1,7 @@
 package com.AcousticNFC.transmit;
 
+import com.AcousticNFC.receive.Receiver;
+
 /* Use OFDM to modulate a bit string
  * Always padded with 0s, the length of the modulated signal will be a multiple of:
  * keyingCapacity * numSubCarriers
@@ -9,14 +11,14 @@ public class OFDM {
     
     double sampleRate;
 
-    int subCarrierWidth = 172; // Hz
+    public double subCarrierWidth; // Hz
     double symbolLength; // seconds
-    public int symbolNSamples; // only the data part, without the cyclic prefix
+    public int symbolNSamples = (int) Math.pow(2, 8); // only the data part, without the cyclic prefix
 
-    int bandWidthLow = 6000; // Hz
-    int bandWidthHigh = 7000; // Hz
+    public double bandWidthLow = 6000; // Hz
+    public double bandWidthHigh = 7000; // Hz
 
-    int numSubCarriers;
+    public int numSubCarriers;
 
     int symbolCapacity; // bits per symbol
 
@@ -28,20 +30,18 @@ public class OFDM {
     public OFDM(double sampleRate) {
         this.sampleRate = sampleRate;
 
+        // determine the subcarrier width
+        subCarrierWidth = sampleRate / symbolNSamples;
+
         // recalibrate bandWidthLow: move to the next multiple
-        bandWidthLow = (bandWidthLow + subCarrierWidth - 1) / subCarrierWidth * subCarrierWidth;
+        bandWidthLow = Math.ceil(bandWidthLow / subCarrierWidth) * subCarrierWidth;
         // then the scans should start exactly at bandWidthLow
 
         // num subcarriers
-        numSubCarriers = (bandWidthHigh - bandWidthLow) / subCarrierWidth + 1;
+        numSubCarriers = (int) Math.floor((bandWidthHigh - bandWidthLow) / subCarrierWidth);
 
         // determine the symbol length
         symbolLength = (double) 1 / subCarrierWidth;
-
-        // determine the number of samples per symbol
-        symbolNSamples = (int) (sampleRate * symbolLength);
-        // round down to the nearest power of 2
-        symbolNSamples = Integer.highestOneBit(symbolNSamples);
 
         // determine the number of samples per cyclic prefix
         cyclicPrefixNSamples = (int) (sampleRate * cyclicPrefixLength);
@@ -50,18 +50,18 @@ public class OFDM {
         symbolCapacity = keyingCapacity * numSubCarriers;
 
         // print some info
-        System.out.println("OFDM parameters:");
-        System.out.println("sampleRate: " + sampleRate);
-        System.out.println("subCarrierWidth: " + subCarrierWidth);
-        System.out.println("symbolLength: " + symbolLength);
-        System.out.println("symbolNSamples: " + symbolNSamples);
-        System.out.println("bandWidthLow: " + bandWidthLow);
-        System.out.println("bandWidthHigh: " + bandWidthHigh);
-        System.out.println("numSubCarriers: " + numSubCarriers);
-        System.out.println("symbolCapacity: " + symbolCapacity);
-        System.out.println("cyclicPrefixLength: " + cyclicPrefixLength);
-        System.out.println("cyclicPrefixNSamples: " + cyclicPrefixNSamples);
-        System.out.println("keyingCapacity: " + keyingCapacity);
+        // System.out.println("OFDM parameters:");
+        // System.out.println("sampleRate: " + sampleRate);
+        // System.out.println("subCarrierWidth: " + subCarrierWidth);
+        // System.out.println("symbolLength: " + symbolLength);
+        // System.out.println("symbolNSamples: " + symbolNSamples);
+        // System.out.println("bandWidthLow: " + bandWidthLow);
+        // System.out.println("bandWidthHigh: " + bandWidthHigh);
+        // System.out.println("numSubCarriers: " + numSubCarriers);
+        // System.out.println("symbolCapacity: " + symbolCapacity);
+        // System.out.println("cyclicPrefixLength: " + cyclicPrefixLength);
+        // System.out.println("cyclicPrefixNSamples: " + cyclicPrefixNSamples);
+        // System.out.println("keyingCapacity: " + keyingCapacity);
     }
 
     /* Applies PSK modulation to a binary string of length 'keyingCapacity'. 
@@ -71,7 +71,7 @@ public class OFDM {
      * to create a 'key' index.
      * Phase for each 'key' is calculated as: 2 * PI * index / numKeys.
     */
-    public float[] phaseShiftKeying(int[] data, int carrierFreq) {
+    public float[] phaseShiftKeying(int[] data, double carrierFreq) {
         // sanity: data length should be equal to keyingCapacity
         assert data.length == keyingCapacity;
 
@@ -92,7 +92,7 @@ public class OFDM {
         for (int i = 0; i < symbolNSamples; i++) {
             double t = (double) i / sampleRate;
             // use cos because we use complex representation
-            modulatedSignal[i] = 0.5F * (float) Math.cos(2 * Math.PI * carrierFreq * t + phase);
+            modulatedSignal[i] = 0.1F * (float) Math.cos(2 * Math.PI * carrierFreq * t + phase);
         }
 
         return modulatedSignal;
@@ -115,7 +115,7 @@ public class OFDM {
         float[] symbol = new float[numSamplesPerWholeSymbol];
         for (int i = 0; i < numSubCarriers; i++) {
             // Get the subcarrier frequency
-            int carrierFreq = bandWidthLow + i * subCarrierWidth;
+            double carrierFreq = bandWidthLow + i * subCarrierWidth;
 
             // Get the data for this subcarrier
             int[] subCarrierData = new int[keyingCapacity];
@@ -167,8 +167,25 @@ public class OFDM {
                 symbolData[j] = paddedData[i * symbolCapacity + j];
             }
 
+            
             // Generate the symbol
             float[] symbol = symbolGen(symbolData);
+
+            // print the data of the first symbol
+            if (i == 0) {
+                System.out.println("OFDM modulator: data of the first symbol:");
+                for (int j = 0; j < symbolCapacity; j++) {
+                    System.out.print(symbolData[j]);
+                }
+                System.out.println();
+
+                // demodulate the first symbol
+                Receiver receiver = new Receiver(sampleRate);
+                receiver.feedSamples(symbol);
+                receiver.unpacking = true;
+                receiver.tickDone = 0;
+                receiver.process();
+            }
 
             // Add the symbol to the result
             for (int j = 0; j < cyclicPrefixNSamples + symbolNSamples; j++) {

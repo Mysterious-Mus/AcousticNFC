@@ -13,8 +13,8 @@ public class Receiver {
 
     SoFDetector sofDetector;
 
-    boolean unpacking;
-    int tickDone;
+    public boolean unpacking;
+    public int tickDone;
     Demodulator demodulator;
 
     ArrayList<Boolean> receiveBuffer;
