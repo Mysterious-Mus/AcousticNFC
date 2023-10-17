@@ -44,8 +44,27 @@ public class Demodulator {
             amplitudes[i] = (float) fftResult[i].abs();
         }
 
+        // calcualte the phases
+        float[] phases = new float[symbolLength];
+        for (int i = 0; i < symbolLength; i++) {
+            phases[i] = (float) fftResult[i].phase();
+        }
+
+        // calculate the phases of the subcarriers
+        float[] subCarrierPhases = new float[ofdm_info.numSubCarriers];
+        int startingBin = (int) Math.round(ofdm_info.bandWidthLow / ofdm_info.subCarrierWidth);
+        for (int i = 0; i < ofdm_info.numSubCarriers; i++) {
+            subCarrierPhases[i] = phases[startingBin + i];
+        }
+
         // dump the amplitudes
         FileOp.outputFloatSeq(amplitudes, "amplitudes.csv");
+
+        // dump the phases
+        FileOp.outputFloatSeq(phases, "phases.csv");
+
+        // dump the subcarrier phases
+        FileOp.outputFloatSeq(subCarrierPhases, "subCarrierPhases.csv");
 
         // dump the symbol samples
         FileOp.outputFloatSeq(samples, "symbol.csv");
@@ -53,7 +72,8 @@ public class Demodulator {
 
     /* Demodulate all to demodulate */
     public void demodulate() {
-        while (receiver.tickDone + ofdm_info.cyclicPrefixNSamples + symbolLength < 
+        while ( receiver.unpacking &&
+            receiver.tickDone + ofdm_info.cyclicPrefixNSamples + symbolLength <= 
             receiver.getLength()) {
             demodulateSymbol();
         }
@@ -61,7 +81,8 @@ public class Demodulator {
 
     /* Demodulate test */
     public void demodulate_test() {
-        while (receiver.tickDone + ofdm_info.cyclicPrefixNSamples + symbolLength < 
+        while ( receiver.unpacking &&
+            receiver.tickDone + ofdm_info.cyclicPrefixNSamples + symbolLength <= 
             receiver.getLength()) {
             demodulateSymbol();
             receiver.unpacking = false;
