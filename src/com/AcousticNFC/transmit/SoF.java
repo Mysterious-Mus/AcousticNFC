@@ -7,22 +7,26 @@ package com.AcousticNFC.transmit;
  */
 public class SoF {
     double sampleRate;
-    double T = 0.005; // duration of SoF, seconds
-    float amplitude = 0.7f;
+    double T = 0.002905; // duration of SoF, seconds
+    float amplitude = 0.8f;
     // frequencies of SoF
     float fmax = 6000;
-    float fmin = 16000;
+    float fmin = 12000;
     int numSamples;
+
+    double silentDuration = 0.004; // seconds
+    public int silentNSamples;
 
     public SoF(double sampleRate) {
         this.sampleRate = sampleRate;
         numSamples = (int)Math.round(2 * T * sampleRate);
+        silentNSamples = (int)Math.round(silentDuration * sampleRate);
         // print NSample
         System.out.println("SoF NSample: " + numSamples);
     }
 
     public float[] generateSoF() {
-        float[] samples = new float[numSamples];
+        float[] samples = new float[numSamples + silentNSamples];
         float a = (float)((fmax - fmin) / T);
         float phi0 = (float)(Math.PI * a * T * T);
         // stage 1

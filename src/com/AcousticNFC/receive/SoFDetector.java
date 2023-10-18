@@ -13,9 +13,10 @@ public class SoFDetector {
     float[] sofSamples;
     int sofNSamples;
 
-    int lastSoFIdx = -1000;
+    int lastSoFIdx = 0;
 
-    float corrThreshold = 0.04f;
+    float corrThreshold = 0.002f;
+    // float corrThreshold = 0.15f;
 
     Receiver receiver;
     /* The correlation between the samples and the SoF
@@ -78,15 +79,15 @@ public class SoFDetector {
             if (!receiver.unpacking) {
                 if (startingIdx >= waitNSamples) {
                     if (correlations.get(startingIdx - waitNSamples) > corrThreshold
-                        && startingIdx - lastSoFIdx > sofNSamples) {
+                        && startingIdx - lastSoFIdx > sofNSamples + sof.silentNSamples + waitNSamples) {
                         int bestStartingIdx = startingIdx - waitNSamples;
                         for (int i = startingIdx - waitNSamples + 1; i < startingIdx; i++) {
                             if (correlations.get(i) > correlations.get(bestStartingIdx)) {
                                 bestStartingIdx = i;
                             }
                         }
-                        int endIdx = bestStartingIdx + sofNSamples;
-                        System.out.println("SoF end detected at " + endIdx);
+                        int endIdx = bestStartingIdx + sofNSamples + sof.silentNSamples;
+                        System.out.println("SoF end detected at " + endIdx + ", Starting at " + bestStartingIdx);
                         // send message to start demodulation
                         receiver.unpacking = true;
                         receiver.tickDone = endIdx;

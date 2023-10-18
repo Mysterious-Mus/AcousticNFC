@@ -15,8 +15,8 @@ public class OFDM {
     double symbolLength; // seconds
     public int symbolNSamples = (int) Math.pow(2, 8); // only the data part, without the cyclic prefix
 
-    public double bandWidthLow = 6000; // Hz
-    public double bandWidthHigh = 7000; // Hz
+    public double bandWidthLow = 4000; // Hz
+    public double bandWidthHigh = 6000; // Hz
 
     public int numSubCarriers;
 
@@ -31,7 +31,7 @@ public class OFDM {
         this.sampleRate = sampleRate;
 
         // determine the subcarrier width
-        subCarrierWidth = sampleRate / symbolNSamples *2;
+        subCarrierWidth = sampleRate / symbolNSamples * 2;
 
         // recalibrate bandWidthLow: move to the next multiple
         bandWidthLow = Math.ceil(bandWidthLow / subCarrierWidth) * subCarrierWidth;
@@ -133,9 +133,9 @@ public class OFDM {
         }
 
         // Add the cyclic prefix
-        for (int i = 0; i < cyclicPrefixNSamples; i++) {
-            symbol[i] = symbol[numSamplesPerWholeSymbol - cyclicPrefixNSamples + i];
-        }
+        // for (int i = 0; i < cyclicPrefixNSamples; i++) {
+        //     symbol[i] = symbol[numSamplesPerWholeSymbol - cyclicPrefixNSamples + i];
+        // }
 
         return symbol;
     }
