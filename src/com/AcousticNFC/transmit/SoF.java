@@ -1,11 +1,16 @@
 package com.AcousticNFC.transmit;
 
+import com.AcousticNFC.Config;
+
 /* Dataframe SoF generator
  * The SoF is a 1ms long sound that is used to indicate the start of a dataframe
  * The SoF is a chirp signal in Dhwani's implementation, the formulation
  * can be found in notes.ipynb
  */
 public class SoF {
+
+    Config cfg;
+
     double sampleRate;
     double T = 0.002905; // duration of SoF, seconds
     float amplitude = 0.8f;
@@ -17,7 +22,7 @@ public class SoF {
     double silentDuration = 0.004; // seconds
     public int silentNSamples;
 
-    public SoF(double sampleRate) {
+    public SoF(Config cfg_src) {
         this.sampleRate = sampleRate;
         numSamples = (int)Math.round(2 * T * sampleRate);
         silentNSamples = (int)Math.round(silentDuration * sampleRate);

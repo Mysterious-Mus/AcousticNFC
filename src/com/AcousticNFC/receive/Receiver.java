@@ -9,7 +9,6 @@ import com.AcousticNFC.utils.FileOp;
 
 public class Receiver {
     
-    double sampleRate;
     ArrayList<Float> samples;
 
     SoFDetector sofDetector;
@@ -20,13 +19,15 @@ public class Receiver {
 
     public ArrayList<Boolean> receiveBuffer;
 
-    public Receiver(double sampleRate) {
-        this.sampleRate = sampleRate;
+    Config cfg;
+
+    public Receiver(Config cfg_src) {
+        cfg = cfg_src;
         samples = new ArrayList<Float>();
-        sofDetector = new SoFDetector(sampleRate, this);
+        sofDetector = new SoFDetector(cfg, this);
         unpacking = false;
         tickDone = 0;
-        demodulator = new Demodulator(this);
+        demodulator = new Demodulator(this, cfg);
         receiveBuffer = new ArrayList<Boolean>();
     }
 
