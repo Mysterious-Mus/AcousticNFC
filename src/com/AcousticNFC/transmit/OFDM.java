@@ -1,5 +1,6 @@
 package com.AcousticNFC.transmit;
 
+import com.AcousticNFC.Config;
 import com.AcousticNFC.receive.Receiver;
 
 /* Use OFDM to modulate a bit string
@@ -8,60 +9,11 @@ import com.AcousticNFC.receive.Receiver;
  * The maximum amplitude of the modulated signal is 0.2
  */
 public class OFDM {
+
+    Config cfg;
     
-    public double sampleRate;
-
-    public double subCarrierWidth; // Hz
-    double symbolLength; // seconds
-    public int symbolNSamples = (int) Math.pow(2, 8); // only the data part, without the cyclic prefix
-
-    public double bandWidthLow = 4000; // Hz
-    public double bandWidthHigh = 6000; // Hz
-
-    public int numSubCarriers;
-
-    int symbolCapacity; // bits per symbol
-
-    double cyclicPrefixLength = 0.004; // seconds
-    public int cyclicPrefixNSamples;
-
-    public int keyingCapacity = 1; // bits per subcarrier
-
-    public OFDM(double sampleRate) {
-        this.sampleRate = sampleRate;
-
-        // determine the subcarrier width
-        subCarrierWidth = sampleRate / symbolNSamples * 2;
-
-        // recalibrate bandWidthLow: move to the next multiple
-        bandWidthLow = Math.ceil(bandWidthLow / subCarrierWidth) * subCarrierWidth;
-        // then the scans should start exactly at bandWidthLow
-
-        // num subcarriers
-        numSubCarriers = (int) Math.floor((bandWidthHigh - bandWidthLow) / subCarrierWidth);
-
-        // determine the symbol length
-        symbolLength = (double) 1 / subCarrierWidth;
-
-        // determine the number of samples per cyclic prefix
-        cyclicPrefixNSamples = (int) (sampleRate * cyclicPrefixLength);
-
-        // determine the symbol capacity
-        symbolCapacity = keyingCapacity * numSubCarriers;
-
-        // print some info
-        // System.out.println("OFDM parameters:");
-        // System.out.println("sampleRate: " + sampleRate);
-        // System.out.println("subCarrierWidth: " + subCarrierWidth);
-        // System.out.println("symbolLength: " + symbolLength);
-        // System.out.println("symbolNSamples: " + symbolNSamples);
-        // System.out.println("bandWidthLow: " + bandWidthLow);
-        // System.out.println("bandWidthHigh: " + bandWidthHigh);
-        // System.out.println("numSubCarriers: " + numSubCarriers);
-        // System.out.println("symbolCapacity: " + symbolCapacity);
-        // System.out.println("cyclicPrefixLength: " + cyclicPrefixLength);
-        // System.out.println("cyclicPrefixNSamples: " + cyclicPrefixNSamples);
-        // System.out.println("keyingCapacity: " + keyingCapacity);
+    public OFDM(Config cfg_src) {
+        cfg = cfg_src;
     }
 
     /* Applies PSK modulation to a binary string of length 'keyingCapacity'. 
@@ -73,24 +25,24 @@ public class OFDM {
     */
     public float[] phaseShiftKeying(int[] data, double carrierFreq) {
         // sanity: data length should be equal to keyingCapacity
-        assert data.length == keyingCapacity;
+        assert data.length == cfg.keyingCapacity;
 
         // number of keys
-        int numKeys = (int) Math.pow(2, keyingCapacity);
+        int numKeys = (int) Math.pow(2, cfg.keyingCapacity);
 
         // Index
         int index = 0;
-        for (int i = 0; i < keyingCapacity; i++) {
-            index += data[i] * Math.pow(2, keyingCapacity - i - 1);
+        for (int i = 0; i < cfg.keyingCapacity; i++) {
+            index += data[i] * Math.pow(2, cfg.keyingCapacity - i - 1);
         }
 
         // Phase
         float phase = (float) (2 * Math.PI * index / numKeys);
 
         // Modulated signal
-        float[] modulatedSignal = new float[symbolNSamples];
-        for (int i = 0; i < symbolNSamples; i++) {
-            double t = (double) i / sampleRate;
+        float[] modulatedSignal = new float[cfg.symbolLength];
+        for (int i = 0; i < cfg.symbolLength; i++) {
+            double t = (double) i / cfg.sampleRate;
             // use cos because we use complex representation
             modulatedSignal[i] = 0.8F * (float) Math.cos(2 * Math.PI * carrierFreq * t + phase);
         }
@@ -106,29 +58,29 @@ public class OFDM {
     */
     public float[] symbolGen(int[] data) {
         // Sanity: data length should be equal to numSubCarriers * keyingCapacity
-        assert data.length == numSubCarriers * keyingCapacity;
+        assert data.length == cfg.numSubCarriers * cfg.keyingCapacity;
 
         // Determine the number of samples per symbol
-        int numSamplesPerWholeSymbol = cyclicPrefixNSamples + symbolNSamples;
+        int numSamplesPerWholeSymbol = cfg.cyclicPrefixNSamples + cfg.symbolLength;
 
         // Generate the symbol
         float[] symbol = new float[numSamplesPerWholeSymbol];
-        for (int i = 0; i < numSubCarriers; i++) {
+        for (int i = 0; i < cfg.numSubCarriers; i++) {
             // Get the subcarrier frequency
-            double carrierFreq = bandWidthLow + i * subCarrierWidth;
+            double carrierFreq = cfg.bandWidthLow + i * cfg.subCarrierWidth;
 
             // Get the data for this subcarrier
-            int[] subCarrierData = new int[keyingCapacity];
-            for (int j = 0; j < keyingCapacity; j++) {
-                subCarrierData[j] = data[i * keyingCapacity + j];
+            int[] subCarrierData = new int[cfg.keyingCapacity];
+            for (int j = 0; j < cfg.keyingCapacity; j++) {
+                subCarrierData[j] = data[i * cfg.keyingCapacity + j];
             }
 
             // Modulate the subcarrier
             float[] modulatedSubCarrier = phaseShiftKeying(subCarrierData, carrierFreq);
 
             // Add the subcarrier to the symbol
-            for (int j = 0; j < symbolNSamples; j++) {
-                symbol[cyclicPrefixNSamples + j] += modulatedSubCarrier[j] / numSubCarriers;
+            for (int j = 0; j < cfg.symbolLength; j++) {
+                symbol[cfg.cyclicPrefixNSamples + j] += modulatedSubCarrier[j] / cfg.numSubCarriers;
             }
         }
 
@@ -149,47 +101,31 @@ public class OFDM {
      */
     public float[] modulate(int[] data) {
         // pad the input with 0s to make the length a multiple of symbolCapacity
-        int numSymbols = (int) Math.ceil((double) data.length / symbolCapacity);
-        int[] paddedData = new int[numSymbols * symbolCapacity];
+        int numSymbols = (int) Math.ceil((double) data.length / cfg.symbolCapacity);
+        int[] paddedData = new int[numSymbols * cfg.symbolCapacity];
         for (int i = 0; i < data.length; i++) {
             paddedData[i] = data[i];
         }
         // Sanity check
-        assert paddedData.length % symbolCapacity == 0;
+        assert paddedData.length % cfg.symbolCapacity == 0;
 
         // modulate
-        int resultNSamples = numSymbols * (cyclicPrefixNSamples + symbolNSamples);
+        int resultNSamples = numSymbols * (cfg.cyclicPrefixNSamples + cfg.symbolLength);
         float[] result = new float[resultNSamples];
         for (int i = 0; i < numSymbols; i++) {
             // Get the data for this symbol
-            int[] symbolData = new int[symbolCapacity];
-            for (int j = 0; j < symbolCapacity; j++) {
-                symbolData[j] = paddedData[i * symbolCapacity + j];
+            int[] symbolData = new int[cfg.symbolCapacity];
+            for (int j = 0; j < cfg.symbolCapacity; j++) {
+                symbolData[j] = paddedData[i * cfg.symbolCapacity + j];
             }
 
             
             // Generate the symbol
             float[] symbol = symbolGen(symbolData);
 
-            // print the data of the first symbol
-            if (i == 0) {
-                System.out.println("OFDM modulator: data of the first symbol:");
-                for (int j = 0; j < symbolCapacity; j++) {
-                    System.out.print(symbolData[j]);
-                }
-                System.out.println();
-
-                // demodulate the first symbol
-                Receiver receiver = new Receiver(sampleRate);
-                receiver.feedSamples(symbol);
-                receiver.unpacking = true;
-                receiver.tickDone = 0;
-                receiver.process();
-            }
-
             // Add the symbol to the result
-            for (int j = 0; j < cyclicPrefixNSamples + symbolNSamples; j++) {
-                result[i * (cyclicPrefixNSamples + symbolNSamples) + j] = symbol[j];
+            for (int j = 0; j < cfg.cyclicPrefixNSamples + cfg.symbolLength; j++) {
+                result[i * (cfg.cyclicPrefixNSamples + cfg.symbolLength) + j] = symbol[j];
             }
         }
 

@@ -1,7 +1,9 @@
 package com.AcousticNFC.utils;
 
+import com.AcousticNFC.Config;
+
 public class Music {
-    private final double sampleRate;
+    Config cfg;
     private final double duration = 1.5; // seconds for each chord
     private final float amplitude = 0.1f;
     private final float[] rootNotes = {261.63F, 220.00F, 174.61F, 196.00F};
@@ -53,17 +55,17 @@ public class Music {
         return frequencies;
     }
 
-    public Music(double sampleRate) {
-        this.sampleRate = sampleRate;
+    public Music(Config cfg_src) {
+        cfg = cfg_src;
     }
 
     public float[] generateChord(float[] frequencies) {
-        int n = (int) (sampleRate * duration);
+        int n = (int) (cfg.sampleRate * duration);
         float[] samples = new float[n];
         for (int i = 0; i < frequencies.length; i++) {
             double frequency = frequencies[i];
             for (int j = 0; j < n; j++) {
-                samples[j] += (float) (amplitude * Math.sin(2 * Math.PI * frequency * j / sampleRate));
+                samples[j] += (float) (amplitude * Math.sin(2 * Math.PI * frequency * j / cfg.sampleRate));
             }
         }
         return samples;
@@ -94,10 +96,10 @@ public class Music {
         // determine the sound function on the continuous domain
 
         // generate the sound samples
-        int n = (int) (sampleRate * duration_pj1pt2);
+        int n = (int) (cfg.sampleRate * duration_pj1pt2);
         float[] samples = new float[n];
         for (int i = 0; i < n; i++) {
-            samples[i] = soundFunctionPj1Pt2(i / sampleRate);
+            samples[i] = soundFunctionPj1Pt2(i / cfg.sampleRate);
         }
         return samples;
     }

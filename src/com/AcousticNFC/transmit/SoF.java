@@ -11,45 +11,30 @@ public class SoF {
 
     Config cfg;
 
-    double sampleRate;
-    double T = 0.002905; // duration of SoF, seconds
-    float amplitude = 0.8f;
-    // frequencies of SoF
-    float fmax = 6000;
-    float fmin = 12000;
-    int numSamples;
-
-    double silentDuration = 0.004; // seconds
-    public int silentNSamples;
-
     public SoF(Config cfg_src) {
-        this.sampleRate = sampleRate;
-        numSamples = (int)Math.round(2 * T * sampleRate);
-        silentNSamples = (int)Math.round(silentDuration * sampleRate);
-        // print NSample
-        System.out.println("SoF NSample: " + numSamples);
+        cfg = cfg_src;
     }
 
     public float[] generateSoF() {
-        float[] samples = new float[numSamples + silentNSamples];
-        float a = (float)((fmax - fmin) / T);
-        float phi0 = (float)(Math.PI * a * T * T);
+        float[] samples = new float[cfg.sofNSamples + cfg.sofSilentNSamples];
+        float a = (float)((cfg.SoF_fmax - cfg.SoF_fmin) / cfg.SoF_T);
+        float phi0 = (float)(Math.PI * a * cfg.SoF_T * cfg.SoF_T);
         // stage 1
-        for (int i = 0; i < numSamples / 2; i++) {
-            float time = (float) i / (float) sampleRate;
+        for (int i = 0; i < cfg.sofNSamples / 2; i++) {
+            float time = (float) i / (float) cfg.sofNSamples;
             float phase = (float) (Math.PI * a * time * time);
-            samples[i] = amplitude * (float) Math.cos(phase);
+            samples[i] = cfg.SoF_amplitude * (float) Math.cos(phase);
         }
         // stage 2
-        for (int i = numSamples / 2; i < numSamples; i++) {
-            float t = (float) i / (float) sampleRate;
-            float phase = (float) (phi0 + fmax*(t-T) - Math.PI * a * (t-T) * (t-T));
-            samples[i] = amplitude * (float) Math.cos(phase);
+        for (int i = cfg.sofNSamples / 2; i < cfg.sofNSamples; i++) {
+            float t = (float) i / (float) cfg.sampleRate;
+            float phase = (float) (phi0 + cfg.SoF_fmax*(t-cfg.SoF_T) - Math.PI * a * (t-cfg.SoF_T) * (t-cfg.SoF_T));
+            samples[i] = cfg.SoF_amplitude * (float) Math.cos(phase);
         }
         return samples;
     }
 
     public int NSample() {
-        return (int) (2 * T * sampleRate);
+        return (int) (2 * cfg.SoF_T * cfg.SoF_amplitude);
     }
 }

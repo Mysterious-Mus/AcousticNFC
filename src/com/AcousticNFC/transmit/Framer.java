@@ -14,11 +14,12 @@ public class Framer {
     SoF sof;
     OFDM ofdm;
 
-    public Framer(double sampleRate) {
-        this.sampleRate = sampleRate;
+    Config cfg;
 
-        sof = new SoF(sampleRate);
-        ofdm = new OFDM(sampleRate);
+    public Framer(Config cfg_src) {
+        cfg = cfg_src;
+        sof = new SoF(cfg);
+        ofdm = new OFDM(cfg);
     }
 
     /* Pack a dataframe containing FRAMELENGTH bits
@@ -27,12 +28,12 @@ public class Framer {
      */
     public float[] pack(int[] bitString) {
         // fix the length of the bit string
-        if (bitString.length > Config.frameLength) {
-            int[] newBitString = new int[Config.frameLength];
-            System.arraycopy(bitString, 0, newBitString, 0, Config.frameLength);
+        if (bitString.length > cfg.frameLength) {
+            int[] newBitString = new int[cfg.frameLength];
+            System.arraycopy(bitString, 0, newBitString, 0, cfg.frameLength);
             bitString = newBitString;
-        } else if (bitString.length < Config.frameLength) {
-            int[] newBitString = new int[Config.frameLength];
+        } else if (bitString.length < cfg.frameLength) {
+            int[] newBitString = new int[cfg.frameLength];
             System.arraycopy(bitString, 0, newBitString, 0, bitString.length);
             bitString = newBitString;
         }

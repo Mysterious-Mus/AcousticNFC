@@ -46,11 +46,11 @@ import com.synthbot.jasiohost.AsioDriverState;
 import com.synthbot.jasiohost.AsioChannel;
 import com.synthbot.jasiohost.AsioDriver;
 
+import com.AcousticNFC.Config;
 import com.AcousticNFC.utils.Recorder;
 import com.AcousticNFC.utils.Player;
 import com.AcousticNFC.utils.Music;
 import com.AcousticNFC.transmit.SoF;
-import com.AcousticNFC.transmit.SoF_toy;
 import com.AcousticNFC.utils.BitString;
 import com.AcousticNFC.transmit.OFDM;
 import com.AcousticNFC.transmit.Framer;
@@ -63,13 +63,13 @@ import java.util.concurrent.locks.*;
  */
 public class Host extends JFrame implements AsioDriverListener {
   
+  public Config cfg;
+
   private static final long serialVersionUID = 1L;
   
   private AsioDriver asioDriver;
   private Set<AsioChannel> activeChannels;
-  private int sampleIndex;
   private int bufferSize;
-  private double sampleRate;
   private float[] output;
   // recordings
   private Recorder recorder;
@@ -131,6 +131,8 @@ public class Host extends JFrame implements AsioDriverListener {
     // the title
     super("Acoustic NFC");
 
+    this.cfg = new Config();
+
     this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
     this.addWindowListener(new WindowAdapter() {
         @Override
@@ -157,7 +159,7 @@ public class Host extends JFrame implements AsioDriverListener {
     driverInit();
 
     // init framer
-    framer = new Framer(sampleRate);
+    framer = new Framer(cfg);
     // get the bit string
     bitString = new BitString("bit_string.txt");
   
@@ -165,7 +167,7 @@ public class Host extends JFrame implements AsioDriverListener {
     layoutPanel();
 
     // init receiver
-    receiver = new Receiver(sampleRate);
+    receiver = new Receiver(cfg);
 
     // launch the SoF calculation thread
     SoFCalcThread soFCalcThread = new SoFCalcThread();
@@ -322,7 +324,7 @@ public class Host extends JFrame implements AsioDriverListener {
         // restart the recorder
         recorder = new Recorder();
         // generate music
-        music = new Music(sampleRate);
+        music = new Music(cfg);
         // set player to play the music
         player = new Player(music.generateChordProgression());
       }
@@ -335,22 +337,9 @@ public class Host extends JFrame implements AsioDriverListener {
         driverInit();
         setState(State.PLAYING);
         // generate music
-        music = new Music(sampleRate);
+        music = new Music(cfg);
         // set player to play the music
         player = new Player(music.generateProj1Pt2Sound());
-      }
-    });
-
-    buttonPlayToySoF.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent event) {
-        // restart the driver to sync the new setting
-        driverShutdown();
-        driverInit();
-        setState(State.PLAYING);
-        // generate SoF
-        SoF_toy toysof = new SoF_toy(sampleRate);
-        // set player to play the music
-        player = new Player(toysof.generateSoF());
       }
     });
 
@@ -363,7 +352,7 @@ public class Host extends JFrame implements AsioDriverListener {
     initOFDM.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent event) {
         // init OFDM
-        OFDM ofdm = new OFDM(sampleRate);
+        OFDM ofdm = new OFDM(cfg);
       }
     });
 
@@ -393,7 +382,7 @@ public class Host extends JFrame implements AsioDriverListener {
         driverInit();
         setReceiverState(ReceiverState.RECEIVING);
         // init receiver
-        receiver = new Receiver(sampleRate);
+        receiver = new Receiver(cfg);
       }
     });
 
@@ -430,13 +419,13 @@ public class Host extends JFrame implements AsioDriverListener {
       break;
     }
 
-    sampleIndex = 0;
     bufferSize = asioDriver.getBufferPreferredSize();
-    sampleRate = asioDriver.getSampleRate();
+    double sampleRate = asioDriver.getSampleRate();
     // if sample rate is not 44100, throw warning
     if (Math.abs(sampleRate - 44100) > 1e-6) {
       System.out.println("Warning: sample rate is not 44100. System will probably fail.");
     }
+    cfg.UpdSampleRate(sampleRate);
     output = new float[bufferSize];
     asioDriver.createBuffers(activeChannels);
     asioDriver.start();
