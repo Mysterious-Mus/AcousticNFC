@@ -131,7 +131,7 @@ public class Host extends JFrame implements AsioDriverListener {
     // the title
     super("Acoustic NFC");
 
-    this.cfg = new Config();
+    this.cfg = new Config(this);
 
     this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
     this.addWindowListener(new WindowAdapter() {
@@ -151,6 +151,7 @@ public class Host extends JFrame implements AsioDriverListener {
 
     // init workstate
     setState(State.IDLE);
+    setReceiverState(ReceiverState.IDLE);
 
     // button callbacks
     setButtonCallbacks();
@@ -228,7 +229,10 @@ public class Host extends JFrame implements AsioDriverListener {
     panel4.add(buttonStopReceive);
     this.add(panel4);
 
-    this.setSize(600, 140);
+    // cfg panel
+    this.add(cfg.panel);
+
+    this.setSize(1000, 600);
     this.setResizable(false);
     this.setVisible(true);
   }
@@ -271,6 +275,13 @@ public class Host extends JFrame implements AsioDriverListener {
         receiverStateLabel.setText("Unknown");
         break;
     }
+  }
+
+  // system state
+  public Boolean isBusy() {
+    // print system state
+    System.out.println("System state: " + state + " " + receiverState);
+    return state != State.IDLE || receiverState != ReceiverState.IDLE;
   }
 
   // button callback
