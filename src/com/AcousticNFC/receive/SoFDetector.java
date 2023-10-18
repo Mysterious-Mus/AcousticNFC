@@ -15,7 +15,7 @@ public class SoFDetector {
 
     int lastSoFIdx = 0;
 
-    float corrThreshold = 0.002f;
+    float corrThreshold = 0.0025f;
     // float corrThreshold = 0.15f;
 
     Receiver receiver;
