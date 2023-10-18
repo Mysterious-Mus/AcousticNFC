@@ -12,6 +12,8 @@ public class Framer {
     SoF sof;
     OFDM ofdm;
 
+    public int frameLength = 1024; // bits
+
     public Framer(double sampleRate) {
         this.sampleRate = sampleRate;
 
@@ -19,15 +21,21 @@ public class Framer {
         ofdm = new OFDM(sampleRate);
     }
 
+    /* Pack a dataframe containing FRAMELENGTH bits
+     * padding 0s if the bit string is shorter than FRAMELENGTH
+     * truncate the bit string if it is longer than FRAMELENGTH
+     */
     public float[] pack(int[] bitString) {
-        // concatenate the length of the bit string
-        int[] length = new int[32];
-        int[] bitStringWithLength = new int[bitString.length + length.length];
-        for(int bitIdx = 0; bitIdx < length.length; bitIdx++) {
-            length[bitIdx] = (bitString.length >> bitIdx) & 1;
+        // fix the length of the bit string
+        if (bitString.length > frameLength) {
+            int[] newBitString = new int[frameLength];
+            System.arraycopy(bitString, 0, newBitString, 0, frameLength);
+            bitString = newBitString;
+        } else if (bitString.length < frameLength) {
+            int[] newBitString = new int[frameLength];
+            System.arraycopy(bitString, 0, newBitString, 0, bitString.length);
+            bitString = newBitString;
         }
-        System.arraycopy(length, 0, bitStringWithLength, 0, length.length);
-        System.arraycopy(bitString, 0, bitStringWithLength, length.length, bitString.length);
 
         // get SoF and symbols
         float[] sofSamples = sof.generateSoF();

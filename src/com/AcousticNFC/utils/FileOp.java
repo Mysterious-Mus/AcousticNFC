@@ -61,4 +61,17 @@ public class FileOp {
             e.printStackTrace();
         }
     }
+
+    public static void outputBitString(ArrayList<Boolean> Data, String fileName) {
+        try {
+            FileWriter writer = new FileWriter(fileName);
+            for (Boolean d: Data) {
+                writer.append(d? "1": "0");
+            }
+            writer.flush();
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

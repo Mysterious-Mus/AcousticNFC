@@ -25,7 +25,7 @@ public class OFDM {
     double cyclicPrefixLength = 0.004; // seconds
     public int cyclicPrefixNSamples;
 
-    int keyingCapacity = 1; // bits per subcarrier
+    public int keyingCapacity = 1; // bits per subcarrier
 
     public OFDM(double sampleRate) {
         this.sampleRate = sampleRate;
