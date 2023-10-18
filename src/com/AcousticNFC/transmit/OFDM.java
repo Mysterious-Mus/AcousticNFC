@@ -31,7 +31,7 @@ public class OFDM {
         this.sampleRate = sampleRate;
 
         // determine the subcarrier width
-        subCarrierWidth = sampleRate / symbolNSamples*2;
+        subCarrierWidth = sampleRate / symbolNSamples * 2;
 
         // recalibrate bandWidthLow: move to the next multiple
         bandWidthLow = Math.ceil(bandWidthLow / subCarrierWidth) * subCarrierWidth;
@@ -134,7 +134,7 @@ public class OFDM {
 
         // Add the cyclic prefix
         // for (int i = 0; i < cyclicPrefixNSamples; i++) {
-        //     symbol[i] = symbol[numSamplesPerWholeSymbol - cyclicPrefixNSamples + i];
+        //     symbol[i] = symbol[cyclicPrefixNSamples + i];
         // }
 
         return symbol;

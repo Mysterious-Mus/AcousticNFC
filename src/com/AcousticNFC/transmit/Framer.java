@@ -1,5 +1,7 @@
 package com.AcousticNFC.transmit;
 
+import com.AcousticNFC.Config;
+
 /* Frame Protocol:
  * 1. SoF
  * 2. Length of bit string: 32 bits
@@ -11,8 +13,6 @@ public class Framer {
 
     SoF sof;
     OFDM ofdm;
-
-    public int frameLength = 1024; // bits
 
     public Framer(double sampleRate) {
         this.sampleRate = sampleRate;
@@ -27,12 +27,12 @@ public class Framer {
      */
     public float[] pack(int[] bitString) {
         // fix the length of the bit string
-        if (bitString.length > frameLength) {
-            int[] newBitString = new int[frameLength];
-            System.arraycopy(bitString, 0, newBitString, 0, frameLength);
+        if (bitString.length > Config.frameLength) {
+            int[] newBitString = new int[Config.frameLength];
+            System.arraycopy(bitString, 0, newBitString, 0, Config.frameLength);
             bitString = newBitString;
-        } else if (bitString.length < frameLength) {
-            int[] newBitString = new int[frameLength];
+        } else if (bitString.length < Config.frameLength) {
+            int[] newBitString = new int[Config.frameLength];
             System.arraycopy(bitString, 0, newBitString, 0, bitString.length);
             bitString = newBitString;
         }
