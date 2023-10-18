@@ -369,16 +369,18 @@ public class Host extends JFrame implements AsioDriverListener {
 
     buttonTransmit.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent event) {
-        // acquire lock
-        PlayContentLock.lock();
         // restart the driver to sync the new setting if idle
         if (state == State.IDLE && receiverState == ReceiverState.IDLE) {
           driverShutdown();
           driverInit();
         }
-        setState(State.PLAYING);
+        // prepare play content
+        float[] playContent = framer.pack(bitString.getBitString());
+        // acquire lock
+        PlayContentLock.lock();
         // set player
-        player = new Player(framer.pack(bitString.getBitString()));
+        setState(State.PLAYING);
+        player = new Player(playContent);
         // release lock
         PlayContentLock.unlock();
       }
@@ -569,6 +571,10 @@ public class Host extends JFrame implements AsioDriverListener {
       public void run() {
         System.out.println("resetRequest() callback received. Returning driver to INITIALIZED state.");
         asioDriver.returnToState(AsioDriverState.INITIALIZED);
+
+        // reboot
+        driverShutdown();
+        driverInit();
       }
     }.start();
   }
