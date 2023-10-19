@@ -13,7 +13,7 @@ public class Config {
     
     public double sampleRate = 44100;
 
-    public int frameLength = 200;
+    public int frameLength = 1024;
     public int symbolLength = 256;
 
     public double cyclicPrefixLength = 0.004;
