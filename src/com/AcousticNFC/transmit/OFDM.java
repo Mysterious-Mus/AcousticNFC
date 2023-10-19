@@ -120,6 +120,15 @@ public class OFDM {
                 symbolData[j] = paddedData[i * cfg.symbolCapacity + j];
             }
 
+            // log the first symbol
+            if (i == 0) {
+                String panelInfo = "";
+                for (int j = 0; j < cfg.symbolCapacity; j++) {
+                    panelInfo += symbolData[j] + " ";
+                }
+                cfg.UpdFirstSymbolData(panelInfo);
+            }
+
             
             // Generate the symbol
             float[] symbol = symbolGen(symbolData);

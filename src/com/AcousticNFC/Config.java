@@ -13,7 +13,7 @@ public class Config {
     
     public double sampleRate = 44100;
 
-    public int frameLength = 1024;
+    public int frameLength = 80;
     public int symbolLength = 256;
 
     public double cyclicPrefixLength = 0.004;
@@ -75,6 +75,10 @@ public class Config {
         JLabel maxSofCorrDectField;
         JTextField SofDetectThresholdField;
 
+        // debug info
+        JLabel firstSymbolPhasesField;
+        JLabel firstSymbolDataField;
+
         public ConfigPanel(Config config_src) {
             this.config = config_src;
 
@@ -103,6 +107,10 @@ public class Config {
             sofSilentNSamplesField = new JLabel(Integer.toString(config.sofSilentNSamples));
             maxSofCorrDectField = new JLabel(Double.toString(config.maxSofCorrDetect));
             SofDetectThresholdField = new JTextField(Double.toString(config.SofDetectThreshld));
+
+            // debug fields
+            firstSymbolPhasesField = new JLabel("");
+            firstSymbolDataField = new JLabel("");
 
             // Add a button to update the Config object with the entered values
             JButton updateButton = new JButton("Update");
@@ -153,84 +161,105 @@ public class Config {
                 SofDetectThresholdField.setText(Double.toString(config.SofDetectThreshld));
             });
 
-            setLayout(new GridLayout(0, 4));
+            this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
-            add(new JLabel("Sample Rate(Hz):"));
-            add(sampleRateField);
-            add(new JLabel("Subcarrier Dist:"));
-            add(subcarrierDistField);
+            JPanel grid1 = new JPanel();
 
-            add(new JLabel("Symbol Length(Bits):"));
-            add(symbolLengthField);
-            add(new JLabel("Sub Carrier Width(Hz):"));
-            add(subCarrierWidthField);
-            
-            add(new JLabel("Cyclic Prefix Length(s):"));
-            add(cyclicPrefixLengthField);
-            add(new JLabel("Cyclic Prefix Length(Samples):"));
-            add(cyclicPrefixNSamplesField);
-            
-            add(new JLabel("Cyclic Prefix Mute:"));
-            add(cyclicPrefixMuteField);
-            add(new JLabel(""));
-            add(new JLabel(""));
-            
-            add(new JLabel("Band Width Low Edit(Hz):"));
-            add(bandWidthLowEditField);
-            add(new JLabel("Band Width Low(Hz):"));
-            add(bandWidthLowField);
-            
-            add(new JLabel("Band Width High Edit(Hz):"));
-            add(bandWidthHighEditField);
-            add(new JLabel("Band Width High(Hz):"));
-            add(bandWidthHighField);
-            
-            add(new JLabel(""));
-            add(new JLabel(""));
-            add(new JLabel("Number of Sub Carriers:"));
-            add(numSubCarriersField);
+            grid1.setLayout(new GridLayout(0, 4));
 
-            add(new JLabel("Keying Capacity:"));
-            add(keyingCapacityField);
-            add(new JLabel("Symbol Capacity:"));
-            add(symbolCapacityField);
+            grid1.add(new JLabel("Sample Rate(Hz):"));
+            grid1.add(sampleRateField);
+            grid1.add(new JLabel("Subcarrier Dist:"));
+            grid1.add(subcarrierDistField);
 
-            add(new JLabel("SoF Amplitude:"));
-            add(SoF_amplitudeField);
-            add(new JLabel(""));
-            add(new JLabel(""));
+            grid1.add(new JLabel("Symbol Length(Bits):"));
+            grid1.add(symbolLengthField);
+            grid1.add(new JLabel("Sub Carrier Width(Hz):"));
+            grid1.add(subCarrierWidthField);
             
-            add(new JLabel("SoF T(s):"));
-            add(SoF_TField);
-            add(new JLabel("SoF NSamples:"));
-            add(sofNSamplesField);
+            grid1.add(new JLabel("Cyclic Prefix Length(s):"));
+            grid1.add(cyclicPrefixLengthField);
+            grid1.add(new JLabel("Cyclic Prefix Length(Samples):"));
+            grid1.add(cyclicPrefixNSamplesField);
             
-            add(new JLabel("SoF Fmin(Hz):"));
-            add(SoF_fminField);
-            add(new JLabel("SoF Fmax(Hz):"));
-            add(SoF_fmaxField);
+            grid1.add(new JLabel("Cyclic Prefix Mute:"));
+            grid1.add(cyclicPrefixMuteField);
+            grid1.add(new JLabel(""));
+            grid1.add(new JLabel(""));
             
-            add(new JLabel("SoF Silence Period(s):"));
-            add(SofSilencePeriodField);
-            add(new JLabel("SoF Silent NSamples:"));
-            add(sofSilentNSamplesField);
+            grid1.add(new JLabel("Band Width Low Edit(Hz):"));
+            grid1.add(bandWidthLowEditField);
+            grid1.add(new JLabel("Band Width Low(Hz):"));
+            grid1.add(bandWidthLowField);
+            
+            grid1.add(new JLabel("Band Width High Edit(Hz):"));
+            grid1.add(bandWidthHighEditField);
+            grid1.add(new JLabel("Band Width High(Hz):"));
+            grid1.add(bandWidthHighField);
+            
+            grid1.add(new JLabel(""));
+            grid1.add(new JLabel(""));
+            grid1.add(new JLabel("Number of Sub Carriers:"));
+            grid1.add(numSubCarriersField);
 
-            add(new JLabel("Frame Length(Bits):"));
-            add(frameLengthField);
-            add(updateButton);
-            add(new JLabel(""));
+            grid1.add(new JLabel("Keying Capacity:"));
+            grid1.add(keyingCapacityField);
+            grid1.add(new JLabel("Symbol Capacity:"));
+            grid1.add(symbolCapacityField);
 
-            add(new JLabel("Max SoF Corr Dectected:"));
-            add(maxSofCorrDectField);
-            add(new JLabel("SoF Threshold:"));
-            add(SofDetectThresholdField);
+            grid1.add(new JLabel("SoF Amplitude:"));
+            grid1.add(SoF_amplitudeField);
+            grid1.add(new JLabel(""));
+            grid1.add(new JLabel(""));
+            
+            grid1.add(new JLabel("SoF T(s):"));
+            grid1.add(SoF_TField);
+            grid1.add(new JLabel("SoF NSamples:"));
+            grid1.add(sofNSamplesField);
+            
+            grid1.add(new JLabel("SoF Fmin(Hz):"));
+            grid1.add(SoF_fminField);
+            grid1.add(new JLabel("SoF Fmax(Hz):"));
+            grid1.add(SoF_fmaxField);
+            
+            grid1.add(new JLabel("SoF Silence Period(s):"));
+            grid1.add(SofSilencePeriodField);
+            grid1.add(new JLabel("SoF Silent NSamples:"));
+            grid1.add(sofSilentNSamplesField);
+
+            grid1.add(new JLabel("Frame Length(Bits):"));
+            grid1.add(frameLengthField);
+
+            this.add(grid1);
+        
+            JPanel updateButtonPanel = new JPanel(new BorderLayout());
+            updateButtonPanel.add(updateButton, BorderLayout.CENTER);
+            this.add(updateButtonPanel);
+
+            JPanel grid2 = new JPanel();
+            grid2.setLayout(new GridLayout(0, 4));
+
+            grid2.add(new JLabel("Max SoF Corr Dectected:"));
+            grid2.add(maxSofCorrDectField);
+            grid2.add(new JLabel("SoF Threshold:"));
+            grid2.add(SofDetectThresholdField);
             
 
-            add(resetMaxCorrButton);
-            add(setSofDetectThresholdButton);
-            add(disableSofDetectThresholdButton);
-            add(new JLabel(""));
+            grid2.add(resetMaxCorrButton);
+            grid2.add(setSofDetectThresholdButton);
+            grid2.add(disableSofDetectThresholdButton);
+            grid2.add(new JLabel(""));
 
+            this.add(grid2);
+
+            JPanel debugPanel = new JPanel(new GridLayout(0,2));
+            debugPanel.add(new JLabel("First Symbol Phases:"));
+            debugPanel.add(firstSymbolPhasesField);
+
+            debugPanel.add(new JLabel("First Symbol Data:"));
+            debugPanel.add(firstSymbolDataField);
+
+            this.add(debugPanel);
         }
 
         public void updateDisplay() {
@@ -323,5 +352,13 @@ public class Config {
             maxSofCorrDetect = corr;
             panel.maxSofCorrDectField.setText(Double.toString(maxSofCorrDetect));
         }
+    }
+
+    public void UpdFirstSymbolPhases(String info) {
+        panel.firstSymbolPhasesField.setText(info);
+    }
+
+    public void UpdFirstSymbolData(String info) {
+        panel.firstSymbolDataField.setText(info);
     }
 }

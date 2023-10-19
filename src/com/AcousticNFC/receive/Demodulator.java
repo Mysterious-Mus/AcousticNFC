@@ -41,12 +41,25 @@ public class Demodulator {
         // do the FFT
         Complex[] fftResult = FFT.fft(samples);
 
+        // log the first symbol phases
+        // if the frameBuffer is empty
+        if (frameBuffer.size() == 0) {
+            String panelInfo = "";
+            for (int i = 0; i < cfg.numSubCarriers; i++) {
+                panelInfo += String.format("%.2f ", fftResult[
+                    (int) Math.round((cfg.bandWidthLow + i * cfg.subCarrierWidth) / 
+                    cfg.sampleRate * cfg.symbolLength)].phase());
+            }
+            cfg.UpdFirstSymbolPhases(panelInfo);
+        }
+
         // calculate the keys of the subcarriers
         for (int i = 0; i < cfg.numSubCarriers; i++) {
             // see notes.ipynb for the derivation
             double thisCarrierPhase = fftResult[
                     (int) Math.round((cfg.bandWidthLow + i * cfg.subCarrierWidth) / 
                     cfg.sampleRate * cfg.symbolLength)].phase();
+
             int numKeys = (int) Math.round(Math.pow(2, cfg.keyingCapacity));
             double lastPhaseSegment = 2 * Math.PI / numKeys / 2;
             int thisCarrierIndex = (int)Math.floor((thisCarrierPhase + 2 * Math.PI + lastPhaseSegment) % (2 * Math.PI) / 
