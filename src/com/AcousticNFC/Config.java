@@ -13,7 +13,7 @@ public class Config {
     
     public double sampleRate = 44100;
 
-    public int frameLength = 1024;
+    public int frameLength = 200;
     public int symbolLength = 256;
 
     public double cyclicPrefixLength = 0.004;
@@ -21,8 +21,9 @@ public class Config {
         (int)(sampleRate * cyclicPrefixLength);
     public boolean cyclicPrefixMute = true;      
 
+    public int subcarrierDist = 2;
     public double subCarrierWidth = 
-        sampleRate / symbolLength;
+        sampleRate / symbolLength * subcarrierDist;
     public double bandWidthLowEdit = 4000;
     public double bandWidthHighEdit = 6000;
     public double bandWidthLow =
@@ -50,6 +51,7 @@ public class Config {
         private Config config;
 
         JLabel sampleRateField;
+        JTextField subcarrierDistField;
         JTextField frameLengthField;
         JTextField symbolLengthField;
         JTextField cyclicPrefixLengthField;
@@ -78,6 +80,7 @@ public class Config {
 
             // init the UI elems
             sampleRateField = new JLabel(Double.toString(config.sampleRate));
+            subcarrierDistField = new JTextField(Integer.toString(config.subcarrierDist));
             frameLengthField = new JTextField(Integer.toString(config.frameLength));
             symbolLengthField = new JTextField(Integer.toString(config.symbolLength));
             cyclicPrefixLengthField = new JTextField(Double.toString(config.cyclicPrefixLength));
@@ -109,6 +112,7 @@ public class Config {
                 } else {
                     // update all config
                     config.sampleRate = Double.parseDouble(sampleRateField.getText());
+                    config.subcarrierDist = Integer.parseInt(subcarrierDistField.getText());
                     config.frameLength = Integer.parseInt(frameLengthField.getText());
                     config.symbolLength = Integer.parseInt(symbolLengthField.getText());
                     config.cyclicPrefixLength = Double.parseDouble(cyclicPrefixLengthField.getText());
@@ -136,9 +140,9 @@ public class Config {
             });
 
             // The button to set the SoF detect threshold as 90% of the observed max correlation
-            JButton setSofDetectThresholdButton = new JButton("Set 90%");
+            JButton setSofDetectThresholdButton = new JButton("Set 98%");
             setSofDetectThresholdButton.addActionListener(e -> {
-                config.SofDetectThreshld = 0.9 * config.maxSofCorrDetect;
+                config.SofDetectThreshld = 0.98 * config.maxSofCorrDetect;
                 SofDetectThresholdField.setText(Double.toString(config.SofDetectThreshld));
             });
 
@@ -153,8 +157,8 @@ public class Config {
 
             add(new JLabel("Sample Rate(Hz):"));
             add(sampleRateField);
-            add(new JLabel("Frame Length(Bits):"));
-            add(frameLengthField);
+            add(new JLabel("Subcarrier Dist:"));
+            add(subcarrierDistField);
 
             add(new JLabel("Symbol Length(Bits):"));
             add(symbolLengthField);
@@ -211,8 +215,8 @@ public class Config {
             add(new JLabel("SoF Silent NSamples:"));
             add(sofSilentNSamplesField);
 
-            add(new JLabel(""));
-            add(new JLabel(""));
+            add(new JLabel("Frame Length(Bits):"));
+            add(frameLengthField);
             add(updateButton);
             add(new JLabel(""));
 
@@ -232,6 +236,7 @@ public class Config {
         public void updateDisplay() {
             // update all text fields
             sampleRateField.setText(Double.toString(config.sampleRate));
+            subcarrierDistField.setText(Integer.toString(config.subcarrierDist));
             frameLengthField.setText(Integer.toString(config.frameLength));
             symbolLengthField.setText(Integer.toString(config.symbolLength));
             cyclicPrefixLengthField.setText(Double.toString(config.cyclicPrefixLength));
@@ -272,7 +277,7 @@ public class Config {
         cyclicPrefixNSamples = 
             (int)(sampleRate * cyclicPrefixLength);
         subCarrierWidth =
-            sampleRate / symbolLength;
+            sampleRate / symbolLength * subcarrierDist;
         bandWidthLow =
             Math.ceil(bandWidthLowEdit / subCarrierWidth) * subCarrierWidth;
         bandWidthHigh =
