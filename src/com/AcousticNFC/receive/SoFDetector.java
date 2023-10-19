@@ -14,7 +14,7 @@ public class SoFDetector {
     Config cfg;
     
     SoF sof;
-    float[] sofSamples;
+    public float[] sofSamples;
 
     Receiver receiver; // where to take the samples
 
@@ -102,8 +102,12 @@ public class SoFDetector {
                     receiver.unpacking = true;
                     // point to the end of SoF slience
                     receiver.tickDone = candidateIdx + cfg.sofSilentNSamples;
+                    // report the location of the end of the SoF
+                    System.out.println("Found a SoF real ending at " + candidateIdx);
                     // print log
                     System.out.println("Found a SoF ending at " + receiver.tickDone);
+                    // print the location of the end of the first cyclicprefix
+                    System.out.println("The end of the first cyclicprefix is at " + (receiver.tickDone + cfg.cyclicPrefixNSamples));
                     return;
                 }
                 else {

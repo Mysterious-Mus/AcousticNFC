@@ -2,9 +2,7 @@ package com.AcousticNFC.receive;
 
 import java.util.ArrayList;
 
-import com.AcousticNFC.receive.SoFDetector;
 import com.AcousticNFC.Config;
-import com.AcousticNFC.receive.Demodulator;
 import com.AcousticNFC.utils.FileOp;
 
 public class Receiver {
@@ -25,6 +23,10 @@ public class Receiver {
 
     public ArrayList<Boolean> receiveBuffer;
 
+    // for debug, calculate all the corrs and finally dump
+    // for idx i, corrs is the correlation of samples[i-sofNSample+1:i+1]
+    public ArrayList<Double> corrs;
+
     Config cfg;
 
     public Receiver(Config cfg_src) {
@@ -35,6 +37,8 @@ public class Receiver {
         unpacking = false;
         demodulator = new Demodulator(this, cfg);
         receiveBuffer = new ArrayList<Boolean>();
+        
+        this.corrs = new ArrayList<Double>();
     }
 
     public int getLength() {
@@ -65,10 +69,25 @@ public class Receiver {
 
         // demodulation
         demodulator.demodulate();
+
+        // calculate new corrs
+        for (int endIdx = corrs.size(); endIdx < samples.size(); endIdx ++) {
+            if (endIdx < cfg.sofNSamples - 1) {
+                corrs.add(0.0);
+            }
+            else {
+                double newCorr = 0;
+                for (int sofIdx = 0; sofIdx < cfg.sofNSamples; sofIdx++) {
+                    newCorr += samples.get(endIdx-cfg.sofNSamples+1+sofIdx) * sofDetector.sofSamples[sofIdx];
+                }
+                newCorr /= cfg.sofNSamples;
+                corrs.add(newCorr);
+            }
+        }
     }
     
     public void dumpResults() {
-        // update the correlations
         FileOp.outputFloatSeq(samples, "samples.csv");
+        FileOp.outputDoubleArray(corrs, "correlations.csv");
     }
 }
