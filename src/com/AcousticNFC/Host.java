@@ -173,10 +173,6 @@ public class Host extends JFrame implements AsioDriverListener {
     // launch the SoF calculation thread
     SoFCalcThread soFCalcThread = new SoFCalcThread();
     soFCalcThread.start();
-    // while (true) {
-    //   receiver.process();
-    //   System.out.print("");
-    // }
   }
 
   // layout panel

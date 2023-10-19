@@ -1,5 +1,7 @@
 package com.AcousticNFC.receive;
 
+import java.util.ArrayList;
+
 import com.AcousticNFC.utils.FFT;
 import com.AcousticNFC.utils.Complex;
 
@@ -14,8 +16,11 @@ public class Demodulator {
     Receiver receiver;
     Config cfg;
 
+    private ArrayList<Boolean> frameBuffer;
+
     public Demodulator(Receiver receiver, Config cfg_src) {
         this.receiver = receiver;
+        frameBuffer = new ArrayList<Boolean>();
         cfg = cfg_src;
     }
 
@@ -49,7 +54,7 @@ public class Demodulator {
             
             // push the bits into the receiver's buffer
             for (int j = 0; j < cfg.keyingCapacity; j++) {
-                receiver.receiveBuffer.add((thisCarrierIndex & (1 << (cfg.keyingCapacity - j - 1))) != 0);
+                frameBuffer.add((thisCarrierIndex & (1 << (cfg.keyingCapacity - j - 1))) != 0);
             }
         }
     }
@@ -58,19 +63,27 @@ public class Demodulator {
     public void demodulate() {
         while ( receiver.unpacking &&
             receiver.tickDone + cfg.cyclicPrefixNSamples + cfg.symbolLength <= 
-            receiver.getLength()) {
+            receiver.getLength() &&
+            frameBuffer.size() < cfg.frameLength) {
             demodulateSymbol();
-            if (receiver.receiveBuffer.size() >= cfg.frameLength) {
-                // print log
-                System.out.println("Received a frame of length " + cfg.frameLength);
-                receiver.unpacking = false;
-                // pop back until the length is Config.frameLength
-                while (receiver.receiveBuffer.size() > cfg.frameLength) {
-                    receiver.receiveBuffer.remove(receiver.receiveBuffer.size() - 1);
-                }
-                FileOp.outputBitString(receiver.receiveBuffer, "receiveBuffer.txt");
-                break;
+        }
+        if (frameBuffer.size() >= cfg.frameLength) {
+            // print log
+            System.out.println("Received a frame of length " + cfg.frameLength);
+            receiver.unpacking = false;
+            // pop back until the length is Config.frameLength
+            while (frameBuffer.size() > cfg.frameLength) {
+                frameBuffer.remove(frameBuffer.size() - 1);
             }
+            FileOp.outputBitString(frameBuffer, "receiveBuffer.txt");
+            // push the frame into the receiver's buffer
+            for (int i = 0; i < cfg.frameLength; i++) {
+                receiver.receiveBuffer.add(frameBuffer.get(i));
+            }
+            // print log
+            System.out.println("Pushed the frame into the receiver's buffer");
+            // clear the frameBuffer
+            frameBuffer.clear();
         }
     }
 

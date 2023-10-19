@@ -13,8 +13,14 @@ public class Receiver {
 
     SoFDetector sofDetector;
 
-    public boolean unpacking;
+    public boolean unpacking; // the receiver is either unpacking or waiting for SoF
+
+    // when the receiver is waiting for SoF, tickDone means that we have checked
+    // all the indices before and including tickDone can't be the exact end of a SoF
+    // when the receiver is unpacking, tickDone means that we have unpacked all the
+    // symbols before and including tickDone
     public int tickDone;
+
     Demodulator demodulator;
 
     public ArrayList<Boolean> receiveBuffer;
@@ -24,9 +30,9 @@ public class Receiver {
     public Receiver(Config cfg_src) {
         cfg = cfg_src;
         samples = new ArrayList<Float>();
+        tickDone = cfg.sofNSamples - 1;  // can't be sure these points are SoF ends
         sofDetector = new SoFDetector(cfg, this);
         unpacking = false;
-        tickDone = 0;
         demodulator = new Demodulator(this, cfg);
         receiveBuffer = new ArrayList<Boolean>();
     }
@@ -40,6 +46,10 @@ public class Receiver {
         return samples;
     }
 
+    public float getSample(int idx) {
+        return samples.get(idx);
+    }
+
     /* Add the samples to the receiver */
     public void feedSamples(float[] samples) {
         // add the new samples to back
@@ -51,7 +61,7 @@ public class Receiver {
     /* Do the computation heavy operations */
     public void process() {
         // update the correlations
-        sofDetector.updateCorrelations();
+        sofDetector.detect();
 
         // demodulation
         demodulator.demodulate();
@@ -59,8 +69,6 @@ public class Receiver {
     
     public void dumpResults() {
         // update the correlations
-        sofDetector.updateCorrelations();
         FileOp.outputFloatSeq(samples, "samples.csv");
-        FileOp.outputDoubleArray(sofDetector.getCorrelations(), "correlations.csv");
     }
 }

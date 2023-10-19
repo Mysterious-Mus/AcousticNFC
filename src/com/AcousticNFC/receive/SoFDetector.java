@@ -7,6 +7,7 @@ import java.util.Collections;
 
 import com.AcousticNFC.Config;
 import com.AcousticNFC.receive.Receiver;
+import com.AcousticNFC.utils.CyclicBuffer;
 
 public class SoFDetector {
 
@@ -15,119 +16,105 @@ public class SoFDetector {
     SoF sof;
     float[] sofSamples;
 
-    int lastSoFIdx = 0;
+    Receiver receiver; // where to take the samples
 
-    Receiver receiver;
     /* The correlation between the samples and the SoF
-     * correlations[i] is the correlation between the samples[i:i+L-1] and the SoF */
-    ArrayList<Double> correlations;
+     * correlations[i] is the correlation between the samples[i-L+1:i] and the SoF */
+    /* the small index at the start would be L-1 */
+    CyclicBuffer<Double> correlations;
+    /* How many points should it save?
+     * We know the points before receiver.tickDone are checked
+     * We don't check more than sofNSamples + sofSilentNSamples points at a time,
+     *  otherwise we might miss the start of a frame
+     * To confirm that a point is exact end the start of a frame, we need to check all points
+     *  whose distance to the point is smaller than sofNSamples
+     * So the size of the buffer, serving also as a limit of the number of points to check,
+     *  should be (sofNSamples - 1) + (sofNSamples + sofSilentNSamples) + (sofNSamples - 1)
+     *  = 3 * sofNSamples + sofSilentNSamples - 2,
+     * At each call, the buffer should contain(both end inclusive):
+     *  from (receiver.tickDone + 1) - (sofNSamples - 1) = receiver.tickDone - sofNSamples + 2(or 0)
+     *  to (receiver.tickDone + 1) + (sofNSamples + sofSilentNSamples) - 1 + (sofNSamples - 1)
+     *      = receiver.tickDone + 2 * sofNSamples + sofSilentNSamples - 1(or receiveBufferSize - sofNSamples)
+     */
 
     public SoFDetector(Config cfg_src, Receiver receiver) {
         cfg = cfg_src;
         sof = new SoF(cfg);
-        sofSamples = sof.generateSoF();
-        correlations = new ArrayList<Double>();
+        sofSamples = sof.generateSoFNoSilence();
+        correlations = new CyclicBuffer<Double>(3 * cfg.sofNSamples + cfg.sofSilentNSamples - 2);
+        // the initial FIW:
+        correlations.setFIW(cfg.sofNSamples - 1);
         this.receiver = receiver;
     }
 
-    /* Calculate the correlation between the samples and the SoF
-     * If the samples are shorter than SoF, 0s are padded to the end of the samples
-     */
-    public double correlation(ArrayList<Float> samples, int startIdx) {
-        double sum = 0;
-        for (int i = startIdx; i < Math.min(startIdx + cfg.sofNSamples, samples.size()); i++) {
-            sum += samples.get(i) * sofSamples[i - startIdx];
-        }
-
-        return sum / cfg.sofNSamples;
-    }
-
     /* Calculating Correlations with SoF and see if we can mark the start of a frame */
-    public void updateCorrelations() {
-        // if nothing yet
-        if (receiver.getLength() < cfg.sofNSamples) {
-            return;
-        }
+    public void detect() {
+        if (receiver.unpacking) return;
+        // Which slice of Corrs we need in this call?
+        // the first index we should check is receiver.tickDone + 1
+        // if it is the end of a SoF, it should be the largest among the neighbouring 2*sofNSamples-1 points,
+        //  and greater than the threshold.
+        // So the first index of Corrs we should preserve is receiver.tickDone + 1 - sofNSamples + 1
+        //  = receiver.tickDone - sofNSamples + 2
+        correlations.setFIW(receiver.tickDone - cfg.sofNSamples + 2);
 
-        // record where we were last time
-        int startingIdx = correlations.size(); // inclusive
-        // this means we've calculated all the correlations of the slices whose
-        // starting index is smaller than startingIdx
-
-        // this function is designed to mark 1 SoF at a time
-        // we can't go too far in a single run because we might miss the start of a frame
-        // when we can calculate more than SofNSample + SofSilentNSamples correlations this time,
-        // it means we have the risk of missing the start of a frame, so we should wait.
-        // This could happen because the processing speed is not enough for the sampling speed.
-        int endIdx = Math.min(receiver.getLength() - cfg.sofNSamples + 1, 
-            startingIdx + cfg.sofNSamples + cfg.sofSilentNSamples); // exclusive
-
-        // calculate the new correlations
-        for (int idx = correlations.size(); 
-            idx < endIdx; idx++) {
-            correlations.add(correlation(receiver.getSamples(), idx));
-        }
-
-        // marking the start of a frame
-        // we shouldn't be demodulating
-        if (!receiver.unpacking) {
-            // The task is to locate a zone that contains the exact matching point
-            // then find the maximun correlation, done
-
-            // The feature of the matching zone, emperically, is that the correlation
-            // would take a sharp rise and decline at once, much sharper than even a sudden loud noise
-
-            // We should judge such a sharp peak by its quick rise
-
-            // Due to the jittering nature of correlation (positively or negatively correlated),
-            // we smooth the correlation with a window taking maximum. A great change between
-            // neighbouring windows indicates the presence of a SoF.
-
-            // Where should we start the detection?
-            // Last time, the last corr calculated was at startingIdx - 1
-            // So, every window before startingIdx - 1 - sofDetectWindowLen is already detected for SoF
-            // The last window is not detected because the peak may appear after the window
-
-            if (startingIdx - 1 - 3 * cfg.sofDetectWindowLen< 2000) {
-                // we don't have enough data to detect SoF
-                return;
+        // print correlations.feedIdx() and receiver.getLength()
+        // fill in the buffer until full or no more data
+        for (
+            int idx = correlations.feedIdx();
+            idx < receiver.getLength() && !correlations.full();
+            idx++
+        ) {
+            // the interval calculated now is [idx - sofNSamples + 1, idx]
+            double newCorr = 0;
+            for (int sofIdx = 0; sofIdx < cfg.sofNSamples; sofIdx++) {
+                newCorr += receiver.getSample(idx-cfg.sofNSamples+1+sofIdx) * sofSamples[sofIdx];
             }
+            newCorr /= cfg.sofNSamples;
+            correlations.push(newCorr);
+            // update the cfg panel
+            cfg.UpdCorrdetect(newCorr);
+        }
 
-            int formerWindowEnd = startingIdx - 2 * cfg.sofDetectWindowLen; // exclusive
-            double formerWindowMax = Collections.max(correlations.subList(
-                formerWindowEnd - cfg.sofDetectWindowLen, formerWindowEnd));
-            // See the following avaliable windows
-            while (formerWindowEnd + cfg.sofDetectWindowLen <= endIdx - cfg.sofDetectWindowLen) {
-                double newWindowMax = Collections.max(correlations.subList(
-                    formerWindowEnd, formerWindowEnd + cfg.sofDetectWindowLen));
-                if (newWindowMax / formerWindowMax> cfg.sofDetectWindowSensitivity) {
-                    // We sense a sharp decline, find the exact peak
-                    // the starting point of the peak scan
-                    int peakIdx = formerWindowEnd;
-                    // the ending point of the peak scan is the end of this window
-                    for (int i = peakIdx + 1; i < formerWindowEnd + 2 * cfg.sofDetectWindowLen; i++) {
-                        if (correlations.get(i) > correlations.get(peakIdx)) {
-                            peakIdx = i;
-                        }
+        // now we scan all our candidates
+        for (
+            int candidateIdx = Math.max(receiver.tickDone + 1, correlations.FIW);
+            candidateIdx <= correlations.feedIdx() - cfg.sofNSamples;
+            candidateIdx++
+        ) {
+            // check threshold first
+            if (correlations.get(candidateIdx) > cfg.SofDetectThreshld) {
+                // check if it is greatest among the neighbouring 2*sofNSamples-1 points
+                int greatestIdx = candidateIdx;
+                for (
+                    int i = Math.max(correlations.feedIdx() - cfg.sofNSamples, candidateIdx + 1);
+                    i <= candidateIdx + cfg.sofNSamples - 1;
+                    i++
+                ) {
+                    if (correlations.get(i) > correlations.get(greatestIdx)) {
+                        greatestIdx = i;
                     }
-                    // the corr peak found is the starting point of the SoF, calculate the end
-                    int sofEndIdx = peakIdx + cfg.sofNSamples + cfg.sofSilentNSamples;
-                    // report SoF found
-                    System.out.println("SoF end detected at " + sofEndIdx + ", Starting at " + peakIdx);
-                    // update receiver
-                    receiver.unpacking = true;
-                    receiver.tickDone = sofEndIdx;
-                    break;
                 }
 
-                // move on
-                formerWindowMax = newWindowMax;
-                formerWindowEnd += cfg.sofDetectWindowLen;
+                // if it is the greatest among neighbours
+                if (greatestIdx == candidateIdx) {
+                    // we have found a SoF
+                    receiver.unpacking = true;
+                    // point to the end of SoF slience
+                    receiver.tickDone = candidateIdx + cfg.sofSilentNSamples;
+                    // print log
+                    System.out.println("Found a SoF ending at " + receiver.tickDone);
+                    return;
+                }
+                else {
+                    // the candidates between candidateIdx and greatestIdx - 1 have been ruled out
+                    // we can skip them
+                    candidateIdx = Math.max(greatestIdx - 1, candidateIdx);
+                }
             }
         }
-    }
 
-    public ArrayList<Double> getCorrelations() {
-        return correlations;
+        // no SoF found, go to the last index we have checked
+        receiver.tickDone = correlations.feedIdx() - cfg.sofNSamples;
     }
 }

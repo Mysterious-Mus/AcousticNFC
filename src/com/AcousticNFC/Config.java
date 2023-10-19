@@ -43,8 +43,8 @@ public class Config {
     public double SofSilencePeriod = 0.004;
     public int sofSilentNSamples = (int)(SofSilencePeriod * sampleRate);
 
-    public int sofDetectWindowLen = 1000;
-    public double sofDetectWindowSensitivity = 30;
+    public double maxSofCorrDetect = 0;
+    public double SofDetectThreshld = 1000; // The threshold for correlation detection
 
     public class ConfigPanel extends JPanel {
         private Config config;
@@ -70,6 +70,8 @@ public class Config {
         JTextField SoF_fmaxField;
         JTextField SofSilencePeriodField;
         JLabel sofSilentNSamplesField;
+        JLabel maxSofCorrDectField;
+        JTextField SofDetectThresholdField;
 
         public ConfigPanel(Config config_src) {
             this.config = config_src;
@@ -96,6 +98,8 @@ public class Config {
             SoF_fmaxField = new JTextField(Double.toString(config.SoF_fmax));
             SofSilencePeriodField = new JTextField(Double.toString(config.SofSilencePeriod));
             sofSilentNSamplesField = new JLabel(Integer.toString(config.sofSilentNSamples));
+            maxSofCorrDectField = new JLabel(Double.toString(config.maxSofCorrDetect));
+            SofDetectThresholdField = new JTextField(Double.toString(config.SofDetectThreshld));
 
             // Add a button to update the Config object with the entered values
             JButton updateButton = new JButton("Update");
@@ -117,11 +121,32 @@ public class Config {
                     config.SoF_fmin = Double.parseDouble(SoF_fminField.getText());
                     config.SoF_fmax = Double.parseDouble(SoF_fmaxField.getText());
                     config.SofSilencePeriod = Double.parseDouble(SofSilencePeriodField.getText());
+                    config.SofDetectThreshld = Double.parseDouble(SofDetectThresholdField.getText());
                     
                     ConfigChange();
-                    update();
+                    updateDisplay();
                 }
+            });
 
+            // The button to reset the observed max correlation
+            JButton resetMaxCorrButton = new JButton("Reset Max Corr");
+            resetMaxCorrButton.addActionListener(e -> {
+                config.maxSofCorrDetect = 0;
+                maxSofCorrDectField.setText(Double.toString(config.maxSofCorrDetect));
+            });
+
+            // The button to set the SoF detect threshold as 90% of the observed max correlation
+            JButton setSofDetectThresholdButton = new JButton("Set 90%");
+            setSofDetectThresholdButton.addActionListener(e -> {
+                config.SofDetectThreshld = 0.9 * config.maxSofCorrDetect;
+                SofDetectThresholdField.setText(Double.toString(config.SofDetectThreshld));
+            });
+
+            // The button to set the threshold back to the default value, disabling the SoF detection
+            JButton disableSofDetectThresholdButton = new JButton("Disable Detection");
+            disableSofDetectThresholdButton.addActionListener(e -> {
+                config.SofDetectThreshld = 1000;
+                SofDetectThresholdField.setText(Double.toString(config.SofDetectThreshld));
             });
 
             setLayout(new GridLayout(0, 4));
@@ -188,15 +213,23 @@ public class Config {
 
             add(new JLabel(""));
             add(new JLabel(""));
-            add(new JLabel(""));
             add(updateButton);
+            add(new JLabel(""));
 
+            add(new JLabel("Max SoF Corr Dectected:"));
+            add(maxSofCorrDectField);
+            add(new JLabel("SoF Threshold:"));
+            add(SofDetectThresholdField);
+            
 
-            // Add more labels and text fields for each field in the Config class...
+            add(resetMaxCorrButton);
+            add(setSofDetectThresholdButton);
+            add(disableSofDetectThresholdButton);
+            add(new JLabel(""));
 
         }
 
-        public void update() {
+        public void updateDisplay() {
             // update all text fields
             sampleRateField.setText(Double.toString(config.sampleRate));
             frameLengthField.setText(Integer.toString(config.frameLength));
@@ -219,6 +252,7 @@ public class Config {
             SoF_fmaxField.setText(Double.toString(config.SoF_fmax));
             SofSilencePeriodField.setText(Double.toString(config.SofSilencePeriod));
             sofSilentNSamplesField.setText(Integer.toString(config.sofSilentNSamples));
+            maxSofCorrDectField.setText(Double.toString(config.maxSofCorrDetect));
         }
     }
 
@@ -269,8 +303,6 @@ public class Config {
         System.out.println("sofNSamples: " + sofNSamples);
         System.out.println("SofSilencePeriod: " + SofSilencePeriod);
         System.out.println("sofSilentNSamples: " + sofSilentNSamples);
-        System.out.println("sofDetectWindowLen: " + sofDetectWindowLen);
-        System.out.println("sofDetectWindowSensitivity: " + sofDetectWindowSensitivity);
     }
 
     public void UpdSampleRate(double sampleRate) {
@@ -278,6 +310,13 @@ public class Config {
 
         ConfigChange();
         // tell the panel to update the text fields
-        panel.update();
+        panel.updateDisplay();
+    }
+
+    public void UpdCorrdetect(double corr) {
+        if (corr > maxSofCorrDetect) {
+            maxSofCorrDetect = corr;
+            panel.maxSofCorrDectField.setText(Double.toString(maxSofCorrDetect));
+        }
     }
 }
