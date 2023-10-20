@@ -114,11 +114,11 @@ public class Host extends JFrame implements AsioDriverListener {
       while(true) {
         try {
           // acquire the lock
-          BufferIntrLock.lock();
+          // BufferIntrLock.lock();
           // update the correlations
           receiver.process();
           // release the lock
-          BufferIntrLock.unlock();
+          // BufferIntrLock.unlock();
         } catch(Exception e) {
             e.printStackTrace();  // Log the exception
             break;  // Break the loop if an exception occurs
@@ -541,11 +541,11 @@ public class Host extends JFrame implements AsioDriverListener {
       // read from the input channel
       inputChannel.read(input);
       // lock
-      BufferIntrLock.lock();
+      // BufferIntrLock.lock();
       // receive
       receiver.feedSamples(input);
       // unlock
-      BufferIntrLock.unlock();
+      // BufferIntrLock.unlock();
     }
   }
   

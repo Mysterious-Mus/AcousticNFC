@@ -60,7 +60,7 @@ public class SoFDetector {
                     }
                     // print candidateIdx
                     receiver.tickDone = candidateIdx + cfg.sofSilentNSamples;
-                    System.out.println("decode start at " + receiver.tickDone);
+                    System.out.println("decode start at " + receiver.tickDone + ", SoF signal end at " + candidateIdx);
                     // correction
                     // receiver.tickDone += -90;
                     break;

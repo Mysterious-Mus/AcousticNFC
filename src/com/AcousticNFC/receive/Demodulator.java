@@ -113,7 +113,8 @@ public class Demodulator {
                 }
             }
             // print result
-            System.out.println("Scan test result: best doneIdx = " + bestDoneIdx + ", best BER = " + bestBER);
+            System.out.println("Scan test result: best doneIdx = " + bestDoneIdx + 
+                ", best BER = " + bestBER + ". SoF end at " + (bestDoneIdx - cfg.sofSilentNSamples));
             pendingScanTest = false;
         }
     }
@@ -171,5 +172,5 @@ public class Demodulator {
 
     boolean pendingScanTest = false;
     int scanTestCallPoint;
-    int scanWindow = 100;
+    int scanWindow = 500;
 }

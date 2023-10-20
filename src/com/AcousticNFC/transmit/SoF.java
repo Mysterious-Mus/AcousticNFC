@@ -15,6 +15,19 @@ public class SoF {
         cfg = cfg_src;
     }
 
+    public float[] generateWarmupSoF() {
+        float[] withWarmup = new float[500 + cfg.sofNSamples + cfg.sofSilentNSamples];
+
+        // the warmUp section should be a sine wave, with lenght cfg.sofNSamples
+        for (int idx = 0; idx < 500; idx ++) {
+            withWarmup[idx] = 0.8f * (float) Math.sin(2 * Math.PI * 1000 * idx / cfg.sampleRate);
+        }
+
+        float[] samplesNoSilence = generateSoFNoSilence();
+        System.arraycopy(samplesNoSilence, 0, withWarmup, cfg.sofNSamples, cfg.sofNSamples);
+        return withWarmup;
+    }
+
     public float[] generateSoF() {
         float[] samples = new float[cfg.sofNSamples + cfg.sofSilentNSamples];
         

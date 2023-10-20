@@ -33,7 +33,7 @@ public class Framer {
 
         
         // get SoF and symbols
-        float[] sofSamples = sof.generateSoF();
+        float[] sofSamples = sof.generateWarmupSoF();
         float[] symbolSamples = ofdm.modulate(frameData);
 
         // tell the cfg the data for debug
