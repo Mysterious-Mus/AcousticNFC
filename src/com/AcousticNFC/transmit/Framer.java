@@ -31,12 +31,14 @@ public class Framer {
             frameData.add(i < bitString.size() ? bitString.get(i) : false);
         }
 
-        // tell the cfg the data for debug
-        cfg.transmitted = frameData;
-
+        
         // get SoF and symbols
         float[] sofSamples = sof.generateSoF();
         float[] symbolSamples = ofdm.modulate(frameData);
+
+        // tell the cfg the data for debug
+        cfg.transmitted = frameData;
+        cfg.allSymbolLength = symbolSamples.length;
 
         // concatenate SoF and symbols
         float[] samples = new float[sofSamples.length + symbolSamples.length];

@@ -59,8 +59,10 @@ public class SoFDetector {
                         }
                     }
                     // print candidateIdx
-                    System.out.println("SoF detected at " + candidateIdx);
                     receiver.tickDone = candidateIdx + cfg.sofSilentNSamples;
+                    System.out.println("decode start at " + receiver.tickDone);
+                    // correction
+                    // receiver.tickDone += -90;
                     break;
                 }
             }

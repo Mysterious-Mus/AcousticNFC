@@ -15,42 +15,38 @@ public class Config {
     
     public double sampleRate = 44100;
 
-    public int frameLength = 80;
+    public int frameLength = 100;
     public int symbolLength = 256;
 
     public double cyclicPrefixLength = 0.004;
-    public int cyclicPrefixNSamples = 
-        (int)(sampleRate * cyclicPrefixLength);
+    public int cyclicPrefixNSamples;
     public boolean cyclicPrefixMute = true;      
 
     public int subcarrierDist = 2;
-    public double subCarrierWidth = 
-        sampleRate / symbolLength * subcarrierDist;
+    public double subCarrierWidth;
     public double bandWidthLowEdit = 4000;
     public double bandWidthHighEdit = 6000;
-    public double bandWidthLow =
-        Math.ceil(bandWidthLowEdit / subCarrierWidth) * subCarrierWidth;
-    public double bandWidthHigh =
-        Math.floor(bandWidthHighEdit / subCarrierWidth) * subCarrierWidth;
-    public int numSubCarriers = 
-        (int) Math.round((bandWidthHigh - bandWidthLow) / subCarrierWidth);
+    public double bandWidthLow;
+    public double bandWidthHigh;
+    public int numSubCarriers;
     
     public int keyingCapacity = 1;
-    public int symbolCapacity = numSubCarriers * keyingCapacity;
+    public int symbolCapacity;
 
     public float SoF_amplitude = 0.8f;
     public double SoF_T = 0.002905; // The 'T' parameter of SoF, see DOC
-    public int sofNSamples = (int)(2 * SoF_T * sampleRate);
+    public int sofNSamples;
     public double SoF_fmin = 6000;
     public double SoF_fmax = 12000;
     public double SofSilencePeriod = 0.004;
-    public int sofSilentNSamples = (int)(SofSilencePeriod * sampleRate);
+    public int sofSilentNSamples;
 
     public double maxSofCorrDetect = 0;
     public double SofDetectThreshld = 1000; // The threshold for correlation detection
 
     // debug shared info
     public ArrayList<Boolean> transmitted;
+    public int allSymbolLength;
 
     public class ConfigPanel extends JPanel {
         private Config config;
