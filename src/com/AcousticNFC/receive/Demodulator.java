@@ -80,7 +80,10 @@ public class Demodulator {
     }
 
     private void scanTest() {
-        int lastSampleIdx = scanTestCallPoint + scanWindow + cfg.allSymbolLength + 100;
+        // calculate allSymbolLength
+        int allSymbolLength = (int)Math.ceil((double)cfg.frameLength / 
+            (cfg.keyingCapacity * cfg.numSubCarriers)) * (cfg.symbolLength + cfg.cyclicPrefixNSamples);
+        int lastSampleIdx = scanTestCallPoint + scanWindow + cfg.allSymbolLength + 10000;
         if (lastSampleIdx < receiver.getLength()) {
             int bestDoneIdx = scanTestCallPoint; double bestBER = 1;
             for (int doneIdx = scanTestCallPoint - scanWindow; doneIdx <= scanTestCallPoint + scanWindow; doneIdx++) {
@@ -115,6 +118,7 @@ public class Demodulator {
             // print result
             System.out.println("Scan test result: best doneIdx = " + bestDoneIdx + 
                 ", best BER = " + bestBER + ". SoF end at " + (bestDoneIdx - cfg.sofSilentNSamples));
+            System.out.println("Compensation needed:" +(bestDoneIdx - scanTestCallPoint));
             pendingScanTest = false;
         }
     }

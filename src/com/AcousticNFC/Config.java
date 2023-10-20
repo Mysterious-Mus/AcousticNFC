@@ -15,7 +15,7 @@ public class Config {
     
     public double sampleRate = 44100;
 
-    public int frameLength = 100;
+    public int frameLength = 40;
     public int symbolLength = 256;
 
     public double cyclicPrefixLength = 0.004;
@@ -36,8 +36,8 @@ public class Config {
     public float SoF_amplitude = 0.8f;
     public double SoF_T = 0.002905; // The 'T' parameter of SoF, see DOC
     public int sofNSamples;
-    public double SoF_fmin = 6000;
-    public double SoF_fmax = 12000;
+    public double SoF_fmin = 200;
+    public double SoF_fmax = 6000;
     public double SofSilencePeriod = 0.004;
     public int sofSilentNSamples;
 
@@ -47,6 +47,9 @@ public class Config {
     // debug shared info
     public ArrayList<Boolean> transmitted;
     public int allSymbolLength;
+
+    // compensation
+    public int sofAlignCompensate = -9;
 
     public class ConfigPanel extends JPanel {
         private Config config;

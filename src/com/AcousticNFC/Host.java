@@ -239,12 +239,18 @@ public class Host extends JFrame implements AsioDriverListener {
     // the mapper from state to label
     switch (state) {
       case IDLE:
+        if (this.state == State.PLAYING) {
+          // release lock
+          PlayContentLock.unlock();
+        }
         stateLabel.setText("Idle");
         break;
       case RECORDING:
         stateLabel.setText("Recording");
         break;
       case PLAYING:
+      // acquire lock
+        PlayContentLock.lock();
         stateLabel.setText("Playing");
         break;
       case RECORDING_PLAYING:
@@ -372,13 +378,9 @@ public class Host extends JFrame implements AsioDriverListener {
         }
         // prepare play content
         float[] playContent = framer.pack(bitString.getBitString());
-        // acquire lock
-        PlayContentLock.lock();
         // set player
-        setState(State.PLAYING);
         player = new Player(playContent);
-        // release lock
-        PlayContentLock.unlock();
+        setState(State.PLAYING);
       }
     });
 
@@ -501,8 +503,6 @@ public class Host extends JFrame implements AsioDriverListener {
         return;
       }
 
-      // lock play content
-      PlayContentLock.lock();
       output = new float[bufferSize];
       // play
       if (!player.playContent(bufferSize, output)) {
@@ -511,8 +511,6 @@ public class Host extends JFrame implements AsioDriverListener {
       }
       // write to the output channel
       outputChannel.write(output);
-      // release lock
-      PlayContentLock.unlock();
     }
     else {
       // not playing, send 0
