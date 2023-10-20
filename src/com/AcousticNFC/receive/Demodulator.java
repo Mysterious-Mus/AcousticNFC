@@ -79,7 +79,7 @@ public class Demodulator {
     }
 
     private void scanTest() {
-        int lastSampleIdx = scanTestCallPoint + scanWindow + cfg.allSymbolLength - 1;
+        int lastSampleIdx = scanTestCallPoint + scanWindow + cfg.allSymbolLength + 100;
         if (lastSampleIdx < receiver.getLength()) {
             int bestDoneIdx = scanTestCallPoint; double bestBER = 1;
             for (int doneIdx = scanTestCallPoint - scanWindow; doneIdx <= scanTestCallPoint + scanWindow; doneIdx++) {
