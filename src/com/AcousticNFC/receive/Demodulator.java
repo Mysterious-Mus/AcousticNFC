@@ -28,10 +28,11 @@ public class Demodulator {
         // skip the cyclic prefix
         receiver.tickDone += cfg.cyclicPrefixNSamples;
 
+
         // get the samples of the symbol
         float[] samples = new float[cfg.symbolLength];
         for (int i = 0; i < cfg.symbolLength; i++) {
-            samples[i] = receiver.samples.get(receiver.tickDone + i);
+            samples[i] = receiver.getSample(receiver.tickDone + i + 1);
         }
         receiver.tickDone += cfg.symbolLength;
 
@@ -89,7 +90,7 @@ public class Demodulator {
                     testReceiverPtr += cfg.cyclicPrefixNSamples;
                     float nxtSymbolSamples[] = new float[cfg.symbolLength];
                     for (int i = 0; i < cfg.symbolLength; i++) {
-                        nxtSymbolSamples[i] = receiver.samples.get(testReceiverPtr + i);
+                        nxtSymbolSamples[i] = receiver.samples.get(testReceiverPtr + i + 1);
                     }
                     testReceiverPtr += cfg.symbolLength;
                     ArrayList<Boolean> resultBuffer = demodulateSymbol(nxtSymbolSamples);
@@ -126,8 +127,7 @@ public class Demodulator {
         }
 
         while ( receiver.unpacking &&
-            receiver.tickDone + cfg.cyclicPrefixNSamples + cfg.symbolLength <= 
-            receiver.getLength() &&
+            receiver.tickDone + cfg.cyclicPrefixNSamples + cfg.symbolLength < receiver.getLength() &&
             frameBuffer.size() < cfg.frameLength) {
             
             if (frameBuffer.isEmpty()) {
