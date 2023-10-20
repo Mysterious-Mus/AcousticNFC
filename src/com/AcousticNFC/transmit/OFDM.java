@@ -1,5 +1,7 @@
 package com.AcousticNFC.transmit;
 
+import java.util.ArrayList;
+
 import com.AcousticNFC.Config;
 import com.AcousticNFC.receive.Receiver;
 
@@ -100,12 +102,12 @@ public class OFDM {
      * The maximum amplitude is 0.2.
      * Cyclical Prefix is added before each symbol.
      */
-    public float[] modulate(int[] data) {
+    public float[] modulate(ArrayList<Boolean> data) {
         // pad the input with 0s to make the length a multiple of symbolCapacity
-        int numSymbols = (int) Math.ceil((double) data.length / cfg.symbolCapacity);
-        int[] paddedData = new int[numSymbols * cfg.symbolCapacity];
-        for (int i = 0; i < data.length; i++) {
-            paddedData[i] = data[i];
+        int numSymbols = (int) Math.ceil((double) data.size() / cfg.symbolCapacity);
+        boolean[] paddedData = new boolean[numSymbols * cfg.symbolCapacity];
+        for (int i = 0; i < data.size(); i++) {
+            paddedData[i] = data.get(i);
         }
         // Sanity check
         assert paddedData.length % cfg.symbolCapacity == 0;
@@ -117,7 +119,7 @@ public class OFDM {
             // Get the data for this symbol
             int[] symbolData = new int[cfg.symbolCapacity];
             for (int j = 0; j < cfg.symbolCapacity; j++) {
-                symbolData[j] = paddedData[i * cfg.symbolCapacity + j];
+                symbolData[j] = paddedData[i * cfg.symbolCapacity + j] ? 1 : 0;
             }
 
             // log the first symbol

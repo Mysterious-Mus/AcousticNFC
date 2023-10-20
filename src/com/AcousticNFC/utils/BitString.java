@@ -3,40 +3,32 @@ package com.AcousticNFC.utils;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class BitString {
     public String filename;
-    public int[] bitString;
+    public ArrayList<Boolean> bitString;
 
     public BitString(String filename) {
         this.filename = filename;
+        this.bitString = new ArrayList<Boolean>();
 
         // read the file
         try {
             BufferedReader br = new BufferedReader(new FileReader(filename));
             String line;
             while ((line = br.readLine()) != null) {
-                bitString = new int[line.length()];
                 for (int i = 0; i < line.length(); i++) { // each bit is a separate character
-                    bitString[i] = Character.getNumericValue(line.charAt(i)); // parse each bit separately
+                    bitString.add(line.charAt(i) == '1' ? true : false);
                 }
             }
             br.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        // print first bits
-        System.out.println("First 10 bits of " + filename + ":");
-        for (int i = 0; i < 10; i++) {
-            System.out.print(bitString[i]);
-        }
-
-        // print length
-        System.out.println("\nLength of " + filename + ": " + bitString.length);
     }
 
-    public int[] getBitString() {
+    public ArrayList<Boolean> getBitString() {
         return bitString;
     }
 }

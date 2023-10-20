@@ -93,6 +93,14 @@ public class Demodulator {
             for (int i = 0; i < cfg.frameLength; i++) {
                 receiver.receiveBuffer.add(frameBuffer.get(i));
             }
+            // calculate BER
+            int numErrors = 0;
+            for (int i = 0; i < cfg.frameLength; i++) {
+                if (frameBuffer.get(i) != cfg.transmitted.get(i)) {
+                    numErrors++;
+                }
+            }
+            cfg.UpdBER((double)numErrors / cfg.frameLength);
             // print log
             System.out.println("Pushed the frame into the receiver's buffer");
             // clear the frameBuffer

@@ -2,6 +2,8 @@ package com.AcousticNFC;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+
 public class Config {
 
     Host host;
@@ -47,6 +49,9 @@ public class Config {
     public double maxSofCorrDetect = 0;
     public double SofDetectThreshld = 1000; // The threshold for correlation detection
 
+    // debug shared info
+    public ArrayList<Boolean> transmitted;
+
     public class ConfigPanel extends JPanel {
         private Config config;
 
@@ -78,6 +83,9 @@ public class Config {
         // debug info
         JLabel firstSymbolPhasesField;
         JLabel firstSymbolDataField;
+
+        // statistics
+        JLabel BERField;
 
         public ConfigPanel(Config config_src) {
             this.config = config_src;
@@ -111,6 +119,9 @@ public class Config {
             // debug fields
             firstSymbolPhasesField = new JLabel("");
             firstSymbolDataField = new JLabel("");
+
+            // statistics
+            BERField = new JLabel("");
 
             // Add a button to update the Config object with the entered values
             JButton updateButton = new JButton("Update");
@@ -260,6 +271,12 @@ public class Config {
             debugPanel.add(firstSymbolDataField);
 
             this.add(debugPanel);
+
+            JPanel statisticsPanel = new JPanel(new GridLayout(0,2));
+            statisticsPanel.add(new JLabel("BER:"));
+            statisticsPanel.add(BERField);
+
+            this.add(statisticsPanel);
         }
 
         public void updateDisplay() {
@@ -360,5 +377,9 @@ public class Config {
 
     public void UpdFirstSymbolData(String info) {
         panel.firstSymbolDataField.setText(info);
+    }
+
+    public void UpdBER(double BER) {
+        panel.BERField.setText(Double.toString(BER));
     }
 }

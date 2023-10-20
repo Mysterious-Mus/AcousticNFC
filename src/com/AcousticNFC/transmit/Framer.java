@@ -1,6 +1,7 @@
 package com.AcousticNFC.transmit;
 
 import com.AcousticNFC.Config;
+import java.util.ArrayList;
 
 /* Frame Protocol:
  * 1. SoF
@@ -22,31 +23,26 @@ public class Framer {
         ofdm = new OFDM(cfg);
     }
 
-    /* Pack a dataframe containing FRAMELENGTH bits
-     * padding 0s if the bit string is shorter than FRAMELENGTH
-     * truncate the bit string if it is longer than FRAMELENGTH
-     */
-    public float[] pack(int[] bitString) {
-        // fix the length of the bit string
-        if (bitString.length > cfg.frameLength) {
-            int[] newBitString = new int[cfg.frameLength];
-            System.arraycopy(bitString, 0, newBitString, 0, cfg.frameLength);
-            bitString = newBitString;
-        } else if (bitString.length < cfg.frameLength) {
-            int[] newBitString = new int[cfg.frameLength];
-            System.arraycopy(bitString, 0, newBitString, 0, bitString.length);
-            bitString = newBitString;
+    public float[] pack(ArrayList<Boolean> bitString) {
+        // current implementation is for test. Just pack all bits into one frame,
+        // truncate if longer, pad if shorter
+        ArrayList<Boolean> frameData = new ArrayList<Boolean>();
+        for (int i = 0; i < cfg.frameLength; i++) {
+            frameData.add(i < bitString.size() ? bitString.get(i) : false);
         }
+
+        // tell the cfg the data for debug
+        cfg.transmitted = frameData;
 
         // get SoF and symbols
         float[] sofSamples = sof.generateSoF();
-        float[] symbolSamples = ofdm.modulate(bitString);
+        float[] symbolSamples = ofdm.modulate(frameData);
 
         // concatenate SoF and symbols
         float[] samples = new float[sofSamples.length + symbolSamples.length];
         System.arraycopy(sofSamples, 0, samples, 0, sofSamples.length);
         System.arraycopy(symbolSamples, 0, samples, sofSamples.length, symbolSamples.length);
-
+        System.out.println("Packed " + frameData.size() + " bits into " + samples.length + " samples");
         return samples;
     }
 }
