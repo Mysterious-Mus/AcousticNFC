@@ -19,7 +19,7 @@ public class SoF {
         float[] samples = new float[cfg.sofNSamples + cfg.sofSilentNSamples];
         
         float[] samplesNoSilence = generateSoFNoSilence();
-        System.arraycopy(samplesNoSilence, 0, samples, cfg.sofSilentNSamples, cfg.sofNSamples);
+        System.arraycopy(samplesNoSilence, 0, samples, 0, cfg.sofNSamples);
         return samples;
     }
 
