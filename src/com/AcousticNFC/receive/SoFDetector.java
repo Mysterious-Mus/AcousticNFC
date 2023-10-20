@@ -59,7 +59,7 @@ public class SoFDetector {
                         }
                     }
                     // print candidateIdx
-                    receiver.tickDone = candidateIdx + cfg.sofSilentNSamples;
+                    receiver.tickDone = candidateIdx + cfg.sofSilentNSamples + cfg.sofAlignCompensate;
                     System.out.println("decode start at " + receiver.tickDone + ", SoF signal end at " + candidateIdx);
                     break;
                 }
