@@ -15,7 +15,7 @@ public class Config {
     
     public double sampleRate = 44100;
 
-    public int frameLength = 40;
+    public int frameLength = 4000;
     public int symbolLength = 256;
 
     public double cyclicPrefixLength = 0.004;
@@ -158,9 +158,9 @@ public class Config {
             });
 
             // The button to set the SoF detect threshold as 90% of the observed max correlation
-            JButton setSofDetectThresholdButton = new JButton("Set 90%");
+            JButton setSofDetectThresholdButton = new JButton("Set 95%");
             setSofDetectThresholdButton.addActionListener(e -> {
-                config.SofDetectThreshld = 0.9 * config.maxSofCorrDetect;
+                config.SofDetectThreshld = 0.95 * config.maxSofCorrDetect;
                 SofDetectThresholdField.setText(Double.toString(config.SofDetectThreshld));
             });
 

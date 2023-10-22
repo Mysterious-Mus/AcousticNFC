@@ -43,7 +43,8 @@ public class CyclicBuffer<T> {
         return buffer.get(getBufferIdx(i));
     }
 
-    public int feedIdx() {
+    // index of the elem behind the last item(doesn't exist yet but next to feed)
+    public int tailIdx() {
         return lastIdx; // this should be the index of the next element to be fed
     }
 

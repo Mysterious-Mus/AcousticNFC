@@ -128,7 +128,7 @@ public class Demodulator {
 
         // see if we do the scan test
         if (pendingScanTest) {
-            scanTest();
+            // scanTest();
         }
 
         while ( receiver.unpacking &&

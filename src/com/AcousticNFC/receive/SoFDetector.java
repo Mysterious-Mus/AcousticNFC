@@ -26,7 +26,7 @@ public class SoFDetector {
         this.receiver = receiver;
     }
 
-    int window = 20;
+    int window = 1;
 
     /* Calculating Correlations with SoF and see if we can mark the start of a frame */
     public void detect() {
