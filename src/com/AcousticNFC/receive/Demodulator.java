@@ -128,7 +128,7 @@ public class Demodulator {
 
         // see if we do the scan test
         if (pendingScanTest) {
-            // scanTest();
+            scanTest();
         }
 
         while ( receiver.unpacking &&
@@ -176,5 +176,5 @@ public class Demodulator {
 
     boolean pendingScanTest = false;
     int scanTestCallPoint;
-    int scanWindow = 500;
+    int scanWindow = 30;
 }

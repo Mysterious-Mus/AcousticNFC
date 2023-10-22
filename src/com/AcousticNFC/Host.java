@@ -56,6 +56,7 @@ import com.AcousticNFC.transmit.OFDM;
 import com.AcousticNFC.transmit.Framer;
 import com.AcousticNFC.receive.Receiver;
 
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.*;
 
 /**
@@ -107,7 +108,7 @@ public class Host extends JFrame implements AsioDriverListener {
   final AsioDriverListener host = this;
 
   final Lock BufferIntrLock = new ReentrantLock();
-  final Lock PlayContentLock = new ReentrantLock();
+  private boolean PlayContentLock = false;
 
   class SoFCalcThread extends Thread {
     public void run() {
@@ -235,31 +236,25 @@ public class Host extends JFrame implements AsioDriverListener {
 
   // state switch wrapper
   private void setState(State state) {
-    this.state = state;
     // the mapper from state to label
     switch (state) {
       case IDLE:
-        if (this.state == State.PLAYING) {
-          // release lock
-          PlayContentLock.unlock();
-        }
         stateLabel.setText("Idle");
         break;
-      case RECORDING:
+        case RECORDING:
         stateLabel.setText("Recording");
         break;
-      case PLAYING:
-      // acquire lock
-        PlayContentLock.lock();
+        case PLAYING:
         stateLabel.setText("Playing");
         break;
-      case RECORDING_PLAYING:
+        case RECORDING_PLAYING:
         stateLabel.setText("Recording and Playing");
         break;
-      default:
+        default:
         stateLabel.setText("Unknown");
         break;
     }
+    this.state = state;
   }
 
   // receiveState switch wrapper
@@ -302,7 +297,6 @@ public class Host extends JFrame implements AsioDriverListener {
     buttonStop.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent event) {
         setState(State.IDLE);
-        stateLabel.setText("Idle");
         // print the length of the recording
         System.out.println("Recording length: " + recorder.getRecordings().length);
         // output the recordings as a csv file
@@ -378,9 +372,13 @@ public class Host extends JFrame implements AsioDriverListener {
         }
         // prepare play content
         float[] playContent = framer.pack(bitString.getBitString());
+        // use lock to tell the intr, player is not ready
+        PlayContentLock = true;
         // set player
-        player = new Player(playContent);
         setState(State.PLAYING);
+        player = new Player(playContent);
+        // release
+        PlayContentLock = false;
       }
     });
 
@@ -492,8 +490,8 @@ public class Host extends JFrame implements AsioDriverListener {
       recorder.record(input);
     }
 
-    // If we need to play
-    if (state == State.PLAYING || state == State.RECORDING_PLAYING) {
+    // If we need to play (we shouldn't be modifying the content to play)
+    if ((state == State.PLAYING || state == State.RECORDING_PLAYING) && !PlayContentLock) {
       // if not found
       if (outputChannel == null) {
         // print error

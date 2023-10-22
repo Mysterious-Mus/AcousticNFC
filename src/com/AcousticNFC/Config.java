@@ -15,7 +15,7 @@ public class Config {
     
     public double sampleRate = 44100;
 
-    public int frameLength = 4000;
+    public int frameLength = 400;
     public int symbolLength = 256;
 
     public double cyclicPrefixLength = 0.004;
@@ -24,7 +24,7 @@ public class Config {
 
     public int subcarrierDist = 2;
     public double subCarrierWidth;
-    public double bandWidthLowEdit = 4000;
+    public double bandWidthLowEdit = 3000;
     public double bandWidthHighEdit = 6000;
     public double bandWidthLow;
     public double bandWidthHigh;
@@ -42,14 +42,14 @@ public class Config {
     public int sofSilentNSamples;
 
     public double maxSofCorrDetect = 0;
-    public double SofDetectThreshld = 1000; // The threshold for correlation detection
+    public double SofDetectThreshld = 0.002; // The threshold for correlation detection
 
     // debug shared info
     public ArrayList<Boolean> transmitted;
     public int allSymbolLength;
 
     // compensation
-    public int sofAlignCompensate = -9;
+    public int sofAlignCompensate = 0;
 
     public class ConfigPanel extends JPanel {
         private Config config;
