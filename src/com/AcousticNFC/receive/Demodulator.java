@@ -167,8 +167,6 @@ public class Demodulator {
                 }
             }
             cfg.UpdBER((double)numErrors / cfg.frameLength);
-            // print log
-            System.out.println("Pushed the frame into the receiver's buffer");
             // clear the frameBuffer
             frameBuffer.clear();
         }

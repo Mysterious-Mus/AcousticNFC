@@ -44,7 +44,7 @@ public class Framer {
         float[] samples = new float[sofSamples.length + symbolSamples.length];
         System.arraycopy(sofSamples, 0, samples, 0, sofSamples.length);
         System.arraycopy(symbolSamples, 0, samples, sofSamples.length, symbolSamples.length);
-        System.out.println("Packed " + frameData.size() + " bits into " + samples.length + " samples");
+        // System.out.println("Packed " + frameData.size() + " bits into " + samples.length + " samples");
         return samples;
     }
 }
