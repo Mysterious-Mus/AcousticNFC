@@ -109,7 +109,7 @@ public class Demodulator {
                         numErrors ++;
                     }
                 }
-                double BER = (double)numErrors / cfg.frameLength;
+                double BER = (double)numErrors / alignBitLen;
                 if (BER - bestBER < 0.001) {
                     bestBER = BER;
                     bestDoneIdx = doneIdx;
