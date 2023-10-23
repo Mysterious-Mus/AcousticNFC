@@ -30,7 +30,7 @@ public class SoFDetector {
 
     /* Calculating Correlations with SoF and see if we can mark the start of a frame */
     public void detect() {
-        if (receiver.unpacking) return;
+        if (receiver.unpacking || receiver.scanAligning) return;
 
         for (int candidateIdx = receiver.tickDone + 1; 
             candidateIdx <= receiver.getLength() - window; candidateIdx++) {
@@ -44,7 +44,7 @@ public class SoFDetector {
                 cfg.UpdCorrdetect(corr);
                 if (corr > cfg.SofDetectThreshld) {
                     // found a SoF
-                    receiver.unpacking = true;
+                    receiver.scanAligning = true;
                     // find the greatest point in the window
                     for (int i = candidateIdx + 1; i < candidateIdx + window; i++) {
                         // calculate new corr

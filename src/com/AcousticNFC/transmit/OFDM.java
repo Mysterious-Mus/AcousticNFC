@@ -87,7 +87,7 @@ public class OFDM {
         }
 
         // Add the cyclic prefix
-        for (int i = 0; i < cfg.cyclicPrefixNSamples; i++) {
+        for (int i = cfg.cyclicPrefixNSamples / 2; i < cfg.cyclicPrefixNSamples; i++) {
             symbol[i] = cfg.cyclicPrefixMute ? 0 :
                 symbol[numSamplesPerWholeSymbol - cfg.cyclicPrefixNSamples + i];
         }

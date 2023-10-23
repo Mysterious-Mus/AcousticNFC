@@ -26,19 +26,22 @@ public class Framer {
     public float[] pack(ArrayList<Boolean> bitString) {
         // current implementation is for test. Just pack all bits into one frame,
         // truncate if longer, pad if shorter
+
         ArrayList<Boolean> frameData = new ArrayList<Boolean>();
-        for (int i = 0; i < cfg.frameLength; i++) {
+
+        // generate aligning header
+        int headerLen = cfg.alignNSymbol * cfg.keyingCapacity * cfg.numSubCarriers;
+        for (int i = 0; i < headerLen; i++) {
+            frameData.add(i % 2 == 0);
+        }
+
+        for (int i = headerLen; i < cfg.frameLength; i++) {
             frameData.add(i < bitString.size() ? bitString.get(i) : false);
         }
 
-        
         // get SoF and symbols
         float[] sofSamples = sof.generateWarmupSoF();
         float[] symbolSamples = ofdm.modulate(frameData);
-
-        // tell the cfg the data for debug
-        cfg.transmitted = frameData;
-        cfg.allSymbolLength = symbolSamples.length;
 
         // concatenate SoF and symbols
         float[] samples = new float[sofSamples.length + symbolSamples.length];

@@ -12,20 +12,22 @@ public class Config {
      * The calculated ones are not editable, but can be changed by changing the editable ones
      *      Once one of the editable ones is changed, the calculated ones are updated
     */
+
+    // buffer size should be small!
     
     public double sampleRate = 44100;
 
     public int frameLength = 400;
-    public int symbolLength = 256;
+    public int symbolLength = 32;
 
     public double cyclicPrefixLength = 0.004;
     public int cyclicPrefixNSamples;
     public boolean cyclicPrefixMute = true;      
 
-    public int subcarrierDist = 2;
+    public int subcarrierDist = 1;
     public double subCarrierWidth;
-    public double bandWidthLowEdit = 3000;
-    public double bandWidthHighEdit = 6000;
+    public double bandWidthLowEdit = 500;
+    public double bandWidthHighEdit = 8000;
     public double bandWidthLow;
     public double bandWidthHigh;
     public int numSubCarriers;
@@ -36,8 +38,8 @@ public class Config {
     public float SoF_amplitude = 0.8f;
     public double SoF_T = 0.002905; // The 'T' parameter of SoF, see DOC
     public int sofNSamples;
-    public double SoF_fmin = 200;
-    public double SoF_fmax = 6000;
+    public double SoF_fmin = 4000;
+    public double SoF_fmax = 9000;
     public double SofSilencePeriod = 0.004;
     public int sofSilentNSamples;
 
@@ -46,7 +48,11 @@ public class Config {
 
     // debug shared info
     public ArrayList<Boolean> transmitted;
-    public int allSymbolLength;
+    public int alignNSymbol = 15;
+    public int scanWindow = 200;
+
+    public int alignBitLen;
+    public int realFrameLen;
 
     // compensation
     public int sofAlignCompensate = 0;
@@ -125,29 +131,25 @@ public class Config {
             // Add a button to update the Config object with the entered values
             JButton updateButton = new JButton("Update");
             updateButton.addActionListener(e -> {
-                if (config.host.isBusy()) {
-                    JOptionPane.showMessageDialog(ConfigPanel.this, "System is busy. Please try again later.", "Save Config", JOptionPane.WARNING_MESSAGE);
-                } else {
-                    // update all config
-                    config.sampleRate = Double.parseDouble(sampleRateField.getText());
-                    config.subcarrierDist = Integer.parseInt(subcarrierDistField.getText());
-                    config.frameLength = Integer.parseInt(frameLengthField.getText());
-                    config.symbolLength = Integer.parseInt(symbolLengthField.getText());
-                    config.cyclicPrefixLength = Double.parseDouble(cyclicPrefixLengthField.getText());
-                    config.cyclicPrefixMute = cyclicPrefixMuteField.isSelected();
-                    config.bandWidthLowEdit = Double.parseDouble(bandWidthLowEditField.getText());
-                    config.bandWidthHighEdit = Double.parseDouble(bandWidthHighEditField.getText());
-                    config.keyingCapacity = Integer.parseInt(keyingCapacityField.getText());
-                    config.SoF_amplitude = Float.parseFloat(SoF_amplitudeField.getText());
-                    config.SoF_T = Double.parseDouble(SoF_TField.getText());
-                    config.SoF_fmin = Double.parseDouble(SoF_fminField.getText());
-                    config.SoF_fmax = Double.parseDouble(SoF_fmaxField.getText());
-                    config.SofSilencePeriod = Double.parseDouble(SofSilencePeriodField.getText());
-                    config.SofDetectThreshld = Double.parseDouble(SofDetectThresholdField.getText());
-                    
-                    ConfigChange();
-                    updateDisplay();
-                }
+                // update all config
+                config.sampleRate = Double.parseDouble(sampleRateField.getText());
+                config.subcarrierDist = Integer.parseInt(subcarrierDistField.getText());
+                config.frameLength = Integer.parseInt(frameLengthField.getText());
+                config.symbolLength = Integer.parseInt(symbolLengthField.getText());
+                config.cyclicPrefixLength = Double.parseDouble(cyclicPrefixLengthField.getText());
+                config.cyclicPrefixMute = cyclicPrefixMuteField.isSelected();
+                config.bandWidthLowEdit = Double.parseDouble(bandWidthLowEditField.getText());
+                config.bandWidthHighEdit = Double.parseDouble(bandWidthHighEditField.getText());
+                config.keyingCapacity = Integer.parseInt(keyingCapacityField.getText());
+                config.SoF_amplitude = Float.parseFloat(SoF_amplitudeField.getText());
+                config.SoF_T = Double.parseDouble(SoF_TField.getText());
+                config.SoF_fmin = Double.parseDouble(SoF_fminField.getText());
+                config.SoF_fmax = Double.parseDouble(SoF_fmaxField.getText());
+                config.SofSilencePeriod = Double.parseDouble(SofSilencePeriodField.getText());
+                config.SofDetectThreshld = Double.parseDouble(SofDetectThresholdField.getText());
+                
+                ConfigChange();
+                updateDisplay();
             });
 
             // The button to reset the observed max correlation
@@ -333,26 +335,29 @@ public class Config {
         sofNSamples = (int)(2 * SoF_T * sampleRate);
         sofSilentNSamples = (int)(SofSilencePeriod * sampleRate);
 
+        alignBitLen = alignNSymbol * keyingCapacity * numSubCarriers;
+        realFrameLen = frameLength - alignBitLen;
+        
         // print all config
-        System.out.println("Config:");
-        System.out.println("sampleRate: " + sampleRate);
-        System.out.println("frameLength: " + frameLength);
-        System.out.println("symbolLength: " + symbolLength);
-        System.out.println("cyclicPrefixLength: " + cyclicPrefixLength);
-        System.out.println("cyclicPrefixNSamples: " + cyclicPrefixNSamples);
-        System.out.println("cyclicPrefixMute: " + cyclicPrefixMute);
-        System.out.println("subCarrierWidth: " + subCarrierWidth);
-        System.out.println("bandWidthLowEdit: " + bandWidthLowEdit);
-        System.out.println("bandWidthHighEdit: " + bandWidthHighEdit);
-        System.out.println("bandWidthLow: " + bandWidthLow);
-        System.out.println("bandWidthHigh: " + bandWidthHigh);
-        System.out.println("numSubCarriers: " + numSubCarriers);
-        System.out.println("keyingCapacity: " + keyingCapacity);
-        System.out.println("symbolCapacity: " + symbolCapacity);
-        System.out.println("SoF_T: " + SoF_T);
-        System.out.println("sofNSamples: " + sofNSamples);
-        System.out.println("SofSilencePeriod: " + SofSilencePeriod);
-        System.out.println("sofSilentNSamples: " + sofSilentNSamples);
+        // System.out.println("Config:");
+        // System.out.println("sampleRate: " + sampleRate);
+        // System.out.println("frameLength: " + frameLength);
+        // System.out.println("symbolLength: " + symbolLength);
+        // System.out.println("cyclicPrefixLength: " + cyclicPrefixLength);
+        // System.out.println("cyclicPrefixNSamples: " + cyclicPrefixNSamples);
+        // System.out.println("cyclicPrefixMute: " + cyclicPrefixMute);
+        // System.out.println("subCarrierWidth: " + subCarrierWidth);
+        // System.out.println("bandWidthLowEdit: " + bandWidthLowEdit);
+        // System.out.println("bandWidthHighEdit: " + bandWidthHighEdit);
+        // System.out.println("bandWidthLow: " + bandWidthLow);
+        // System.out.println("bandWidthHigh: " + bandWidthHigh);
+        // System.out.println("numSubCarriers: " + numSubCarriers);
+        // System.out.println("keyingCapacity: " + keyingCapacity);
+        // System.out.println("symbolCapacity: " + symbolCapacity);
+        // System.out.println("SoF_T: " + SoF_T);
+        // System.out.println("sofNSamples: " + sofNSamples);
+        // System.out.println("SofSilencePeriod: " + SofSilencePeriod);
+        // System.out.println("sofSilentNSamples: " + sofSilentNSamples);
     }
 
     public void UpdSampleRate(double sampleRate) {

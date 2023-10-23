@@ -80,16 +80,16 @@ public class Demodulator {
     }
 
     private void scanTest() {
-        // calculate allSymbolLength
-        int allSymbolLength = (int)Math.ceil((double)cfg.frameLength / 
-            (cfg.keyingCapacity * cfg.numSubCarriers)) * (cfg.symbolLength + cfg.cyclicPrefixNSamples);
-        int lastSampleIdx = scanTestCallPoint + scanWindow + cfg.allSymbolLength + 10000;
+        int alignNSample = cfg.alignNSymbol * (cfg.cyclicPrefixNSamples + cfg.symbolLength);
+        int alignBitLen = cfg.alignNSymbol * cfg.keyingCapacity * cfg.numSubCarriers;
+        int lastSampleIdx = receiver.tickDone + cfg.scanWindow + alignNSample;
         if (lastSampleIdx < receiver.getLength()) {
-            int bestDoneIdx = scanTestCallPoint; double bestBER = 1;
-            for (int doneIdx = scanTestCallPoint - scanWindow; doneIdx <= scanTestCallPoint + scanWindow; doneIdx++) {
+            int bestDoneIdx = receiver.tickDone; double bestBER = 1;
+            for (int doneIdx = receiver.tickDone - cfg.scanWindow; 
+            doneIdx <= receiver.tickDone + cfg.scanWindow; doneIdx++) {
                 ArrayList<Boolean> testReceiveBuffer = new ArrayList<Boolean>();
                 int testReceiverPtr = doneIdx;
-                while (testReceiveBuffer.size() < cfg.frameLength) {
+                while (testReceiveBuffer.size() < alignBitLen) {
                     testReceiverPtr += cfg.cyclicPrefixNSamples;
                     float nxtSymbolSamples[] = new float[cfg.symbolLength];
                     for (int i = 0; i < cfg.symbolLength; i++) {
@@ -97,7 +97,7 @@ public class Demodulator {
                     }
                     testReceiverPtr += cfg.symbolLength;
                     ArrayList<Boolean> resultBuffer = demodulateSymbol(nxtSymbolSamples);
-                    for (int i = 0; i < resultBuffer.size() && testReceiveBuffer.size() < cfg.frameLength;
+                    for (int i = 0; i < resultBuffer.size() && testReceiveBuffer.size() < alignBitLen;
                         i++) {
                         testReceiveBuffer.add(resultBuffer.get(i));
                     }
@@ -105,21 +105,27 @@ public class Demodulator {
                 // calculate BER
                 int numErrors = 0;
                 for (int bitIdx = 0; bitIdx < testReceiveBuffer.size(); bitIdx ++) {
-                    if (testReceiveBuffer.get(bitIdx) != cfg.transmitted.get(bitIdx)) {
+                    if (testReceiveBuffer.get(bitIdx) != (bitIdx % 2 == 0)) {
                         numErrors ++;
                     }
                 }
                 double BER = (double)numErrors / cfg.frameLength;
-                if (BER < bestBER) {
+                if (BER - bestBER < 0.001) {
                     bestBER = BER;
                     bestDoneIdx = doneIdx;
                 }
+                else if (Math.abs(BER - bestBER) < 0.001) {
+                    if (Math.abs(bestDoneIdx - receiver.tickDone) > Math.abs(doneIdx - receiver.tickDone)) {
+                        bestBER = BER;
+                        bestDoneIdx = doneIdx;
+                    }
+                }
             }
-            // print result
-            System.out.println("Scan test result: best doneIdx = " + bestDoneIdx + 
-                ", best BER = " + bestBER + ". SoF end at " + (bestDoneIdx - cfg.sofSilentNSamples));
-            System.out.println("Compensation needed:" +(bestDoneIdx - scanTestCallPoint));
-            pendingScanTest = false;
+            // print compensation: bestdone - tickdone
+            System.out.println("Compensation: " + (bestDoneIdx - receiver.tickDone));
+            receiver.scanAligning = false;
+            receiver.tickDone = bestDoneIdx;
+            receiver.unpacking = true;
         }
     }
 
@@ -127,52 +133,43 @@ public class Demodulator {
     public void demodulate() {
 
         // see if we do the scan test
-        if (pendingScanTest) {
+        if (receiver.scanAligning) {
             scanTest();
         }
 
         while ( receiver.unpacking &&
             receiver.tickDone + cfg.cyclicPrefixNSamples + cfg.symbolLength < receiver.getLength() &&
-            frameBuffer.size() < cfg.frameLength) {
-            
-            if (frameBuffer.isEmpty()) {
-                // rise a scan test
-                pendingScanTest = true;
-                scanTestCallPoint = receiver.tickDone;
-            }
+            frameBuffer.size() < cfg.realFrameLen) {
             
             ArrayList<Boolean> resultBuffer = demodulateSymbol(getNxtSample());
             for (int i = 0; i < resultBuffer.size(); i++) {
                 frameBuffer.add(resultBuffer.get(i));
             }
         }
-        if (frameBuffer.size() >= cfg.frameLength) {
+        if (frameBuffer.size() >= cfg.realFrameLen) {
             // print log
-            System.out.println("Received a frame of length " + cfg.frameLength);
+            System.out.println("Received a frame of length " + cfg.realFrameLen);
             receiver.unpacking = false;
             // pop back until the length is Config.frameLength
-            while (frameBuffer.size() > cfg.frameLength) {
+            while (frameBuffer.size() > cfg.realFrameLen) {
                 frameBuffer.remove(frameBuffer.size() - 1);
             }
             FileOp.outputBitString(frameBuffer, "receiveBuffer.txt");
             // push the frame into the receiver's buffer
-            for (int i = 0; i < cfg.frameLength; i++) {
+            for (int i = 0; i < cfg.realFrameLen; i++) {
                 receiver.receiveBuffer.add(frameBuffer.get(i));
             }
             // calculate BER
             int numErrors = 0;
-            for (int i = 0; i < cfg.frameLength; i++) {
+            for (int i = 0; i < cfg.realFrameLen; i++) {
                 if (frameBuffer.get(i) != cfg.transmitted.get(i)) {
                     numErrors++;
                 }
             }
-            cfg.UpdBER((double)numErrors / cfg.frameLength);
+            cfg.UpdBER((double)numErrors / cfg.realFrameLen);
             // clear the frameBuffer
             frameBuffer.clear();
         }
     }
 
-    boolean pendingScanTest = false;
-    int scanTestCallPoint;
-    int scanWindow = 30;
 }

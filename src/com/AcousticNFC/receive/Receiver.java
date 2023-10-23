@@ -11,6 +11,7 @@ public class Receiver {
 
     SoFDetector sofDetector;
 
+    public boolean scanAligning;
     public boolean unpacking; // the receiver is either unpacking or waiting for SoF
 
     // when the receiver is waiting for SoF, tickDone means that we have checked
@@ -66,6 +67,6 @@ public class Receiver {
     }
     
     public void dumpResults() {
-        FileOp.outputFloatSeq(samples, "samples.csv");
+        // FileOp.outputFloatSeq(samples, "samples.csv");
     }
 }

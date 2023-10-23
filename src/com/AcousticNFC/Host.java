@@ -164,6 +164,7 @@ public class Host extends JFrame implements AsioDriverListener {
     framer = new Framer(cfg);
     // get the bit string
     bitString = new BitString("bit_string.txt");
+    cfg.transmitted = bitString.getBitString();
   
     // layout panel
     layoutPanel();
@@ -427,6 +428,8 @@ public class Host extends JFrame implements AsioDriverListener {
     }
 
     bufferSize = asioDriver.getBufferPreferredSize();
+    // print buffer size
+    System.out.println("Buffer size: " + bufferSize);
     double sampleRate = asioDriver.getSampleRate();
     // if sample rate is not 44100, throw warning
     if (Math.abs(sampleRate - 44100) > 1e-6) {
@@ -465,8 +468,18 @@ public class Host extends JFrame implements AsioDriverListener {
     return null;
   }
 
+  int guard = 0;
+  int lastPosition = 0;
   // IO handler below, should be fast
   public void bufferSwitch(long systemTime, long samplePosition, Set<AsioChannel> channels) {
+    guard ++;
+    // if (guard > 1) {
+    //   System.out.println("Warning: bufferSwitch() callback received while another callback is still executing.");
+    // }
+    // if (samplePosition - lastPosition != bufferSize) {
+    //   System.out.println("Warning: bufferSwitch() callback received with unexpected sample position.");
+    // }
+    lastPosition = (int)samplePosition;
     // pick the first active input channel
     AsioChannel inputChannel = findAsioChannel(ChannelType.INPUT, channels);
     // pick the first active output channel
@@ -543,6 +556,7 @@ public class Host extends JFrame implements AsioDriverListener {
       // unlock
       // BufferIntrLock.unlock();
     }
+    guard --;
   }
   
   public void bufferSizeChanged(int bufferSize) {
