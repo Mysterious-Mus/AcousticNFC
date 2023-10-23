@@ -105,7 +105,7 @@ public class Demodulator {
                 // calculate BER
                 int numErrors = 0;
                 for (int bitIdx = 0; bitIdx < testReceiveBuffer.size(); bitIdx ++) {
-                    if (testReceiveBuffer.get(bitIdx) != (bitIdx % 2 == 0)) {
+                    if (testReceiveBuffer.get(bitIdx) != cfg.alignBitFunc(bitIdx)) {
                         numErrors ++;
                     }
                 }
@@ -114,17 +114,20 @@ public class Demodulator {
                     bestBER = BER;
                     bestDoneIdx = doneIdx;
                 }
-                else if (Math.abs(BER - bestBER) < 0.001) {
-                    if (Math.abs(bestDoneIdx - receiver.tickDone) > Math.abs(doneIdx - receiver.tickDone)) {
-                        bestBER = BER;
-                        bestDoneIdx = doneIdx;
-                    }
-                }
+                // else if (Math.abs(BER - bestBER) < 0.001) {
+                //     if (Math.abs(bestDoneIdx - receiver.tickDone) > Math.abs(doneIdx - receiver.tickDone)) {
+                //         bestBER = BER;
+                //         bestDoneIdx = doneIdx;
+                //     }
+                // }
             }
             // print compensation: bestdone - tickdone
             System.out.println("Compensation: " + (bestDoneIdx - receiver.tickDone));
+            // print align BER
+            System.out.println("BER: " + bestBER);
+
             receiver.scanAligning = false;
-            receiver.tickDone = bestDoneIdx;
+            receiver.tickDone = bestDoneIdx + alignNSample;
             receiver.unpacking = true;
         }
     }
@@ -166,6 +169,16 @@ public class Demodulator {
                     numErrors++;
                 }
             }
+            // print first bits of transmitted and get
+            int bound = 4;
+            for (int i = 0; i < bound; i++) {
+                System.out.print(cfg.transmitted.get(i) ? "1" : "0");
+            }
+            System.out.println();
+            for (int i = 0; i < bound; i++) {
+                System.out.print(frameBuffer.get(i) ? "1" : "0");
+            }
+            System.out.println();
             cfg.UpdBER((double)numErrors / cfg.realFrameLen);
             // clear the frameBuffer
             frameBuffer.clear();

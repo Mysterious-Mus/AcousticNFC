@@ -32,15 +32,16 @@ public class Framer {
         // generate aligning header
         int headerLen = cfg.alignNSymbol * cfg.keyingCapacity * cfg.numSubCarriers;
         for (int i = 0; i < headerLen; i++) {
-            frameData.add(i % 2 == 0);
+            frameData.add(cfg.alignBitFunc(i));
         }
 
-        for (int i = headerLen; i < cfg.frameLength; i++) {
-            frameData.add(i < bitString.size() ? bitString.get(i) : false);
+        for (int packIdx = headerLen; packIdx < cfg.frameLength; packIdx++) {
+            int contentIdx = packIdx - headerLen;
+            frameData.add(contentIdx < bitString.size() ? bitString.get(contentIdx) : false);
         }
 
         // get SoF and symbols
-        float[] sofSamples = sof.generateWarmupSoF();
+        float[] sofSamples = sof.generateSoF();
         float[] symbolSamples = ofdm.modulate(frameData);
 
         // concatenate SoF and symbols

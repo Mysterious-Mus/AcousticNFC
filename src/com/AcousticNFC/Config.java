@@ -17,7 +17,7 @@ public class Config {
     
     public double sampleRate = 44100;
 
-    public int frameLength = 400;
+    public int frameLength = 500;
     public int symbolLength = 32;
 
     public double cyclicPrefixLength = 0.004;
@@ -48,8 +48,9 @@ public class Config {
 
     // debug shared info
     public ArrayList<Boolean> transmitted;
-    public int alignNSymbol = 15;
-    public int scanWindow = 200;
+    public int alignNSymbol = 10;
+    public int scanWindow = 400;
+    public boolean alignBitFunc(int idx) {return (idx % 5 <= 2);}
 
     public int alignBitLen;
     public int realFrameLen;
