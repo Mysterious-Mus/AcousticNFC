@@ -17,7 +17,7 @@ public class Config {
     
     public double sampleRate = 44100;
 
-    public int frameLength = 2000;
+    public int frameLength;
     public int symbolLength = 32;
 
     public double cyclicPrefixLength = 0.004;
@@ -53,7 +53,14 @@ public class Config {
     public boolean alignBitFunc(int idx) {return (idx % 5 <= 2);}
 
     public int alignBitLen;
-    public int realFrameLen;
+    public int transmitBitLen = 1000;
+    public int decodeBitLen;
+
+    public boolean[][] ECCMat = {
+        { true, true, true, true, false, false, true },
+        // { true, false, true, true, false, true, false },
+    };
+    public int ECCBitRate;
 
     // compensation
     public int sofAlignCompensate = 0;
@@ -63,7 +70,7 @@ public class Config {
 
         JLabel sampleRateField;
         JTextField subcarrierDistField;
-        JTextField frameLengthField;
+        JTextField transmitLenField;
         JTextField symbolLengthField;
         JTextField cyclicPrefixLengthField;
         JLabel cyclicPrefixNSamplesField;
@@ -85,6 +92,8 @@ public class Config {
         JLabel sofSilentNSamplesField;
         JLabel maxSofCorrDectField;
         JTextField SofDetectThresholdField;
+        JTextField alignNSymbolField;
+        JLabel frameLenField;
 
         // debug info
         JLabel firstSymbolPhasesField;
@@ -99,7 +108,7 @@ public class Config {
             // init the UI elems
             sampleRateField = new JLabel(Double.toString(config.sampleRate));
             subcarrierDistField = new JTextField(Integer.toString(config.subcarrierDist));
-            frameLengthField = new JTextField(Integer.toString(config.frameLength));
+            transmitLenField = new JTextField(Integer.toString(config.transmitBitLen));
             symbolLengthField = new JTextField(Integer.toString(config.symbolLength));
             cyclicPrefixLengthField = new JTextField(Double.toString(config.cyclicPrefixLength));
             cyclicPrefixNSamplesField = new JLabel(Integer.toString(config.cyclicPrefixNSamples));
@@ -121,6 +130,8 @@ public class Config {
             sofSilentNSamplesField = new JLabel(Integer.toString(config.sofSilentNSamples));
             maxSofCorrDectField = new JLabel(Double.toString(config.maxSofCorrDetect));
             SofDetectThresholdField = new JTextField(Double.toString(config.SofDetectThreshld));
+            alignNSymbolField = new JTextField(Integer.toString(config.alignNSymbol));
+            frameLenField = new JLabel(Integer.toString(config.frameLength));
 
             // debug fields
             firstSymbolPhasesField = new JLabel("");
@@ -135,7 +146,7 @@ public class Config {
                 // update all config
                 config.sampleRate = Double.parseDouble(sampleRateField.getText());
                 config.subcarrierDist = Integer.parseInt(subcarrierDistField.getText());
-                config.frameLength = Integer.parseInt(frameLengthField.getText());
+                config.transmitBitLen = Integer.parseInt(transmitLenField.getText());
                 config.symbolLength = Integer.parseInt(symbolLengthField.getText());
                 config.cyclicPrefixLength = Double.parseDouble(cyclicPrefixLengthField.getText());
                 config.cyclicPrefixMute = cyclicPrefixMuteField.isSelected();
@@ -148,6 +159,7 @@ public class Config {
                 config.SoF_fmax = Double.parseDouble(SoF_fmaxField.getText());
                 config.SofSilencePeriod = Double.parseDouble(SofSilencePeriodField.getText());
                 config.SofDetectThreshld = Double.parseDouble(SofDetectThresholdField.getText());
+                config.alignNSymbol = Integer.parseInt(alignNSymbolField.getText());
                 
                 ConfigChange();
                 updateDisplay();
@@ -240,8 +252,13 @@ public class Config {
             grid1.add(new JLabel("SoF Silent NSamples:"));
             grid1.add(sofSilentNSamplesField);
 
-            grid1.add(new JLabel("Frame Length(Bits):"));
-            grid1.add(frameLengthField);
+            grid1.add(new JLabel("N Bits Transmit:"));
+            grid1.add(transmitLenField);
+            grid1.add(new JLabel("Align N Symbol:"));
+            grid1.add(alignNSymbolField);
+
+            grid1.add(new JLabel("Frame Length:"));
+            grid1.add(frameLenField);
 
             this.add(grid1);
         
@@ -285,7 +302,7 @@ public class Config {
             // update all text fields
             sampleRateField.setText(Double.toString(config.sampleRate));
             subcarrierDistField.setText(Integer.toString(config.subcarrierDist));
-            frameLengthField.setText(Integer.toString(config.frameLength));
+            transmitLenField.setText(Integer.toString(config.transmitBitLen));
             symbolLengthField.setText(Integer.toString(config.symbolLength));
             cyclicPrefixLengthField.setText(Double.toString(config.cyclicPrefixLength));
             cyclicPrefixNSamplesField.setText(Integer.toString(config.cyclicPrefixNSamples));
@@ -306,6 +323,9 @@ public class Config {
             SofSilencePeriodField.setText(Double.toString(config.SofSilencePeriod));
             sofSilentNSamplesField.setText(Integer.toString(config.sofSilentNSamples));
             maxSofCorrDectField.setText(Double.toString(config.maxSofCorrDetect));
+            SofDetectThresholdField.setText(Double.toString(config.SofDetectThreshld));
+            alignNSymbolField.setText(Integer.toString(config.alignNSymbol));
+            frameLenField.setText(Integer.toString(config.frameLength));
         }
     }
 
@@ -337,7 +357,9 @@ public class Config {
         sofSilentNSamples = (int)(SofSilencePeriod * sampleRate);
 
         alignBitLen = alignNSymbol * keyingCapacity * numSubCarriers;
-        realFrameLen = frameLength - alignBitLen;
+        ECCBitRate = ECCMat.length;
+        frameLength = alignBitLen + ECCBitRate * transmitBitLen;
+        decodeBitLen = transmitBitLen * ECCBitRate;
         
         // print all config
         // System.out.println("Config:");

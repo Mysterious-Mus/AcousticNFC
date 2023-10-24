@@ -151,51 +151,51 @@ public class Demodulator {
 
         while ( receiver.unpacking &&
             receiver.tickDone + cfg.cyclicPrefixNSamples + cfg.symbolLength < receiver.getLength() &&
-            frameBuffer.size() < cfg.realFrameLen) {
+            frameBuffer.size() < cfg.decodeBitLen) {
             
             ArrayList<Boolean> resultBuffer = demodulateSymbol(getNxtSample());
             for (int i = 0; i < resultBuffer.size(); i++) {
                 frameBuffer.add(resultBuffer.get(i));
             }
         }
-        if (frameBuffer.size() >= cfg.realFrameLen) {
+        if (frameBuffer.size() >= cfg.decodeBitLen) {
             // print log
-            System.out.println("Received a frame of length " + cfg.realFrameLen);
+            System.out.println("Received a frame of length " + cfg.decodeBitLen);
             receiver.unpacking = false;
             // pop back until the length is Config.frameLength
-            while (frameBuffer.size() > cfg.realFrameLen) {
+            while (frameBuffer.size() > cfg.decodeBitLen) {
                 frameBuffer.remove(frameBuffer.size() - 1);
             }
             FileOp.outputBitString(frameBuffer, "receiveBuffer.txt");
             // push the frame into the receiver's buffer
-            for (int i = 0; i < cfg.realFrameLen; i++) {
+            for (int i = 0; i < cfg.decodeBitLen; i++) {
                 receiver.receiveBuffer.add(frameBuffer.get(i));
             }
             // calculate BER
             int numErrors = 0;
-            for (int i = 0; i < cfg.realFrameLen; i++) {
+            for (int i = 0; i < cfg.decodeBitLen; i++) {
                 if (frameBuffer.get(i) != cfg.transmitted.get(i)) {
                     numErrors++;
                 }
             }
             // print first bits of transmitted and get
-            int bound = cfg.realFrameLen;
+            int bound = cfg.decodeBitLen;
             int groupLen = 40;
-            for (int groupId = 0; groupId < Math.ceil((double)bound / groupLen); groupId++) {
-                System.out.println();
-                for (int i = 0; i < groupLen; i++) {
-                    if (groupId * groupLen + i < bound) {
-                        System.out.print(cfg.transmitted.get(groupId * groupLen + i) ? "1" : "0");
-                    }
-                }
-                System.out.println();
-                for (int i = 0; i < groupLen; i++) {
-                    if (groupId * groupLen + i < bound) {
-                        System.out.print(frameBuffer.get(groupId * groupLen + i) ? "1" : "0");
-                    }
-                }
-                System.out.println();
-            }
+            // for (int groupId = 0; groupId < Math.ceil((double)bound / groupLen); groupId++) {
+            //     System.out.println();
+            //     for (int i = 0; i < groupLen; i++) {
+            //         if (groupId * groupLen + i < bound) {
+            //             System.out.print(cfg.transmitted.get(groupId * groupLen + i) ? "1" : "0");
+            //         }
+            //     }
+            //     System.out.println();
+            //     for (int i = 0; i < groupLen; i++) {
+            //         if (groupId * groupLen + i < bound) {
+            //             System.out.print(frameBuffer.get(groupId * groupLen + i) ? "1" : "0");
+            //         }
+            //     }
+            //     System.out.println();
+            // }
             System.out.println("GroupDiffs:");
             for (int groupId = 0; groupId < Math.ceil((double)bound / groupLen); groupId++) {
                 int groupDiff = 0;
@@ -207,7 +207,7 @@ public class Demodulator {
                 System.out.print(groupDiff + " ");
             }
             System.out.println();
-            cfg.UpdBER((double)numErrors / cfg.realFrameLen);
+            cfg.UpdBER((double)numErrors / cfg.decodeBitLen);
             // clear the frameBuffer
             frameBuffer.clear();
         }
