@@ -17,7 +17,7 @@ public class Config {
     
     public double sampleRate = 44100;
 
-    public int frameLength = 500;
+    public int frameLength = 2000;
     public int symbolLength = 32;
 
     public double cyclicPrefixLength = 0.004;
@@ -26,7 +26,7 @@ public class Config {
 
     public int subcarrierDist = 1;
     public double subCarrierWidth;
-    public double bandWidthLowEdit = 500;
+    public double bandWidthLowEdit = 2000;
     public double bandWidthHighEdit = 8000;
     public double bandWidthLow;
     public double bandWidthHigh;

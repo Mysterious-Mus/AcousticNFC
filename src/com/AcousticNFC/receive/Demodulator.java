@@ -132,6 +132,8 @@ public class Demodulator {
             // print compensation: bestdone - tickdone
             System.out.println("Compensation: " + (bestDoneIdx - receiver.tickDone));
             // timeCompensation = -bestDistortion;
+            // print avg distort samples
+            System.out.println("Avg Distort: " + bestDistortion * cfg.sampleRate);
 
             receiver.scanAligning = false;
             receiver.tickDone = bestDoneIdx + alignNSample;
