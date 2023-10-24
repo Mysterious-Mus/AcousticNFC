@@ -58,7 +58,7 @@ public class Config {
 
     public boolean[][] ECCMat = {
         { true, true, true, true, false, false, true },
-        // { true, false, true, true, false, true, false },
+        { true, false, true, true, false, true, false },
     };
     public int ECCBitRate;
 
@@ -337,6 +337,10 @@ public class Config {
         // Create a panel with text fields for each field in the Config class
         panel = new ConfigPanel(this);
 
+        ConfigChange();
+    }
+
+    public Config() {
         ConfigChange();
     }
     

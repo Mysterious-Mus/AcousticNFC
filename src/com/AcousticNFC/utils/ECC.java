@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
-
+import com.AcousticNFC.Config;
 
 public class ECC {
   private boolean[][] generatorMatrix;
@@ -13,15 +13,18 @@ public class ECC {
   private int symbolLength;
   private int constraintLength;
 
-  public ECC(boolean[][] g, int L) {
+  Config cfg;
+
+  public ECC(Config cfg_src) {
     /**
      * Convolutional code constructor
      *  g: generator matrix
      *  L: constraint length
      */
-    this.generatorMatrix = g;
-    this.symbolLength = g.length;
-    this.constraintLength = L;
+    this.cfg = cfg_src;
+    this.generatorMatrix = cfg_src.ECCMat;
+    this.symbolLength = cfg_src.ECCMat.length;
+    this.constraintLength = cfg_src.ECCMat[0].length;
     // convert boolen array to int 
     this.generatorMatrix_bit = new int[this.symbolLength];
     for (int i = 0; i < this.symbolLength; i++) {
@@ -189,23 +192,23 @@ public class ECC {
     boolean[][] matrix = {
         { true, true, true, true, false, false, true },
         { true, false, true, true, false, true, false },
-        { true, true, false, true, true, false, false}
     };
-    int arraySize = 1000;
+    
+    int arraySize = 100;
     boolean[] input = new boolean[arraySize];
     Random random = new Random();
 
     for (int i = 0; i < arraySize; i++) {
         input[i] = random.nextBoolean();
     }
-    ECC ECC = new ECC(matrix, 3);
+    ECC ECC = new ECC(new Config());
 
    
     //ECC.PrintBoolenArray(input);
     boolean[] output = ECC.ConvolutionEncode(input);
 
     boolean[] output_fliped = output.clone();
-    for (int i = 0; i < 40; i++) {
+    for (int i = 0; i < 2; i++) {
       int randomIndex = random.nextInt(arraySize); // randomIndex ∈ [0, arraySize)
       output_fliped[randomIndex] = !output[randomIndex]; // filp the bit
     }
