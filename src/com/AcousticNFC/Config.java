@@ -48,8 +48,8 @@ public class Config {
 
     // debug shared info
     public ArrayList<Boolean> transmitted;
-    public int alignNSymbol = 10;
-    public int scanWindow = 400;
+    public int alignNSymbol = 20;
+    public int scanWindow = 500;
     public boolean alignBitFunc(int idx) {return (idx % 5 <= 2);}
 
     public int alignBitLen;
@@ -331,7 +331,7 @@ public class Config {
         bandWidthHigh =
             Math.floor(bandWidthHighEdit / subCarrierWidth) * subCarrierWidth;
         numSubCarriers =
-            (int) Math.round((bandWidthHigh - bandWidthLow) / subCarrierWidth);
+            (int) Math.round((bandWidthHigh - bandWidthLow) / subCarrierWidth) + 1;
         symbolCapacity = numSubCarriers * keyingCapacity;
         sofNSamples = (int)(2 * SoF_T * sampleRate);
         sofSilentNSamples = (int)(SofSilencePeriod * sampleRate);

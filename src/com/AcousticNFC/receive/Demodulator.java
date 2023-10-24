@@ -17,6 +17,7 @@ public class Demodulator {
     Config cfg;
 
     private ArrayList<Boolean> frameBuffer;
+    double timeCompensation = 0; // compensate the sampling offset
 
     public Demodulator(Receiver receiver, Config cfg_src) {
         this.receiver = receiver;
@@ -39,22 +40,31 @@ public class Demodulator {
         return samples;
     }
 
+    public double[] subCarrPhases(float[] samples) {
+        double[] result = new double[cfg.numSubCarriers];
+        Complex[] fftResult = FFT.fft(samples);
+        for (int i = 0; i < cfg.numSubCarriers; i++) {
+            result[i] = fftResult[
+                    (int) Math.round((cfg.bandWidthLow + i * cfg.subCarrierWidth) / 
+                    cfg.sampleRate * cfg.symbolLength)].phase();
+        }
+        return result;
+    }
+
     /* Demodulate the next symbol 
      * Push result bits into the receiver's buffer
     */
     public ArrayList<Boolean> demodulateSymbol(float[] samples) {
         ArrayList<Boolean> resultBuffer = new ArrayList<Boolean>();
-        // do the FFT
-        Complex[] fftResult = FFT.fft(samples);
+        // get Phases
+        double phases[] = subCarrPhases(samples);
 
         // log the first symbol phases
         // if the frameBuffer is empty
         if (frameBuffer.size() == 0) {
             String panelInfo = "";
             for (int i = 0; i < cfg.numSubCarriers; i++) {
-                panelInfo += String.format("%.2f ", fftResult[
-                    (int) Math.round((cfg.bandWidthLow + i * cfg.subCarrierWidth) / 
-                    cfg.sampleRate * cfg.symbolLength)].phase());
+                panelInfo += String.format("%.2f ", phases[i]);
             }
             cfg.UpdFirstSymbolPhases(panelInfo);
         }
@@ -62,9 +72,7 @@ public class Demodulator {
         // calculate the keys of the subcarriers
         for (int i = 0; i < cfg.numSubCarriers; i++) {
             // see notes.ipynb for the derivation
-            double thisCarrierPhase = fftResult[
-                    (int) Math.round((cfg.bandWidthLow + i * cfg.subCarrierWidth) / 
-                    cfg.sampleRate * cfg.symbolLength)].phase();
+            double thisCarrierPhase = phases[i] + timeCompensation * 2 * Math.PI * (cfg.bandWidthLow + i * cfg.subCarrierWidth);
 
             int numKeys = (int) Math.round(Math.pow(2, cfg.keyingCapacity));
             double lastPhaseSegment = 2 * Math.PI / numKeys / 2;
@@ -84,47 +92,46 @@ public class Demodulator {
         int alignBitLen = cfg.alignNSymbol * cfg.keyingCapacity * cfg.numSubCarriers;
         int lastSampleIdx = receiver.tickDone + cfg.scanWindow + alignNSample;
         if (lastSampleIdx < receiver.getLength()) {
-            int bestDoneIdx = receiver.tickDone; double bestBER = 1;
+            int bestDoneIdx = receiver.tickDone;
+            double bestDistortion = 1000;
             for (int doneIdx = receiver.tickDone - cfg.scanWindow; 
             doneIdx <= receiver.tickDone + cfg.scanWindow; doneIdx++) {
-                ArrayList<Boolean> testReceiveBuffer = new ArrayList<Boolean>();
                 int testReceiverPtr = doneIdx;
-                while (testReceiveBuffer.size() < alignBitLen) {
+                double avgDistortion = 0;
+                for (int testSymId = 0; testSymId < cfg.alignNSymbol; testSymId++) {
                     testReceiverPtr += cfg.cyclicPrefixNSamples;
                     float nxtSymbolSamples[] = new float[cfg.symbolLength];
                     for (int i = 0; i < cfg.symbolLength; i++) {
                         nxtSymbolSamples[i] = receiver.samples.get(testReceiverPtr + i + 1);
                     }
                     testReceiverPtr += cfg.symbolLength;
-                    ArrayList<Boolean> resultBuffer = demodulateSymbol(nxtSymbolSamples);
-                    for (int i = 0; i < resultBuffer.size() && testReceiveBuffer.size() < alignBitLen;
-                        i++) {
-                        testReceiveBuffer.add(resultBuffer.get(i));
+                    // calculate average time distortion
+                    double[] phases = subCarrPhases(nxtSymbolSamples);
+                    for (int subCId = 0; subCId < cfg.numSubCarriers; subCId ++) {
+                        double thisCarrierPhase = phases[subCId];
+                        int numKeys = (int) Math.round(Math.pow(2, cfg.keyingCapacity));
+                        int thisCarrierIdx = 0;
+                        for (int bitId = 0; bitId < cfg.keyingCapacity; bitId ++) {
+                            thisCarrierIdx += (cfg.alignBitFunc(testSymId * cfg.keyingCapacity * cfg.numSubCarriers + subCId * cfg.keyingCapacity + bitId) ? 1 : 0)
+                             << (cfg.keyingCapacity - bitId - 1);
+                        }
+                        double requiredPhase = 2 * Math.PI / numKeys * thisCarrierIdx;
+                        avgDistortion += ((thisCarrierPhase - requiredPhase + 4 * Math.PI) % (2 * Math.PI) <
+                                         (2 * Math.PI) - (thisCarrierPhase - requiredPhase + 4 * Math.PI) % (2 * Math.PI) ?
+                                            (thisCarrierPhase - requiredPhase + 4 * Math.PI) % (2 * Math.PI) :
+                                            - (thisCarrierPhase - requiredPhase + 4 * Math.PI) % (2 * Math.PI) + 2 * Math.PI)
+                                            / (2 * Math.PI * (cfg.bandWidthLow + subCId * cfg.subCarrierWidth));
                     }
                 }
-                // calculate BER
-                int numErrors = 0;
-                for (int bitIdx = 0; bitIdx < testReceiveBuffer.size(); bitIdx ++) {
-                    if (testReceiveBuffer.get(bitIdx) != cfg.alignBitFunc(bitIdx)) {
-                        numErrors ++;
-                    }
-                }
-                double BER = (double)numErrors / alignBitLen;
-                if (BER - bestBER < 0.001) {
-                    bestBER = BER;
+                avgDistortion /= alignBitLen;
+                if (Math.abs(avgDistortion) < Math.abs(bestDistortion)) {
+                    bestDistortion = avgDistortion;
                     bestDoneIdx = doneIdx;
                 }
-                // else if (Math.abs(BER - bestBER) < 0.001) {
-                //     if (Math.abs(bestDoneIdx - receiver.tickDone) > Math.abs(doneIdx - receiver.tickDone)) {
-                //         bestBER = BER;
-                //         bestDoneIdx = doneIdx;
-                //     }
-                // }
             }
             // print compensation: bestdone - tickdone
             System.out.println("Compensation: " + (bestDoneIdx - receiver.tickDone));
-            // print align BER
-            System.out.println("BER: " + bestBER);
+            // timeCompensation = -bestDistortion;
 
             receiver.scanAligning = false;
             receiver.tickDone = bestDoneIdx + alignNSample;
@@ -170,13 +177,32 @@ public class Demodulator {
                 }
             }
             // print first bits of transmitted and get
-            int bound = 4;
-            for (int i = 0; i < bound; i++) {
-                System.out.print(cfg.transmitted.get(i) ? "1" : "0");
+            int bound = cfg.realFrameLen;
+            int groupLen = 40;
+            for (int groupId = 0; groupId < Math.ceil((double)bound / groupLen); groupId++) {
+                System.out.println();
+                for (int i = 0; i < groupLen; i++) {
+                    if (groupId * groupLen + i < bound) {
+                        System.out.print(cfg.transmitted.get(groupId * groupLen + i) ? "1" : "0");
+                    }
+                }
+                System.out.println();
+                for (int i = 0; i < groupLen; i++) {
+                    if (groupId * groupLen + i < bound) {
+                        System.out.print(frameBuffer.get(groupId * groupLen + i) ? "1" : "0");
+                    }
+                }
+                System.out.println();
             }
-            System.out.println();
-            for (int i = 0; i < bound; i++) {
-                System.out.print(frameBuffer.get(i) ? "1" : "0");
+            System.out.println("GroupDiffs:");
+            for (int groupId = 0; groupId < Math.ceil((double)bound / groupLen); groupId++) {
+                int groupDiff = 0;
+                for (int i = 0; i < groupLen; i++) {
+                    if (groupId * groupLen + i < bound) {
+                        groupDiff += cfg.transmitted.get(groupId * groupLen + i) == frameBuffer.get(groupId * groupLen + i) ? 0 : 1;
+                    }
+                }
+                System.out.print(groupDiff + " ");
             }
             System.out.println();
             cfg.UpdBER((double)numErrors / cfg.realFrameLen);
