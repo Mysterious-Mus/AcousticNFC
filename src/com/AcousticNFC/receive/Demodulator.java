@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import com.AcousticNFC.utils.FFT;
 import com.AcousticNFC.utils.Complex;
+import com.AcousticNFC.utils.ECC;
 
 import java.io.File;
 
@@ -19,10 +20,13 @@ public class Demodulator {
     private ArrayList<Boolean> frameBuffer;
     double timeCompensation = 0; // compensate the sampling offset
 
+    ECC Ecc;
+
     public Demodulator(Receiver receiver, Config cfg_src) {
         this.receiver = receiver;
         frameBuffer = new ArrayList<Boolean>();
         cfg = cfg_src;
+        Ecc = new ECC(cfg);
     }
 
     private float[] getNxtSample() {
@@ -166,20 +170,26 @@ public class Demodulator {
             while (frameBuffer.size() > cfg.decodeBitLen) {
                 frameBuffer.remove(frameBuffer.size() - 1);
             }
-            FileOp.outputBitString(frameBuffer, "receiveBuffer.txt");
-            // push the frame into the receiver's buffer
+            // get the string for decoding
+            boolean[] receivedCodewords = new boolean[cfg.decodeBitLen];
             for (int i = 0; i < cfg.decodeBitLen; i++) {
-                receiver.receiveBuffer.add(frameBuffer.get(i));
+                receivedCodewords[i] = frameBuffer.get(i);
+            }
+            // decode
+            boolean[] decoded = Ecc.viterbiDecode(receivedCodewords);
+            // push the frame into the receiver's buffer
+            for (int i = 0; i < cfg.transmitBitLen; i++) {
+                receiver.receiveBuffer.add(decoded[i]);
             }
             // calculate BER
             int numErrors = 0;
-            for (int i = 0; i < cfg.decodeBitLen; i++) {
-                if (frameBuffer.get(i) != cfg.transmitted.get(i)) {
+            for (int i = 0; i < cfg.transmitBitLen; i++) {
+                if (decoded[i] != cfg.transmitted.get(i)) {
                     numErrors++;
                 }
             }
             // print first bits of transmitted and get
-            int bound = cfg.decodeBitLen;
+            int bound = cfg.transmitBitLen;
             int groupLen = 40;
             // for (int groupId = 0; groupId < Math.ceil((double)bound / groupLen); groupId++) {
             //     System.out.println();
@@ -201,13 +211,13 @@ public class Demodulator {
                 int groupDiff = 0;
                 for (int i = 0; i < groupLen; i++) {
                     if (groupId * groupLen + i < bound) {
-                        groupDiff += cfg.transmitted.get(groupId * groupLen + i) == frameBuffer.get(groupId * groupLen + i) ? 0 : 1;
+                        groupDiff += cfg.transmitted.get(groupId * groupLen + i) == decoded[groupId * groupLen + i] ? 0 : 1;
                     }
                 }
                 System.out.print(groupDiff + " ");
             }
             System.out.println();
-            cfg.UpdBER((double)numErrors / cfg.decodeBitLen);
+            cfg.UpdBER((double)numErrors / cfg.transmitBitLen);
             // clear the frameBuffer
             frameBuffer.clear();
         }

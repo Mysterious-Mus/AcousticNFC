@@ -53,7 +53,7 @@ public class Config {
     public boolean alignBitFunc(int idx) {return (idx % 5 <= 2);}
 
     public int alignBitLen;
-    public int transmitBitLen = 1000;
+    public int transmitBitLen = 2000;
     public int decodeBitLen;
 
     public boolean[][] ECCMat = {

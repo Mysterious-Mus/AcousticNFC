@@ -2,6 +2,7 @@ package com.AcousticNFC.transmit;
 
 import com.AcousticNFC.Config;
 import java.util.ArrayList;
+import com.AcousticNFC.utils.ECC;
 
 /* Frame Protocol:
  * 1. SoF
@@ -17,10 +18,13 @@ public class Framer {
 
     Config cfg;
 
+    ECC Ecc;
+
     public Framer(Config cfg_src) {
         cfg = cfg_src;
         sof = new SoF(cfg);
         ofdm = new OFDM(cfg);
+        Ecc = new ECC(cfg);
     }
 
     public float[] pack(ArrayList<Boolean> bitString) {
@@ -35,9 +39,20 @@ public class Framer {
             frameData.add(cfg.alignBitFunc(i));
         }
 
-        for (int packIdx = headerLen; packIdx < cfg.frameLength; packIdx++) {
-            int contentIdx = packIdx - headerLen;
-            frameData.add(contentIdx < bitString.size() ? bitString.get(contentIdx) : false);
+        // get transmitted sequence and ECC encode
+        boolean[] seqForEncode = new boolean[cfg.transmitBitLen];
+        for (int bitIdx = 0; bitIdx < cfg.transmitBitLen; bitIdx++) {
+            if (bitIdx < bitString.size()) {
+                seqForEncode[bitIdx] = bitString.get(bitIdx);
+            } else {
+                seqForEncode[bitIdx] = false;
+            }
+        }
+        boolean[] encodedSeq = Ecc.ConvolutionEncode(seqForEncode);
+
+        // add into the transmission string
+        for (int bitIdx = 0; bitIdx < encodedSeq.length; bitIdx++) {
+            frameData.add(encodedSeq[bitIdx]);
         }
 
         // get SoF and symbols
