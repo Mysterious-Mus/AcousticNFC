@@ -90,6 +90,7 @@ public class Receiver {
             }
             System.out.println();
             cfg.UpdBER((double)numErrors / cfg.transmitBitLen);
+            receiveBuffer.clear();
         }
     }
     
