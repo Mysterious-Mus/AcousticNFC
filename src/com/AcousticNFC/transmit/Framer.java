@@ -48,7 +48,7 @@ public class Framer {
                 seqForEncode[bitIdx] = false;
             }
         }
-        boolean[] encodedSeq = Ecc.ConvolutionEncode(seqForEncode);
+        boolean[] encodedSeq = cfg.ECCOn? Ecc.ConvolutionEncode(seqForEncode) : seqForEncode;
 
         // add into the transmission string
         for (int bitIdx = 0; bitIdx < encodedSeq.length; bitIdx++) {

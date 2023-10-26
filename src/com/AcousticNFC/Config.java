@@ -18,15 +18,15 @@ public class Config {
     public double sampleRate = 44100;
 
     public int frameLength;
-    public int symbolLength = 32;
+    public int symbolLength = 64;
 
-    public double cyclicPrefixLength = 0.004;
+    public double cyclicPrefixLength = 0.002;
     public int cyclicPrefixNSamples;
     public boolean cyclicPrefixMute = true;      
 
     public int subcarrierDist = 1;
     public double subCarrierWidth;
-    public double bandWidthLowEdit = 2000;
+    public double bandWidthLowEdit = 4000;
     public double bandWidthHighEdit = 8000;
     public double bandWidthLow;
     public double bandWidthHigh;
@@ -35,16 +35,16 @@ public class Config {
     public int keyingCapacity = 1;
     public int symbolCapacity;
 
-    public float SoF_amplitude = 0.8f;
+    public float SoF_amplitude = 1f;
     public double SoF_T = 0.002905; // The 'T' parameter of SoF, see DOC
     public int sofNSamples;
-    public double SoF_fmin = 4000;
-    public double SoF_fmax = 9000;
+    public double SoF_fmin = 8000;
+    public double SoF_fmax = 8000;
     public double SofSilencePeriod = 0.004;
     public int sofSilentNSamples;
 
     public double maxSofCorrDetect = 0;
-    public double SofDetectThreshld = 0.002; // The threshold for correlation detection
+    public double SofDetectThreshld = 0.06; // The threshold for correlation detection
 
     // debug shared info
     public ArrayList<Boolean> transmitted;
@@ -56,6 +56,7 @@ public class Config {
     public int transmitBitLen = 2000;
     public int decodeBitLen;
 
+    public boolean ECCOn = true;
     public boolean[][] ECCMat = {
         { true, true, true, true, false, false, true },
         { true, false, true, true, false, true, false },
@@ -362,8 +363,8 @@ public class Config {
 
         alignBitLen = alignNSymbol * keyingCapacity * numSubCarriers;
         ECCBitRate = ECCMat.length;
-        frameLength = alignBitLen + ECCBitRate * transmitBitLen;
-        decodeBitLen = transmitBitLen * ECCBitRate;
+        decodeBitLen = ECCOn? transmitBitLen * ECCBitRate : transmitBitLen;
+        frameLength = alignBitLen + decodeBitLen;
         
         // print all config
         // System.out.println("Config:");
