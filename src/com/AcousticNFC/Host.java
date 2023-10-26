@@ -372,7 +372,7 @@ public class Host extends JFrame implements AsioDriverListener {
           driverInit();
         }
         // prepare play content
-        float[] playContent = framer.pack(bitString.getBitString());
+        float[] playContent = framer.frame(bitString.getBitString());
         // use lock to tell the intr, player is not ready
         PlayContentLock = true;
         // set player

@@ -66,4 +66,40 @@ public class Framer {
         // System.out.println("Packed " + frameData.size() + " bits into " + samples.length + " samples");
         return samples;
     }
+
+    public float[] frame(ArrayList<Boolean> bitString) {
+        // calculate how many frames are needed
+        int numFrames = (int) Math.ceil((double) cfg.frameLength / cfg.packBitLen);
+
+        // the final playBuffer
+        ArrayList<Float> playBuffer = new ArrayList<Float>();
+
+        // pack each pack
+        for (int frameIdx = 0; frameIdx < numFrames; frameIdx++) {
+            // get the bit string to pack
+            ArrayList<Boolean> bitStringToPack = new ArrayList<Boolean>();
+            for (int bitIdx = 0; bitIdx < cfg.packBitLen; bitIdx++) {
+                if (frameIdx * cfg.packBitLen + bitIdx < bitString.size()) {
+                    bitStringToPack.add(bitString.get(frameIdx * cfg.packBitLen + bitIdx));
+                } else {
+                    bitStringToPack.add(false);
+                }
+            }
+
+            // pack the bit string
+            float[] samples = pack(bitStringToPack);
+
+            // add to the playBuffer
+            for (int sampleIdx = 0; sampleIdx < samples.length; sampleIdx++) {
+                playBuffer.add(samples[sampleIdx]);
+            }
+        }
+
+        // convert to float[] and return
+        float[] playBufferFloat = new float[playBuffer.size()];
+        for (int sampleIdx = 0; sampleIdx < playBuffer.size(); sampleIdx++) {
+            playBufferFloat[sampleIdx] = playBuffer.get(sampleIdx);
+        }
+        return playBufferFloat;
+    }
 }

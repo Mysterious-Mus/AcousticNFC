@@ -64,6 +64,31 @@ public class Receiver {
 
         // demodulation
         demodulator.demodulate();
+
+        // if transmit done, update results
+        // calculate BER
+        int numErrors = 0;
+        for (int i = 0; i < cfg.transmitBitLen; i++) {
+            if (receiveBuffer.get((i)) != cfg.transmitted.get(i)) {
+                numErrors++;
+            }
+        }
+        // print first bits of transmitted and get
+        int bound = cfg.transmitBitLen;
+        int groupLen = 40;
+        System.out.println("GroupDiffs:");
+        for (int groupId = 0; groupId < Math.ceil((double)bound / groupLen); groupId++) {
+            int groupDiff = 0;
+            for (int i = 0; i < groupLen; i++) {
+                if (groupId * groupLen + i < bound) {
+                    groupDiff += cfg.transmitted.get(groupId * groupLen + i) == 
+                        receiveBuffer.get(groupId * groupLen + i) ? 0 : 1;
+                }
+            }
+            System.out.print(groupDiff + " ");
+        }
+        System.out.println();
+        cfg.UpdBER((double)numErrors / cfg.transmitBitLen);
     }
     
     public void dumpResults() {

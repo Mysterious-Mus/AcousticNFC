@@ -20,7 +20,7 @@ public class Config {
     public int frameLength;
     public int symbolLength = 64;
 
-    public double cyclicPrefixLength = 0.002;
+    public double cyclicPrefixLength = 0.001;
     public int cyclicPrefixNSamples;
     public boolean cyclicPrefixMute = true;      
 
@@ -52,8 +52,10 @@ public class Config {
     public int scanWindow = 500;
     public boolean alignBitFunc(int idx) {return (idx % 5 <= 2);}
 
-    public int alignBitLen;
     public int transmitBitLen = 2000;
+
+    public int packBitLen = 700;
+    public int alignBitLen;
     public int decodeBitLen;
 
     public boolean ECCOn = true;
@@ -363,7 +365,7 @@ public class Config {
 
         alignBitLen = alignNSymbol * keyingCapacity * numSubCarriers;
         ECCBitRate = ECCMat.length;
-        decodeBitLen = ECCOn? transmitBitLen * ECCBitRate : transmitBitLen;
+        decodeBitLen = ECCOn? packBitLen * ECCBitRate : transmitBitLen;
         frameLength = alignBitLen + decodeBitLen;
         
         // print all config
