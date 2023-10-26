@@ -181,43 +181,6 @@ public class Demodulator {
             for (int i = 0; i < cfg.transmitBitLen; i++) {
                 receiver.receiveBuffer.add(decoded[i]);
             }
-            // calculate BER
-            int numErrors = 0;
-            for (int i = 0; i < cfg.transmitBitLen; i++) {
-                if (decoded[i] != cfg.transmitted.get(i)) {
-                    numErrors++;
-                }
-            }
-            // print first bits of transmitted and get
-            int bound = cfg.transmitBitLen;
-            int groupLen = 40;
-            // for (int groupId = 0; groupId < Math.ceil((double)bound / groupLen); groupId++) {
-            //     System.out.println();
-            //     for (int i = 0; i < groupLen; i++) {
-            //         if (groupId * groupLen + i < bound) {
-            //             System.out.print(cfg.transmitted.get(groupId * groupLen + i) ? "1" : "0");
-            //         }
-            //     }
-            //     System.out.println();
-            //     for (int i = 0; i < groupLen; i++) {
-            //         if (groupId * groupLen + i < bound) {
-            //             System.out.print(frameBuffer.get(groupId * groupLen + i) ? "1" : "0");
-            //         }
-            //     }
-            //     System.out.println();
-            // }
-            System.out.println("GroupDiffs:");
-            for (int groupId = 0; groupId < Math.ceil((double)bound / groupLen); groupId++) {
-                int groupDiff = 0;
-                for (int i = 0; i < groupLen; i++) {
-                    if (groupId * groupLen + i < bound) {
-                        groupDiff += cfg.transmitted.get(groupId * groupLen + i) == decoded[groupId * groupLen + i] ? 0 : 1;
-                    }
-                }
-                System.out.print(groupDiff + " ");
-            }
-            System.out.println();
-            cfg.UpdBER((double)numErrors / cfg.transmitBitLen);
             // clear the frameBuffer
             frameBuffer.clear();
         }
