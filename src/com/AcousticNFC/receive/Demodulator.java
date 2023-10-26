@@ -178,7 +178,7 @@ public class Demodulator {
             // decode
             boolean[] decoded = cfg.ECCOn? Ecc.viterbiDecode(receivedCodewords) : receivedCodewords;
             // push the frame into the receiver's buffer
-            for (int i = 0; i < cfg.transmitBitLen; i++) {
+            for (int i = 0; i < decoded.length; i++) {
                 receiver.receiveBuffer.add(decoded[i]);
             }
             // clear the frameBuffer

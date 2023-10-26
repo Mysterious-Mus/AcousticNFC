@@ -40,8 +40,8 @@ public class Framer {
         }
 
         // get transmitted sequence and ECC encode
-        boolean[] seqForEncode = new boolean[cfg.transmitBitLen];
-        for (int bitIdx = 0; bitIdx < cfg.transmitBitLen; bitIdx++) {
+        boolean[] seqForEncode = new boolean[cfg.packBitLen];
+        for (int bitIdx = 0; bitIdx < cfg.packBitLen; bitIdx++) {
             if (bitIdx < bitString.size()) {
                 seqForEncode[bitIdx] = bitString.get(bitIdx);
             } else {
@@ -69,7 +69,7 @@ public class Framer {
 
     public float[] frame(ArrayList<Boolean> bitString) {
         // calculate how many frames are needed
-        int numFrames = (int) Math.ceil((double) cfg.frameLength / cfg.packBitLen);
+        int numFrames = (int) Math.ceil((double) cfg.transmitBitLen / cfg.packBitLen);
 
         // the final playBuffer
         ArrayList<Float> playBuffer = new ArrayList<Float>();
@@ -79,7 +79,7 @@ public class Framer {
             // get the bit string to pack
             ArrayList<Boolean> bitStringToPack = new ArrayList<Boolean>();
             for (int bitIdx = 0; bitIdx < cfg.packBitLen; bitIdx++) {
-                if (frameIdx * cfg.packBitLen + bitIdx < bitString.size()) {
+                if (frameIdx * cfg.packBitLen + bitIdx < cfg.transmitBitLen) {
                     bitStringToPack.add(bitString.get(frameIdx * cfg.packBitLen + bitIdx));
                 } else {
                     bitStringToPack.add(false);
