@@ -5,3 +5,4 @@ bin/
 /*.jar
 bit_string.txt
 receiveBuffer.txt
+received.txt

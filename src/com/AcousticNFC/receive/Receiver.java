@@ -68,7 +68,13 @@ public class Receiver {
         // if transmit done, update results
         // calculate BER
         if (receiveBuffer.size() >= cfg.transmitBitLen) {
-            
+            // remove paddings
+            while (receiveBuffer.size() > cfg.transmitBitLen) {
+                receiveBuffer.remove(receiveBuffer.size() - 1);
+            }
+
+            // dump received bits
+            FileOp.outputBitString(receiveBuffer, "received.txt");
 
             int numErrors = 0;
             for (int i = 0; i < cfg.transmitBitLen; i++) {
