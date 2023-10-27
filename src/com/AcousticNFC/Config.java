@@ -22,7 +22,7 @@ public class Config {
 
     public double cyclicPrefixLength = 0.0018;
     public int cyclicPrefixNSamples;
-    public boolean cyclicPrefixMute = true;      
+    public boolean cyclicPrefixMute = false;      
 
     public int subcarrierDist = 1;
     public double subCarrierWidth;
