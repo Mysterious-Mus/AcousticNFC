@@ -20,7 +20,7 @@ public class Config {
     public int frameLength;
     public int symbolLength = 64;
 
-    public double cyclicPrefixLength = 0.001;
+    public double cyclicPrefixLength = 0.0018;
     public int cyclicPrefixNSamples;
     public boolean cyclicPrefixMute = true;      
 
@@ -44,7 +44,7 @@ public class Config {
     public int sofSilentNSamples;
 
     public double maxSofCorrDetect = 0;
-    public double SofDetectThreshld = 0.06; // The threshold for correlation detection
+    public double SofDetectThreshld = 0.0025; // The threshold for correlation detection
 
     // debug shared info
     public ArrayList<Boolean> transmitted;
