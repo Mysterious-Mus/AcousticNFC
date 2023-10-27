@@ -48,13 +48,13 @@ public class Config {
 
     // debug shared info
     public ArrayList<Boolean> transmitted;
-    public int alignNSymbol = 20;
+    public int alignNSymbol = 10;
     public int scanWindow = 500;
     public boolean alignBitFunc(int idx) {return (idx % 5 <= 2);}
 
-    public int transmitBitLen = 2000;
+    public int transmitBitLen = 10000;
 
-    public int packBitLen = 700;
+    public int packBitLen = 300;
     public int alignBitLen;
     public int decodeBitLen;
 
