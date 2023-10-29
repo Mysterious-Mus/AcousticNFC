@@ -389,16 +389,16 @@ public class Host extends JFrame implements AsioDriverListener {
         // restart the driver to sync the new setting
         driverShutdown();
         driverInit();
-        // delay 2 seconds for warmup
-        try {
-          Thread.sleep(4000);  // Sleep for 2000 milliseconds = 2 seconds
-        } catch (InterruptedException e) {
-          // Handle the exception
-          e.printStackTrace();
-        }
-        setReceiverState(ReceiverState.RECEIVING);
         // init receiver
         receiver = new Receiver(cfg);
+        setReceiverState(ReceiverState.RECEIVING);
+        // // delay 2 seconds for warmup
+        // try {
+        //   Thread.sleep(8000);  // Sleep for 2000 milliseconds = 2 seconds
+        // } catch (InterruptedException e) {
+        //   // Handle the exception
+        //   e.printStackTrace();
+        // }
       }
     });
 
