@@ -76,7 +76,8 @@ public class Demodulator {
         // calculate the keys of the subcarriers
         for (int i = 0; i < cfg.numSubCarriers; i++) {
             // see notes.ipynb for the derivation
-            double thisCarrierPhase = phases[i] + timeCompensation * 2 * Math.PI * (cfg.bandWidthLow + i * cfg.subCarrierWidth);
+            double thisCarrierPhase = phases[i] + 
+                timeCompensation * 2 * Math.PI * (cfg.bandWidthLow + i * cfg.subCarrierWidth);
 
             int numKeys = (int) Math.round(Math.pow(2, cfg.keyingCapacity));
             double lastPhaseSegment = 2 * Math.PI / numKeys / 2;
@@ -101,6 +102,7 @@ public class Demodulator {
             for (int doneIdx = receiver.tickDone - cfg.scanWindow; 
             doneIdx <= receiver.tickDone + cfg.scanWindow; doneIdx++) {
                 int testReceiverPtr = doneIdx;
+                double avgAbsDistortion = 0;
                 double avgDistortion = 0;
                 for (int testSymId = 0; testSymId < cfg.alignNSymbol; testSymId++) {
                     testReceiverPtr += cfg.cyclicPrefixNSamples;
@@ -120,17 +122,22 @@ public class Demodulator {
                              << (cfg.keyingCapacity - bitId - 1);
                         }
                         double requiredPhase = 2 * Math.PI / numKeys * thisCarrierIdx;
-                        avgDistortion += ((thisCarrierPhase - requiredPhase + 4 * Math.PI) % (2 * Math.PI) <
-                                         (2 * Math.PI) - (thisCarrierPhase - requiredPhase + 4 * Math.PI) % (2 * Math.PI) ?
-                                            (thisCarrierPhase - requiredPhase + 4 * Math.PI) % (2 * Math.PI) :
-                                            - (thisCarrierPhase - requiredPhase + 4 * Math.PI) % (2 * Math.PI) + 2 * Math.PI)
+                        double distortion = ((thisCarrierPhase - requiredPhase + 4 * Math.PI) % (2 * Math.PI) < 
+                            (2 * Math.PI) - (thisCarrierPhase - requiredPhase + 4 * Math.PI) % (2 * Math.PI) ? 
+                            (thisCarrierPhase - requiredPhase + 4 * Math.PI) % (2 * Math.PI) : 
+                            (thisCarrierPhase - requiredPhase + 4 * Math.PI) % (2 * Math.PI) - 2 * Math.PI);
+                        avgAbsDistortion += Math.abs(distortion)
+                                            / (2 * Math.PI * (cfg.bandWidthLow + subCId * cfg.subCarrierWidth));
+                        avgDistortion += distortion
                                             / (2 * Math.PI * (cfg.bandWidthLow + subCId * cfg.subCarrierWidth));
                     }
                 }
+                avgAbsDistortion /= alignBitLen;
                 avgDistortion /= alignBitLen;
-                if (Math.abs(avgDistortion) < Math.abs(bestDistortion)) {
-                    bestDistortion = avgDistortion;
+                if (Math.abs(avgAbsDistortion) < Math.abs(bestDistortion)) {
+                    bestDistortion = avgAbsDistortion;
                     bestDoneIdx = doneIdx;
+                    timeCompensation = -avgDistortion;
                 }
             }
             // print compensation: bestdone - tickdone
