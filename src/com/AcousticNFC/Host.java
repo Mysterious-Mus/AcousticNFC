@@ -118,6 +118,7 @@ public class Host extends JFrame implements AsioDriverListener {
           // BufferIntrLock.lock();
           // update the correlations
           receiver.process();
+          Thread.yield();
           // release the lock
           // BufferIntrLock.unlock();
         } catch(Exception e) {
@@ -157,8 +158,8 @@ public class Host extends JFrame implements AsioDriverListener {
     // button callbacks
     setButtonCallbacks();
 
-    // init driver
-    driverInit();
+    // // init driver
+    // driverInit();
 
     // init framer
     framer = new Framer(cfg);
@@ -388,6 +389,13 @@ public class Host extends JFrame implements AsioDriverListener {
         // restart the driver to sync the new setting
         driverShutdown();
         driverInit();
+        // delay 2 seconds for warmup
+        try {
+          Thread.sleep(4000);  // Sleep for 2000 milliseconds = 2 seconds
+        } catch (InterruptedException e) {
+          // Handle the exception
+          e.printStackTrace();
+        }
         setReceiverState(ReceiverState.RECEIVING);
         // init receiver
         receiver = new Receiver(cfg);
@@ -471,7 +479,7 @@ public class Host extends JFrame implements AsioDriverListener {
   int guard = 0;
   int lastPosition = 0;
   // IO handler below, should be fast
-  public void bufferSwitch(long systemTime, long samplePosition, Set<AsioChannel> channels) {
+  public synchronized void bufferSwitch(long systemTime, long samplePosition, Set<AsioChannel> channels) {
     guard ++;
     // if (guard > 1) {
     //   System.out.println("Warning: bufferSwitch() callback received while another callback is still executing.");
