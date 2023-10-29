@@ -190,9 +190,9 @@ public class Config {
             });
 
             // The button to set the SoF detect threshold as 90% of the observed max correlation
-            JButton setSofDetectThresholdButton = new JButton("Set 95%");
+            JButton setSofDetectThresholdButton = new JButton("Set 70%");
             setSofDetectThresholdButton.addActionListener(e -> {
-                config.SofDetectThreshld = 0.95 * config.maxSofCorrDetect;
+                config.SofDetectThreshld = 0.7 * config.maxSofCorrDetect;
                 SofDetectThresholdField.setText(Double.toString(config.SofDetectThreshld));
             });
 
