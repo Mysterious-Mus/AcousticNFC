@@ -4,6 +4,17 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 
+/*
+ * Steps to add one parameter to panel:
+ *  1. declare it as a menber of Config
+ *  2. if it is a passive parameter, implement the calculation formula in Config.ConfigChange()
+ *  3. add it's name label and textfield to the panel in Config.ConfigPanel()
+ *  4. add it to an appropriate place of the pannel
+ *  5. add a line to Config.ConfigPanel.updateDisplay() to update the textfield
+ *  6. add a line to Config.ConfigPanel.updateButton.addActionListener() to update the Config object
+ */
+
+
 public class Config {
 
     Host host;
@@ -20,13 +31,13 @@ public class Config {
     public int frameLength;
     public int symbolLength = 64;
 
-    public double cyclicPrefixLength = 0.0018;
+    public double cyclicPrefixLength = 0.001;
     public int cyclicPrefixNSamples;
-    public boolean cyclicPrefixMute = false;      
+    public boolean cyclicPrefixMute = true;      
 
     public int subcarrierDist = 1;
     public double subCarrierWidth;
-    public double bandWidthLowEdit = 4000;
+    public double bandWidthLowEdit = 3000;
     public double bandWidthHighEdit = 8000;
     public double bandWidthLow;
     public double bandWidthHigh;
@@ -38,18 +49,18 @@ public class Config {
     public float SoF_amplitude = 1f;
     public double SoF_T = 0.002905; // The 'T' parameter of SoF, see DOC
     public int sofNSamples;
-    public double SoF_fmin = 8000;
-    public double SoF_fmax = 8000;
+    public double SoF_fmin = 6000;
+    public double SoF_fmax = 16000;
     public double SofSilencePeriod = 0.004;
     public int sofSilentNSamples;
 
     public double maxSofCorrDetect = 0;
-    public double SofDetectThreshld = 0.0025; // The threshold for correlation detection
+    public double SofDetectThreshld = 0.02; // The threshold for correlation detection
 
     // debug shared info
     public ArrayList<Boolean> transmitted;
     public int alignNSymbol = 10;
-    public int scanWindow = 500;
+    public int scanWindow = 800;
     public boolean alignBitFunc(int idx) {return (idx % 5 <= 2);}
 
     public int transmitBitLen = 10000;
@@ -97,6 +108,7 @@ public class Config {
         JTextField SofDetectThresholdField;
         JTextField alignNSymbolField;
         JLabel frameLenField;
+        JTextField packBitLenField;
 
         // debug info
         JLabel firstSymbolPhasesField;
@@ -135,6 +147,7 @@ public class Config {
             SofDetectThresholdField = new JTextField(Double.toString(config.SofDetectThreshld));
             alignNSymbolField = new JTextField(Integer.toString(config.alignNSymbol));
             frameLenField = new JLabel(Integer.toString(config.frameLength));
+            packBitLenField = new JTextField(Integer.toString(config.packBitLen));
 
             // debug fields
             firstSymbolPhasesField = new JLabel("");
@@ -163,6 +176,7 @@ public class Config {
                 config.SofSilencePeriod = Double.parseDouble(SofSilencePeriodField.getText());
                 config.SofDetectThreshld = Double.parseDouble(SofDetectThresholdField.getText());
                 config.alignNSymbol = Integer.parseInt(alignNSymbolField.getText());
+                config.packBitLen = Integer.parseInt(packBitLenField.getText());
                 
                 ConfigChange();
                 updateDisplay();
@@ -260,6 +274,8 @@ public class Config {
             grid1.add(new JLabel("Align N Symbol:"));
             grid1.add(alignNSymbolField);
 
+            grid1.add(new JLabel("Pack Bit Len:"));
+            grid1.add(packBitLenField);
             grid1.add(new JLabel("Frame Length:"));
             grid1.add(frameLenField);
 
@@ -329,6 +345,7 @@ public class Config {
             SofDetectThresholdField.setText(Double.toString(config.SofDetectThreshld));
             alignNSymbolField.setText(Integer.toString(config.alignNSymbol));
             frameLenField.setText(Integer.toString(config.frameLength));
+            packBitLenField.setText(Integer.toString(config.packBitLen));
         }
     }
 
