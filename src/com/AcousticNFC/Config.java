@@ -33,7 +33,7 @@ public class Config {
 
     public double cyclicPrefixLength = 0.001;
     public int cyclicPrefixNSamples;
-    public boolean cyclicPrefixMute = true;      
+    public boolean cyclicPrefixMute = false;      
 
     public int subcarrierDist = 1;
     public double subCarrierWidth;
@@ -51,7 +51,7 @@ public class Config {
     public int sofNSamples;
     public double SoF_fmin = 6000;
     public double SoF_fmax = 16000;
-    public double SofSilencePeriod = 0.004;
+    public double SofSilencePeriod = 0.000;
     public int sofSilentNSamples;
 
     public double maxSofCorrDetect = 0;
@@ -60,10 +60,10 @@ public class Config {
     // debug shared info
     public ArrayList<Boolean> transmitted;
     public int alignNSymbol = 10;
-    public int scanWindow = 800;
+    public int scanWindow = 100;
     public boolean alignBitFunc(int idx) {return (idx % 5 <= 2);}
 
-    public int transmitBitLen = 10000;
+    public int transmitBitLen = 1000;
 
     public int packBitLen = 300;
     public int alignBitLen;
