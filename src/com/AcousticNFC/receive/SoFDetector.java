@@ -18,8 +18,6 @@ public class SoFDetector {
 
     Receiver receiver; // where to take the samples
 
-    public ArrayList<Double> Scanflag = new ArrayList<Double>();
-
     public SoFDetector(Config cfg_src, Receiver receiver) {
         cfg = cfg_src;
         sof = new SoF(cfg);
@@ -34,13 +32,8 @@ public class SoFDetector {
     public void detect() {
         if (receiver.unpacking || receiver.scanAligning) return;
 
-        while(Scanflag.size() - 1 < receiver.tickDone) {
-            Scanflag.add(0.0);
-        }
-
         for (int candidateIdx = receiver.tickDone + 1; 
             candidateIdx <= receiver.getLength() - window; candidateIdx++) {
-            Scanflag.add(1.0);
             if(candidateIdx >= cfg.sofNSamples - 1) {
                 // now the correlation is valid
                 double corr = 0;
@@ -54,7 +47,6 @@ public class SoFDetector {
                     receiver.scanAligning = true;
                     // find the greatest point in the window
                     for (int i = candidateIdx + 1; i < candidateIdx + window; i++) {
-                        Scanflag.add(1.0);
                         // calculate new corr
                         double newcorr = 0;
                         for (int j = 0; j < cfg.sofNSamples; j++) {
@@ -66,12 +58,7 @@ public class SoFDetector {
                             candidateIdx = i;
                         }
                     }
-
-                    // debug
-                    Scanflag.set(candidateIdx, 2.0);
-
-                    // print original sof end
-                    System.out.println("sof end: " + candidateIdx);
+                    // print candidateIdx
                     receiver.tickDone = candidateIdx + cfg.sofSilentNSamples + cfg.sofAlignCompensate;
                     return;
                 }
