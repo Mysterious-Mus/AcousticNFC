@@ -158,8 +158,8 @@ public class Host extends JFrame implements AsioDriverListener {
     // button callbacks
     setButtonCallbacks();
 
-    // // init driver
-    // driverInit();
+    // init driver
+    driverInit();
 
     // init framer
     framer = new Framer(cfg);
@@ -436,8 +436,6 @@ public class Host extends JFrame implements AsioDriverListener {
     }
 
     bufferSize = asioDriver.getBufferPreferredSize();
-    // print buffer size
-    System.out.println("Buffer size: " + bufferSize);
     double sampleRate = asioDriver.getSampleRate();
     // if sample rate is not 44100, throw warning
     if (Math.abs(sampleRate - 44100) > 1e-6) {

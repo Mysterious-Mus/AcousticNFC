@@ -179,7 +179,6 @@ public class Config {
                 config.packBitLen = Integer.parseInt(packBitLenField.getText());
                 
                 ConfigChange();
-                updateDisplay();
             });
 
             // The button to reset the observed max correlation
@@ -385,26 +384,7 @@ public class Config {
         decodeBitLen = ECCOn? packBitLen * ECCBitRate : transmitBitLen;
         frameLength = alignBitLen + decodeBitLen;
         
-        // print all config
-        // System.out.println("Config:");
-        // System.out.println("sampleRate: " + sampleRate);
-        // System.out.println("frameLength: " + frameLength);
-        // System.out.println("symbolLength: " + symbolLength);
-        // System.out.println("cyclicPrefixLength: " + cyclicPrefixLength);
-        // System.out.println("cyclicPrefixNSamples: " + cyclicPrefixNSamples);
-        // System.out.println("cyclicPrefixMute: " + cyclicPrefixMute);
-        // System.out.println("subCarrierWidth: " + subCarrierWidth);
-        // System.out.println("bandWidthLowEdit: " + bandWidthLowEdit);
-        // System.out.println("bandWidthHighEdit: " + bandWidthHighEdit);
-        // System.out.println("bandWidthLow: " + bandWidthLow);
-        // System.out.println("bandWidthHigh: " + bandWidthHigh);
-        // System.out.println("numSubCarriers: " + numSubCarriers);
-        // System.out.println("keyingCapacity: " + keyingCapacity);
-        // System.out.println("symbolCapacity: " + symbolCapacity);
-        // System.out.println("SoF_T: " + SoF_T);
-        // System.out.println("sofNSamples: " + sofNSamples);
-        // System.out.println("SofSilencePeriod: " + SofSilencePeriod);
-        // System.out.println("sofSilentNSamples: " + sofSilentNSamples);
+        this.panel.updateDisplay();
     }
 
     public void UpdSampleRate(double sampleRate) {
