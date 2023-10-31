@@ -28,7 +28,7 @@ public class SoFDetector {
         this.receiver = receiver;
     }
 
-    int window = 1;
+    int window = 20;
 
     /* Calculating Correlations with SoF and see if we can mark the start of a frame */
     public void detect() {
@@ -73,7 +73,7 @@ public class SoFDetector {
                     // print original sof end
                     System.out.println("sof end: " + candidateIdx);
                     receiver.tickDone = candidateIdx + cfg.sofSilentNSamples + cfg.sofAlignCompensate;
-                    break;
+                    return;
                 }
             }
         }
