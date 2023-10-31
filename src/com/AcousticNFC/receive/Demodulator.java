@@ -50,7 +50,8 @@ public class Demodulator {
         for (int i = 0; i < cfg.numSubCarriers; i++) {
             result[i] = fftResult[
                     (int) Math.round((cfg.bandWidthLow + i * cfg.subCarrierWidth) / 
-                    cfg.sampleRate * cfg.symbolLength)].phase();
+                    cfg.sampleRate * cfg.symbolLength)].phase() + 
+                    timeCompensation * 2 * Math.PI * (cfg.bandWidthLow + i * cfg.subCarrierWidth);
         }
         return result;
     }
@@ -76,8 +77,7 @@ public class Demodulator {
         // calculate the keys of the subcarriers
         for (int i = 0; i < cfg.numSubCarriers; i++) {
             // see notes.ipynb for the derivation
-            double thisCarrierPhase = phases[i] + 
-                timeCompensation * 2 * Math.PI * (cfg.bandWidthLow + i * cfg.subCarrierWidth);
+            double thisCarrierPhase = phases[i];
 
             int numKeys = (int) Math.round(Math.pow(2, cfg.keyingCapacity));
             double lastPhaseSegment = 2 * Math.PI / numKeys / 2;
