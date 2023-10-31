@@ -140,6 +140,8 @@ public class Demodulator {
                     timeCompensation = -avgDistortion;
                 }
             }
+            // print original tickdone
+            System.out.println("Original tickdone: " + receiver.tickDone);
             // print compensation: bestdone - tickdone
             System.out.println("Compensation: " + (bestDoneIdx - receiver.tickDone));
             // timeCompensation = -bestDistortion;
@@ -170,8 +172,6 @@ public class Demodulator {
             }
         }
         if (frameBuffer.size() >= cfg.decodeBitLen) {
-            // print log
-            System.out.println("Received a frame of length " + cfg.decodeBitLen);
             receiver.unpacking = false;
             // pop back until the length is Config.frameLength
             while (frameBuffer.size() > cfg.decodeBitLen) {
