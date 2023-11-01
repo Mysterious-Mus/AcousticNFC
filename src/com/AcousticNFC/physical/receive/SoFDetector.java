@@ -1,12 +1,12 @@
-package com.AcousticNFC.receive;
+package com.AcousticNFC.physical.receive;
 
-import com.AcousticNFC.transmit.SoF;
+import com.AcousticNFC.physical.transmit.SoF;
 
 import java.util.ArrayList;
 import java.util.Collections;
 
 import com.AcousticNFC.Config;
-import com.AcousticNFC.receive.Receiver;
+import com.AcousticNFC.physical.receive.Receiver;
 import com.AcousticNFC.utils.CyclicBuffer;
 
 public class SoFDetector {

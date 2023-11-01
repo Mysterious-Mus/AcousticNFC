@@ -1,9 +1,9 @@
-package com.AcousticNFC.transmit;
+package com.AcousticNFC.physical.transmit;
 
 import java.util.ArrayList;
 
 import com.AcousticNFC.Config;
-import com.AcousticNFC.receive.Receiver;
+import com.AcousticNFC.physical.receive.Receiver;
 
 /* Use OFDM to modulate a bit string
  * Always padded with 0s, the length of the modulated signal will be a multiple of:

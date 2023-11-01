@@ -1,4 +1,4 @@
-package com.AcousticNFC.receive;
+package com.AcousticNFC.physical.receive;
 
 import java.util.ArrayList;
 
@@ -9,7 +9,7 @@ import com.AcousticNFC.utils.ECC;
 import java.io.File;
 
 import com.AcousticNFC.Config;
-import com.AcousticNFC.transmit.OFDM;
+import com.AcousticNFC.physical.transmit.OFDM;
 import com.AcousticNFC.utils.FileOp;
 
 public class Demodulator {

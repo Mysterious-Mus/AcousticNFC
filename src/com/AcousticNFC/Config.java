@@ -57,6 +57,9 @@ public class Config {
     public double maxSofCorrDetect = 0;
     public double SofDetectThreshld = 0.02; // The threshold for correlation detection
 
+    public double interPacketGapPeriod = 0.001; 
+    public int interPacketGapNSamples;
+
     // debug shared info
     public ArrayList<Boolean> transmitted;
     public int alignNSymbol = 10;
@@ -378,6 +381,8 @@ public class Config {
         symbolCapacity = numSubCarriers * keyingCapacity;
         sofNSamples = (int)(2 * SoF_T * sampleRate);
         sofSilentNSamples = (int)(SofSilencePeriod * sampleRate);
+
+        interPacketGapNSamples = (int)(interPacketGapPeriod * sampleRate);
 
         alignBitLen = alignNSymbol * keyingCapacity * numSubCarriers;
         ECCBitRate = ECCMat.length;

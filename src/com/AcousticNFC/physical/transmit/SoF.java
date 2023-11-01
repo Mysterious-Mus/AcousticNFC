@@ -1,4 +1,4 @@
-package com.AcousticNFC.transmit;
+package com.AcousticNFC.physical.transmit;
 
 import com.AcousticNFC.Config;
 

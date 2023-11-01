@@ -50,11 +50,11 @@ import com.AcousticNFC.Config;
 import com.AcousticNFC.utils.Recorder;
 import com.AcousticNFC.utils.Player;
 import com.AcousticNFC.utils.Music;
-import com.AcousticNFC.transmit.SoF;
+import com.AcousticNFC.physical.transmit.SoF;
 import com.AcousticNFC.utils.BitString;
-import com.AcousticNFC.transmit.OFDM;
-import com.AcousticNFC.transmit.Framer;
-import com.AcousticNFC.receive.Receiver;
+import com.AcousticNFC.physical.transmit.OFDM;
+import com.AcousticNFC.physical.transmit.Framer;
+import com.AcousticNFC.physical.receive.Receiver;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.*;

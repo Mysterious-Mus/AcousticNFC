@@ -1,32 +1,33 @@
-package com.AcousticNFC.transmit;
+package com.AcousticNFC.mac;
 
 import java.util.zip.CRC32;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.HexFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+
+import com.AcousticNFC.Config;
+import com.AcousticNFC.physical.transmit.OFDM;
 
 
 /*
  * IEEE 802.3 based Ethernet Frame 
- * Preable: 7 bytes
- * Start of Frame: 1 byte
  * Destination Address: 1 bytes
  * Source Address: 1 bytes
  * Data: 1000 bytes
  * Frame Check Sequence: 4 bytes
- * Interpacket Gap: 4 bytes
  */
 
 public class EthernetFrame {
-    private static final byte[] preamble = HexFormat.of().parseHex("aa".repeat(7));
-    private static final byte[] startOfFrame = HexFormat.of().parseHex("ab");
+    // private static final byte[] preamble = HexFormat.of().parseHex("aa".repeat(7));
+    // private static final byte[] startOfFrame = HexFormat.of().parseHex("ab");
     private byte[] destinationAddress;
     private byte[] sourceAddress;
     private byte[] data;
-    private byte[] InterpacketGap = HexFormat.of().parseHex("00".repeat(4));
 
-    public EthernetFrame(byte[] destinationAddress, byte[] sourceAddress, byte[] data) {
+
+    public EthernetFrame(byte[] destinationAddress, byte[] sourceAddress, byte[] data, Config   cfg_src) {
         this.destinationAddress = destinationAddress;
         this.sourceAddress = sourceAddress;
         this.data = data;
@@ -38,6 +39,19 @@ public class EthernetFrame {
         return Arrays.copyOfRange(res, 4, 8);
     }
 
+    public ArrayList<Boolean> byteArrayToBooleanList(byte[] byteArray) {
+        ArrayList<Boolean> booleanList = new ArrayList<>();
+    
+        for (byte b : byteArray) {
+            for (int i = 0; i < 8; i++) {
+                boolean bit = ((b >> i) & 1) == 1;
+                booleanList.add(bit);
+            }
+        }
+    
+        return booleanList;
+    }
+
     public static String byteArrayToString(byte[] byteArray) {
         StringBuilder sb = new StringBuilder();
         for (byte b : byteArray) {
@@ -46,16 +60,16 @@ public class EthernetFrame {
         return sb.toString();
     }
 
-    public byte[] pack() {
+    public byte[] getFrame() {
         ByteArrayOutputStream frame = new ByteArrayOutputStream( );
         try {
 
             
-            // Preamble (56 bits)
-            frame.write(preamble);
+            // // Preamble (56 bits)
+            // frame.write(preamble);
 
-            // Start of Frame (8 bits)
-            frame.write(startOfFrame);
+            // // Start of Frame (8 bits)
+            // frame.write(startOfFrame);
             
             // Destination Address (8 bits)
             frame.write(destinationAddress);
@@ -71,8 +85,6 @@ public class EthernetFrame {
             crc.update(frame.toByteArray());
             frame.write(Long2ByteArray(crc.getValue()));
 
-            // Interpacket Gap (32 bits)
-            frame.write(InterpacketGap);
         } 
         catch (Exception e) {
             System.out.println("Create Frame Error: " + e);
@@ -81,14 +93,14 @@ public class EthernetFrame {
         return frame.toByteArray();
     }
 
-    public static void main(String[] args) {
-        byte[] destinationAddress = HexFormat.of().parseHex("AA") ;
-        byte[] sourceAddress = HexFormat.of().parseHex("00");
-        byte[] data = HexFormat.of().parseHex("010101010101010101010101010101010101010101010101");
+    // public static void main(String[] args) {
+    //     byte[] destinationAddress = HexFormat.of().parseHex("AA") ;
+    //     byte[] sourceAddress = HexFormat.of().parseHex("00");
+    //     byte[] data = HexFormat.of().parseHex("010101010101010101010101010101010101010101010101");
 
-        EthernetFrame ethernetFrame = new EthernetFrame(destinationAddress, sourceAddress, data);
-        byte[] packedFrame = ethernetFrame.pack();
+    //     EthernetFrame ethernetFrame = new EthernetFrame(destinationAddress, sourceAddress, data);
+    //     byte[] packedFrame = ethernetFrame.pack();
 
-        System.out.println("Packed Ethernet Frame: " + byteArrayToString(packedFrame));
-    }
+    //     System.out.println("Packed Ethernet Frame: " + byteArrayToString(packedFrame));
+    // }
 }
