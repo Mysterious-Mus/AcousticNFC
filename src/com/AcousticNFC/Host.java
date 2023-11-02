@@ -47,13 +47,13 @@ import com.synthbot.jasiohost.AsioChannel;
 import com.synthbot.jasiohost.AsioDriver;
 
 import com.AcousticNFC.Config;
+import com.AcousticNFC.mac.MacManager;
 import com.AcousticNFC.utils.Recorder;
 import com.AcousticNFC.utils.Player;
 import com.AcousticNFC.utils.Music;
 import com.AcousticNFC.physical.transmit.SoF;
 import com.AcousticNFC.utils.BitString;
 import com.AcousticNFC.physical.transmit.OFDM;
-import com.AcousticNFC.physical.transmit.Framer;
 import com.AcousticNFC.physical.receive.Receiver;
 
 import java.util.concurrent.Semaphore;
@@ -80,8 +80,7 @@ public class Host extends JFrame implements AsioDriverListener {
   private Player player;
   // music generator
   private Music music;
-  // working state
-  private Framer framer;
+
   private BitString bitString;
   private enum State { IDLE, RECORDING, PLAYING, RECORDING_PLAYING};
   private State state;
@@ -161,8 +160,6 @@ public class Host extends JFrame implements AsioDriverListener {
     // init driver
     driverInit();
 
-    // init framer
-    framer = new Framer(cfg);
     // get the bit string
     bitString = new BitString("bit_string.txt");
     cfg.transmitted = bitString.getBitString();
@@ -372,13 +369,13 @@ public class Host extends JFrame implements AsioDriverListener {
           driverShutdown();
           driverInit();
         }
-        // prepare play content
-        float[] playContent = framer.frame(bitString.getBitString());
-        // use lock to tell the intr, player is not ready
+
         PlayContentLock = true;
+        
+        MacManager macManager = new MacManager(cfg);
         // set player
         setState(State.PLAYING);
-        player = new Player(playContent);
+        player = new Player(macManager.send(bitString.getBitString()));
         // release
         PlayContentLock = false;
       }

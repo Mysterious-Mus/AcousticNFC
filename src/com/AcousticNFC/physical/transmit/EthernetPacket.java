@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.stream.DoubleStream;
 
 import com.AcousticNFC.utils.ECC;
+import com.AcousticNFC.utils.TypeConvertion;
 
 /* Frame Protocol:
  * 1. SoF
@@ -28,19 +29,6 @@ public class EthernetPacket {
         ofdm = new OFDM(cfg);
     }
 
-    public ArrayList<Boolean> byteArrayToBooleanList(byte[] byteArray) {
-        ArrayList<Boolean> booleanList = new ArrayList<>();
-    
-        for (byte b : byteArray) {
-            for (int i = 0; i < 8; i++) {
-                boolean bit = ((b >> i) & 1) == 1;
-                booleanList.add(bit);
-            }
-        }
-    
-        return booleanList;
-    }
-
     public float[] getPacket(byte[] MacFrame) {
         /* 
         * Input: frame from mac layer
@@ -51,7 +39,7 @@ public class EthernetPacket {
         */
 
         // modulate the MacFrame 
-        float[] MacFrameSamples = ofdm.modulate(byteArrayToBooleanList(MacFrame));
+        float[] MacFrameSamples = ofdm.modulate(TypeConvertion.byteArrayToBooleanList(MacFrame));
 
         // add preamble and SoF
         float[] SoFSamples = sof.generateSoF();
@@ -69,39 +57,39 @@ public class EthernetPacket {
 
     } 
 
-    public float[] frame(ArrayList<Boolean> bitString) {
-        // calculate how many frames are needed
-        int numFrames = (int) Math.ceil((double) cfg.transmitBitLen / cfg.packBitLen);
+    // public float[] frame(ArrayList<Boolean> bitString) {
+    //     // calculate how many frames are needed
+    //     int numFrames = (int) Math.ceil((double) cfg.transmitBitLen / cfg.packBitLen);
 
-        // the final playBuffer
-        ArrayList<Float> playBuffer = new ArrayList<Float>();
+    //     // the final playBuffer
+    //     ArrayList<Float> playBuffer = new ArrayList<Float>();
 
-        // pack each pack
-        for (int frameIdx = 0; frameIdx < numFrames; frameIdx++) {
-            // get the bit string to pack
-            ArrayList<Boolean> bitStringToPack = new ArrayList<Boolean>();
-            for (int bitIdx = 0; bitIdx < cfg.packBitLen; bitIdx++) {
-                if (frameIdx * cfg.packBitLen + bitIdx < cfg.transmitBitLen) {
-                    bitStringToPack.add(bitString.get(frameIdx * cfg.packBitLen + bitIdx));
-                } else {
-                    bitStringToPack.add(false);
-                }
-            }
+    //     // pack each pack
+    //     for (int frameIdx = 0; frameIdx < numFrames; frameIdx++) {
+    //         // get the bit string to pack
+    //         ArrayList<Boolean> bitStringToPack = new ArrayList<Boolean>();
+    //         for (int bitIdx = 0; bitIdx < cfg.packBitLen; bitIdx++) {
+    //             if (frameIdx * cfg.packBitLen + bitIdx < cfg.transmitBitLen) {
+    //                 bitStringToPack.add(bitString.get(frameIdx * cfg.packBitLen + bitIdx));
+    //             } else {
+    //                 bitStringToPack.add(false);
+    //             }
+    //         }
 
-            // pack the bit string
-            float[] samples = pack(bitStringToPack);
+    //         // pack the bit string
+    //         float[] samples = pack(bitStringToPack);
 
-            // add to the playBuffer
-            for (int sampleIdx = 0; sampleIdx < samples.length; sampleIdx++) {
-                playBuffer.add(samples[sampleIdx]);
-            }
-        }
+    //         // add to the playBuffer
+    //         for (int sampleIdx = 0; sampleIdx < samples.length; sampleIdx++) {
+    //             playBuffer.add(samples[sampleIdx]);
+    //         }
+    //     }
 
-        // convert to float[] and return
-        float[] playBufferFloat = new float[playBuffer.size()];
-        for (int sampleIdx = 0; sampleIdx < playBuffer.size(); sampleIdx++) {
-            playBufferFloat[sampleIdx] = playBuffer.get(sampleIdx);
-        }
-        return playBufferFloat;
-    }
+    //     // convert to float[] and return
+    //     float[] playBufferFloat = new float[playBuffer.size()];
+    //     for (int sampleIdx = 0; sampleIdx < playBuffer.size(); sampleIdx++) {
+    //         playBufferFloat[sampleIdx] = playBuffer.get(sampleIdx);
+    //     }
+    //     return playBufferFloat;
+    // }
 }

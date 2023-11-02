@@ -68,7 +68,7 @@ public class Config {
 
     public int transmitBitLen = 1000;
 
-    public int packBitLen = 300;
+    public int packBitLen = 800;
     public int alignBitLen;
     public int decodeBitLen;
 
