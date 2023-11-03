@@ -1,8 +1,11 @@
 package com.AcousticNFC.mac;
 
+import java.util.ArrayList;
 import java.util.zip.CRC32;
 import java.io.ByteArrayOutputStream;
 
+import com.AcousticNFC.Config;
+import com.AcousticNFC.Host;
 import com.AcousticNFC.utils.TypeConvertion;
 
 
@@ -20,6 +23,15 @@ public class EthernetFrame {
     public static byte[] CreateFrame(byte[] destinationAddress, byte[] sourceAddress, byte[] data) {
         ByteArrayOutputStream frame = new ByteArrayOutputStream( );
         try {
+
+            /// generate aligning header
+            ArrayList<Boolean> AlignData = new ArrayList<Boolean>();
+            int headerLen = Host.cfg.alignNSymbol * Host.cfg.keyingCapacity * Host.cfg.numSubCarriers;
+            for (int i = 0; i < headerLen; i++) {
+                AlignData.add(Host.cfg.alignBitFunc(i));
+            }
+            frame.write(TypeConvertion.booleanListByteArrayTo(AlignData));
+
             // Destination Address (8 bits)
             frame.write(destinationAddress);
             

@@ -386,7 +386,7 @@ public class Config {
 
         alignBitLen = alignNSymbol * keyingCapacity * numSubCarriers;
         ECCBitRate = ECCMat.length;
-        decodeBitLen = ECCOn? packBitLen * ECCBitRate : transmitBitLen;
+        decodeBitLen = ECCOn? packBitLen * ECCBitRate : packBitLen;
         frameLength = alignBitLen + decodeBitLen;
         
         this.panel.updateDisplay();

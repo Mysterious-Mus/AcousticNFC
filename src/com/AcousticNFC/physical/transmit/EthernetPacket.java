@@ -28,7 +28,12 @@ public class EthernetPacket {
         sof = new SoF(cfg);
         ofdm = new OFDM(cfg);
     }
-
+    /**
+     * Get the packet to be sent to 
+     * Recieve a mac frame
+     * @param MacFrame
+     * @return {@code float[]} packet samples to physical layer
+     */
     public float[] getPacket(byte[] MacFrame) {
         /* 
         * Input: frame from mac layer

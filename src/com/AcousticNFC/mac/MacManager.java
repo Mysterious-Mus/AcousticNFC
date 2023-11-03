@@ -3,28 +3,137 @@ package com.AcousticNFC.mac;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import javax.sound.sampled.AudioFileFormat.Type;
-
-import com.AcousticNFC.Config;
-import com.AcousticNFC.physical.transmit.EthernetPacket;
-import com.AcousticNFC.utils.Player;
+import com.AcousticNFC.Host;
+import com.AcousticNFC.physical.PhysicalManager;
+import com.AcousticNFC.utils.ANSI;
 import com.AcousticNFC.utils.TypeConvertion;
 
 
 public class MacManager {
 
-    Config cfg;
-
-    public MacManager(Config cfg_src) {
-        cfg = cfg_src;
+    enum State {
+        IDLE,
+        SENDING,
+        SENDING_ACK,
+        RECEIVING,
+        ERROR
     }
 
+    private State currentState;
 
-    public byte[][] distribute( ArrayList<Boolean> bitString) {
+    private PhysicalManager physicalManager;
+
+    public MacManager() {
+        physicalManager = new PhysicalManager();
+        // Initial state is IDLE
+        currentState = State.IDLE;
+        event = Event.IDLE;
+    }
+
+    public void process() {
+        switch (currentState) {
+            case IDLE:
+                handleIdleState();
+                break;
+            case SENDING:
+                handleSendingState();
+                break;
+            case RECEIVING:
+                handleReceivingState();
+                break;
+            case ERROR:
+                handleErrorState();
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void handleIdleState() {
+        switch (event) {
+            case TxPENDING:
+                currentState = State.SENDING;
+                send(Host.cfg.transmitted);
+                event = Event.TxDONE;
+                break;
+            
+            case FRAME_DETECTED:
+                currentState = State.RECEIVING;
+                event = receive();
+                break;
+            case IDLE:
+                currentState = State.IDLE;
+                break;
+            default:
+                currentState = State.ERROR;
+                break;
+        }
+        return;
+    }
+
+    private void handleSendingState() {
+        switch (event) {
+            case TxDONE:
+                currentState = State.IDLE;
+                event = Event.IDLE;
+                break;
+
+            default:
+                currentState = State.ERROR;
+
+                break;
+        }
+    }
+
+    private void handleReceivingState() {
+        switch (event) {
+            case CRC_ERROR:
+                currentState = State.IDLE;
+                //TODO: drop the frame
+                break;
+            case VALID_ACK:
+                currentState = State.IDLE;
+                //TODO: clear timeout
+                break;
+            
+            case VALID_DATA:
+                currentState = State.SENDING;
+                //TODO: MAC layer process the data
+                event = Event.TxDONE;
+                break;
+            default:
+                currentState = State.ERROR;
+
+                break;
+        }
+    }
+
+    private void handleErrorState() {
+        System.err.println(ANSI.ANSI_RED + "Error State" + ANSI.ANSI_RESET);
+    }
+
+    public enum Event {
+        TxPENDING,
+        TxDONE,
+        FRAME_DETECTED,
+        CRC_ERROR,
+        VALID_ACK,
+        VALID_DATA,
+        IDLE
+    }
+
+    public Event event;
+
+    /**
+     * break the data into mac frames
+     * @param bitString to be sent
+     * @return Macframes
+     */
+    public static byte[][] distribute( ArrayList<Boolean> bitString) {
         /* break the large data into frames */
         byte[] input = TypeConvertion.booleanListByteArrayTo(bitString);
 
-        int payloadlen = (int) cfg.packBitLen / 8;
+        int payloadlen = (int) Host.cfg.packBitLen / 8;
         int frameNum = (input.length + payloadlen - 1) / payloadlen;
          
         byte[][] frames = new byte[frameNum][payloadlen];
@@ -49,28 +158,27 @@ public class MacManager {
         return frames;
     }
 
-    public float[] send( ArrayList<Boolean> bitString) {
-        /* Transmit a boolean bitstring 
-         * break into few pieces and then palyback
-        */
+    /**
+     * Send the data
+     * @param bitString to be sent 
+     * @return None
+     */
+    public void send( ArrayList<Boolean> bitString) {
+
+        System.out.println("start sending data");
         byte[][] frames = distribute(bitString);
 
-
-
-        EthernetPacket ethernetPacket = new EthernetPacket(cfg);
-        ArrayList <Float> playContent = new ArrayList <Float> ();
-
-        for (int frameID = 0; frameID < frames.length; frameID++) {
+        //! Test !!! transmit the first frame
+        for (int frameID = 0; frameID < 1; frameID++) {
             // physical Layer
-            float[] packet = ethernetPacket.getPacket(frames[frameID]);
-            for (float sample : packet) {
-                playContent.add(sample);
-            }
+            physicalManager.send(frames[frameID]);
         }
-        return TypeConvertion.floatListtoFloatarray(playContent);
+        System.out.println(ANSI.ANSI_CYAN + "send successfully" + ANSI.ANSI_RESET);
     }
-    public static void main(String[] args) {
-        System.out.println("Hello World!");
-        
+
+    public Event receive() {
+        System.out.println("Start receiving");
+        return Event.VALID_DATA;
     }
+
 }

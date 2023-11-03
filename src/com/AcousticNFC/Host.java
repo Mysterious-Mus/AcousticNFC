@@ -34,6 +34,9 @@ import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.WindowConstants;
+
+import org.w3c.dom.events.Event;
+
 import javax.swing.JProgressBar;
 import javax.swing.JLabel;
 
@@ -47,6 +50,7 @@ import com.synthbot.jasiohost.AsioChannel;
 import com.synthbot.jasiohost.AsioDriver;
 
 import com.AcousticNFC.Config;
+import com.AcousticNFC.Host.MacThread;
 import com.AcousticNFC.mac.MacManager;
 import com.AcousticNFC.utils.Recorder;
 import com.AcousticNFC.utils.Player;
@@ -64,7 +68,7 @@ import java.util.concurrent.locks.*;
  */
 public class Host extends JFrame implements AsioDriverListener {
   
-  public Config cfg;
+  public static Config cfg;
 
   private static final long serialVersionUID = 1L;
   
@@ -80,6 +84,10 @@ public class Host extends JFrame implements AsioDriverListener {
   private Player player;
   // music generator
   private Music music;
+  /**
+   *  Mac Layer FSM, 
+   */
+  private MacManager macManager;
 
   private BitString bitString;
   private enum State { IDLE, RECORDING, PLAYING, RECORDING_PLAYING};
@@ -109,24 +117,15 @@ public class Host extends JFrame implements AsioDriverListener {
   final Lock BufferIntrLock = new ReentrantLock();
   private boolean PlayContentLock = false;
 
-  class SoFCalcThread extends Thread {
-    public void run() {
-      while(true) {
-        try {
-          // acquire the lock
-          // BufferIntrLock.lock();
-          // update the correlations
-          receiver.process();
-          Thread.yield();
-          // release the lock
-          // BufferIntrLock.unlock();
-        } catch(Exception e) {
-            e.printStackTrace();  // Log the exception
-            break;  // Break the loop if an exception occurs
-        }
+  class MacThread extends Thread {
+    
+      @Override
+      public void run() {
+          while (true) {
+              macManager.process();
+          }
       }
     }
-  }
 
   public Host() {
     // the title
@@ -170,9 +169,11 @@ public class Host extends JFrame implements AsioDriverListener {
     // init receiver
     receiver = new Receiver(cfg);
 
+    
     // launch the SoF calculation thread
-    SoFCalcThread soFCalcThread = new SoFCalcThread();
-    soFCalcThread.start();
+    macManager = new MacManager();
+    MacThread macThread = new MacThread();
+    macThread.start();
   }
 
   // layout panel
@@ -369,15 +370,12 @@ public class Host extends JFrame implements AsioDriverListener {
           driverShutdown();
           driverInit();
         }
-
-        PlayContentLock = true;
         
-        MacManager macManager = new MacManager(cfg);
         // set player
         setState(State.PLAYING);
-        player = new Player(macManager.send(bitString.getBitString()));
-        // release
-        PlayContentLock = false;
+        macManager.event = MacManager.Event.TxPENDING;
+      //  player = new Player(MacManager.send(bitString.getBitString()));
+ 
       }
     });
 
@@ -389,6 +387,7 @@ public class Host extends JFrame implements AsioDriverListener {
         // init receiver
         receiver = new Receiver(cfg);
         setReceiverState(ReceiverState.RECEIVING);
+        macManager.event = MacManager.Event.FRAME_DETECTED;
         // // delay 2 seconds for warmup
         // try {
         //   Thread.sleep(8000);  // Sleep for 2000 milliseconds = 2 seconds
@@ -405,8 +404,7 @@ public class Host extends JFrame implements AsioDriverListener {
         receiverStateLabel.setText("Receiver State: Idle");
         // print the length of the recording
         System.out.println("Receiving length: " + receiver.getLength());
-        // output the recordings as a csv file
-        receiver.dumpResults();
+        macManager.event = MacManager.Event.IDLE;
       }
     });
   }
