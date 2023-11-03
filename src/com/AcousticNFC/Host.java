@@ -79,9 +79,9 @@ public class Host extends JFrame implements AsioDriverListener {
   // recordings
   private Recorder recorder;
   // receiver
-  private Receiver receiver;
+  public static Receiver receiver;
   // play contents
-  private Player player;
+  public static Player player;
   // music generator
   private Music music;
   /**
