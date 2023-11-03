@@ -1,5 +1,6 @@
 package com.AcousticNFC.mac;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -141,13 +142,14 @@ public class MacManager {
         /* break the large data into frames */
         byte[] input = TypeConvertion.booleanListByteArrayTo(bitString);
 
-        int payloadlen = (int) Host.cfg.packBitLen / 8;
+        int payloadlen = Math.ceilDiv(Host.cfg.packBitLen , 8);
         int frameNum = (input.length + payloadlen - 1) / payloadlen;
          
         byte[][] frames = new byte[frameNum][payloadlen];
 
         byte[] destinationAddress = new byte[] {0x00};
-        byte[] sourceAddress = new byte[] {0x00};
+        byte[] sourceAddress = new byte[] {(byte)0xFF};
+        byte[] type = new byte[] {0x00};
 
         for (int i = 0; i < frameNum; i++) {
             int start = i * payloadlen;
@@ -160,7 +162,7 @@ public class MacManager {
                 Arrays.fill(frames[i], end - start, payloadlen, (byte) 0);
             }
             // Add mac header
-            frames[i] = EthernetFrame.CreateFrame(destinationAddress, sourceAddress, frames[i]);
+            frames[i] = EthernetFrame.CreateFrame(destinationAddress, sourceAddress, type, frames[i]);
         }
 
         return frames;
@@ -186,7 +188,25 @@ public class MacManager {
 
     public Event receive() {
         System.out.println("Start receiving");
-        physicalManager.receive();
+        byte[] frame = physicalManager.receive();
+        // The frame is received, now check the CRC
+        if (EthernetFrame.checkCRC(frame)) {
+            return Event.CRC_ERROR;
+        }
+        else if (EthernetFrame.getType(frame) == new byte[] {(byte)0xFF}) {
+            // check Data type 
+            // TODO: check the destination address
+            return Event.VALID_ACK;
+        }
+        byte[] data = EthernetFrame.getData(frame);
+        for (byte element : frame) {
+            String hexString = Integer.toHexString(element & 0xFF);
+            if (hexString.length() == 1) {
+                hexString = "0" + hexString;
+            }
+            System.out.print(hexString + " ");
+        }
+        System.out.println();
         return Event.VALID_DATA;
     }
 

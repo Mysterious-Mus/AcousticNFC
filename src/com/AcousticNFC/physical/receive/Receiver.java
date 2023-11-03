@@ -20,7 +20,7 @@ public class Receiver {
     // symbols before and including tickDone
     public int tickDone;
 
-    Demodulator demodulator;
+    public Demodulator demodulator;
 
     public ArrayList<Boolean> receiveBuffer;
 
@@ -58,7 +58,11 @@ public class Receiver {
     }
     
     /* Do the computation heavy operations */
-    public void Receive() {
+    public void receive() {
+
+        // clear the frameBuffer
+        demodulator.frameBuffer.clear();
+
         // demodulation
         demodulator.demodulate();
 

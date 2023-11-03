@@ -9,6 +9,7 @@ import com.AcousticNFC.utils.ECC;
 import java.io.File;
 
 import com.AcousticNFC.Config;
+import com.AcousticNFC.mac.EthernetFrame;
 import com.AcousticNFC.physical.transmit.OFDM;
 import com.AcousticNFC.utils.FileOp;
 
@@ -17,7 +18,7 @@ public class Demodulator {
     Receiver receiver;
     Config cfg;
 
-    private ArrayList<Boolean> frameBuffer;
+    public ArrayList<Boolean> frameBuffer;
     double timeCompensation = 0; // compensate the sampling offset
 
     ECC Ecc;
@@ -160,11 +161,13 @@ public class Demodulator {
     public void demodulate() {
 
         // see if we do the scan test
-        if (receiver.scanAligning) {
-            scanTest();
-        }
- 
-        while ( receiver.unpacking && frameBuffer.size() < cfg.decodeBitLen) {
+        // if (receiver.scanAligning) {
+        //     scanTest();
+        // }
+        receiver.scanAligning = false;
+        receiver.unpacking = true;
+
+        while ( receiver.unpacking && frameBuffer.size() < EthernetFrame.getFrameBitLen()) {
             while (receiver.tickDone + cfg.cyclicPrefixNSamples + cfg.symbolLength >= receiver.getLength()) {
                 // waiting for the next symbol
                 Thread.yield();
@@ -174,17 +177,17 @@ public class Demodulator {
                 frameBuffer.add(resultBuffer.get(i));
             }
         }
-        if (frameBuffer.size() >= cfg.decodeBitLen) {
+        if (frameBuffer.size() >= EthernetFrame.getFrameBitLen()) {
             // print log
-            System.out.println("Received a frame of length " + cfg.decodeBitLen);
+            System.out.println("Received a frame of length " + EthernetFrame.getFrameBitLen());
             receiver.unpacking = false;
             // pop back until the length is Config.frameLength
-            while (frameBuffer.size() > cfg.decodeBitLen) {
+            while (frameBuffer.size() > EthernetFrame.getFrameBitLen()) {
                 frameBuffer.remove(frameBuffer.size() - 1);
             }
             // get the string for decoding
-            boolean[] receivedCodewords = new boolean[cfg.decodeBitLen];
-            for (int i = 0; i < cfg.decodeBitLen; i++) {
+            boolean[] receivedCodewords = new boolean[EthernetFrame.getFrameBitLen()];
+            for (int i = 0; i < EthernetFrame.getFrameBitLen(); i++) {
                 receivedCodewords[i] = frameBuffer.get(i);
             }
             // decode
@@ -193,8 +196,7 @@ public class Demodulator {
             for (int i = 0; i < decoded.length; i++) {
                 receiver.receiveBuffer.add(decoded[i]);
             }
-            // clear the frameBuffer
-            frameBuffer.clear();
+
         }
     }
 

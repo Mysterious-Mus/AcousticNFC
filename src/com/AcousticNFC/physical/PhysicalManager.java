@@ -34,11 +34,12 @@ public class PhysicalManager {
 
     /**
      * The receive function in Physical Layer
-     * 
+     * @return the frame received
     */
-    public void receive() {
+    public byte[] receive() {
         System.out.println("Receiving");
-        Host.receiver.Receive();
+        Host.receiver.receive();
+        return TypeConvertion.booleanListByteArrayTo(Host.receiver.demodulator.frameBuffer);
     }
 
 
