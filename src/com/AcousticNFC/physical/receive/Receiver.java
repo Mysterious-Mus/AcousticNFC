@@ -9,7 +9,7 @@ public class Receiver {
     
     ArrayList<Float> samples;
 
-    SoFDetector sofDetector;
+    public SoFDetector sofDetector;
 
     public boolean scanAligning;
     public boolean unpacking; // the receiver is either unpacking or waiting for SoF
@@ -30,7 +30,7 @@ public class Receiver {
         cfg = cfg_src;
         samples = new ArrayList<Float>();
         tickDone = cfg.sofNSamples - 1;  // can't be sure these points are SoF ends
-        sofDetector = new SoFDetector(cfg, this);
+        sofDetector = new SoFDetector(cfg);
         unpacking = false;
         demodulator = new Demodulator(this, cfg);
         receiveBuffer = new ArrayList<Boolean>();
@@ -58,10 +58,7 @@ public class Receiver {
     }
     
     /* Do the computation heavy operations */
-    public void process() {
-        // update the correlations
-        sofDetector.detect();
-
+    public void Receive() {
         // demodulation
         demodulator.demodulate();
 

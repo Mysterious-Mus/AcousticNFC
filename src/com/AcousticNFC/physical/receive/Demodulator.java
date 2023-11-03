@@ -96,6 +96,10 @@ public class Demodulator {
         int alignNSample = cfg.alignNSymbol * (cfg.cyclicPrefixNSamples + cfg.symbolLength);
         int alignBitLen = cfg.alignNSymbol * cfg.keyingCapacity * cfg.numSubCarriers;
         int lastSampleIdx = receiver.tickDone + cfg.scanWindow + alignNSample;
+        while (lastSampleIdx >= receiver.getLength()) {
+            // busy waiting
+            Thread.yield();
+        }
         if (lastSampleIdx < receiver.getLength()) {
             int bestDoneIdx = receiver.tickDone;
             double bestDistortion = 1000;
@@ -159,11 +163,12 @@ public class Demodulator {
         if (receiver.scanAligning) {
             scanTest();
         }
-
-        while ( receiver.unpacking &&
-            receiver.tickDone + cfg.cyclicPrefixNSamples + cfg.symbolLength < receiver.getLength() &&
-            frameBuffer.size() < cfg.decodeBitLen) {
-            
+ 
+        while ( receiver.unpacking && frameBuffer.size() < cfg.decodeBitLen) {
+            while (receiver.tickDone + cfg.cyclicPrefixNSamples + cfg.symbolLength >= receiver.getLength()) {
+                // waiting for the next symbol
+                Thread.yield();
+            }
             ArrayList<Boolean> resultBuffer = demodulateSymbol(getNxtSample());
             for (int i = 0; i < resultBuffer.size(); i++) {
                 frameBuffer.add(resultBuffer.get(i));

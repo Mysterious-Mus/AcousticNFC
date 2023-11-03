@@ -123,6 +123,8 @@ public class Host extends JFrame implements AsioDriverListener {
       public void run() {
           while (true) {
               macManager.process();
+              //* avoid busy Idling 
+              Thread.yield();
           }
       }
     }
@@ -387,7 +389,6 @@ public class Host extends JFrame implements AsioDriverListener {
         // init receiver
         receiver = new Receiver(cfg);
         setReceiverState(ReceiverState.RECEIVING);
-        macManager.event = MacManager.Event.FRAME_DETECTED;
         // // delay 2 seconds for warmup
         // try {
         //   Thread.sleep(8000);  // Sleep for 2000 milliseconds = 2 seconds

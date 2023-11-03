@@ -56,14 +56,22 @@ public class MacManager {
                 send(Host.cfg.transmitted);
                 event = Event.TxDONE;
                 break;
-            
-            case FRAME_DETECTED:
+                
+                case FRAME_DETECTED:
                 currentState = State.RECEIVING;
+                System.out.println(ANSI.ANSI_GREEN + "Frame Detected!" + ANSI.ANSI_RESET);
                 event = receive();
                 break;
-            case IDLE:
+
+                case IDLE:
                 currentState = State.IDLE;
+                if (Host.receiver.sofDetector.detect() == true) {
+                    
+                    // Note: If data race happened to "event", the "event" will be overwritten, receiver comes first.
+                    event = Event.FRAME_DETECTED;
+                }
                 break;
+
             default:
                 currentState = State.ERROR;
                 break;
@@ -173,11 +181,12 @@ public class MacManager {
             // physical Layer
             physicalManager.send(frames[frameID]);
         }
-        System.out.println(ANSI.ANSI_CYAN + "send successfully" + ANSI.ANSI_RESET);
+        System.out.println(ANSI.ANSI_BLUE + "send successfully" + ANSI.ANSI_RESET);
     }
 
     public Event receive() {
         System.out.println("Start receiving");
+        physicalManager.receive();
         return Event.VALID_DATA;
     }
 

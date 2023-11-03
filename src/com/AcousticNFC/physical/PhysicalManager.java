@@ -32,6 +32,15 @@ public class PhysicalManager {
         Host.player = new Player(samples);
     }
 
+    /**
+     * The receive function in Physical Layer
+     * 
+    */
+    public void receive() {
+        System.out.println("Receiving");
+        Host.receiver.Receive();
+    }
+
 
     
 }

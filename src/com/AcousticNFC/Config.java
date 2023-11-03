@@ -66,13 +66,13 @@ public class Config {
     public int scanWindow = 100;
     public boolean alignBitFunc(int idx) {return (idx % 5 <= 2);}
 
-    public int transmitBitLen = 1000;
+    public int transmitBitLen = 800;
 
     public int packBitLen = 800;
     public int alignBitLen;
     public int decodeBitLen;
 
-    public boolean ECCOn = true;
+    public boolean ECCOn = false;
     public boolean[][] ECCMat = {
         { true, true, true, true, false, false, true },
         { true, false, true, true, false, true, false },
