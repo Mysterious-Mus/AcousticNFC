@@ -143,17 +143,17 @@ public class MacManager {
         byte[] input = TypeConvertion.booleanListByteArrayTo(bitString);
 
         int payloadlen = Math.ceilDiv(Host.cfg.packBitLen , 8);
-        int frameNum = (input.length + payloadlen - 1) / payloadlen;
+        int frameNum = Math.ceilDiv(Host.cfg.transmitBitLen, Host.cfg.packBitLen);
          
         byte[][] frames = new byte[frameNum][payloadlen];
 
-        byte[] destinationAddress = new byte[] {0x00};
-        byte[] sourceAddress = new byte[] {(byte)0xFF};
+        byte[] destinationAddress = new byte[] {(byte)0x91};
+        byte[] sourceAddress = new byte[] {(byte)0x5F};
         byte[] type = new byte[] {0x00};
 
         for (int i = 0; i < frameNum; i++) {
             int start = i * payloadlen;
-            int end = Math.min(start + payloadlen, input.length);
+            int end = Math.min(start + payloadlen, Host.cfg.transmitBitLen);
             // Copy the input bytes to the frame array
             System.arraycopy(input, start, frames[i], 0, end - start);
             
@@ -163,6 +163,16 @@ public class MacManager {
             }
             // Add mac header
             frames[i] = EthernetFrame.CreateFrame(destinationAddress, sourceAddress, type, frames[i]);
+            System.out.println("length" + frames[i].length);
+            for (byte element : frames[i]) {
+            String hexString = Integer.toHexString(element & 0xFF);
+            if (hexString.length() == 1) {
+                hexString = "0" + hexString;
+            }
+            System.out.print(hexString + " ");
+            }
+            System.out.println();
+
         }
 
         return frames;
