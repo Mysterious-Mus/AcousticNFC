@@ -161,11 +161,9 @@ public class Demodulator {
     public void demodulate() {
 
         // see if we do the scan test
-        // if (receiver.scanAligning) {
-        //     scanTest();
-        // }
-        receiver.scanAligning = false;
-        receiver.unpacking = true;
+        if (receiver.scanAligning) {
+            scanTest();
+        }
 
         while ( receiver.unpacking && frameBuffer.size() < EthernetFrame.getFrameBitLen()) {
             while (receiver.tickDone + cfg.cyclicPrefixNSamples + cfg.symbolLength >= receiver.getLength()) {

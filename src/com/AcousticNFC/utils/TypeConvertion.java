@@ -50,4 +50,10 @@ public class TypeConvertion {
         return floatArray;
     }
 
+    public static ArrayList<Boolean> concatList(ArrayList<Boolean> list1, ArrayList<Boolean> list2) {
+        ArrayList<Boolean> res = new ArrayList<>();
+        res.addAll(list1);
+        res.addAll(list2);
+        return res;
+    }
 }

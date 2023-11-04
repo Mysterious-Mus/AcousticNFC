@@ -44,8 +44,12 @@ public class EthernetPacket {
         * Output: packet to physical layer
         */
 
+        ArrayList<Boolean> MacFrameBits = TypeConvertion.byteArrayToBooleanList(MacFrame);
+        ArrayList<Boolean> alignBits = sof.alignBits();
+        ArrayList<Boolean> bitsTransmit =TypeConvertion.concatList(alignBits, MacFrameBits);
+
         // modulate the MacFrame 
-        float[] MacFrameSamples = ofdm.modulate(TypeConvertion.byteArrayToBooleanList(MacFrame));
+        float[] MacFrameSamples = ofdm.modulate(bitsTransmit);
 
         // add preamble and SoF
         float[] SoFSamples = sof.generateSoF();
