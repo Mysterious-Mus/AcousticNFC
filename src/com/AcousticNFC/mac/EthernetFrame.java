@@ -24,8 +24,7 @@ public class EthernetFrame {
      * The Length of a mac frame
      */
     public static int getFrameBitLen() {
-        return Host.cfg.packBitLen + 56 + 
-                 Host.cfg.alignNSymbol * Host.cfg.keyingCapacity * Host.cfg.numSubCarriers;
+        return Host.cfg.packBitLen + 56;
     }
 
     /**
