@@ -1,6 +1,7 @@
 package com.AcousticNFC.physical.transmit;
 
 import com.AcousticNFC.Config;
+import java.util.ArrayList;
 
 /* Dataframe SoF generator
  * The SoF is a 1ms long sound that is used to indicate the start of a dataframe
@@ -58,5 +59,13 @@ public class SoF {
 
     public int NSample() {
         return (int) (2 * cfg.SoF_T * cfg.SoF_amplitude);
+    }
+
+    public ArrayList<Boolean> alignBits() {
+        ArrayList<Boolean> bits = new ArrayList<Boolean>();
+        for (int i = 0; i < cfg.alignBitLen; i++) {
+            bits.add(cfg.alignBitFunc(i));
+        }
+        return bits;
     }
 }
