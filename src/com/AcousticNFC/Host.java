@@ -90,8 +90,8 @@ public class Host extends JFrame implements AsioDriverListener {
   private MacManager macManager;
 
   private BitString bitString;
-  private enum State { IDLE, RECORDING, PLAYING, RECORDING_PLAYING};
-  private State state;
+  public enum State { IDLE, RECORDING, PLAYING, RECORDING_PLAYING};
+  private static State state;
   private enum ReceiverState { IDLE, RECEIVING};
   private ReceiverState receiverState;
 
@@ -102,7 +102,7 @@ public class Host extends JFrame implements AsioDriverListener {
   final JButton buttonControlPanel = new JButton("Control Panel");
   final JButton buttonReplay = new JButton("Replay");
   final JButton buttonRecordAndPlay = new JButton("Play music and record");
-  final JLabel  stateLabel = new JLabel("Idle                 ");
+  final static JLabel  stateLabel = new JLabel("Idle                 ");
   final JButton buttonPj1Pt2 = new JButton("Project 1 Part 2: Generate Correct Sound");
   final JButton buttonPlayToySoF = new JButton("Play Toy SoF");
   final JButton loadBitString = new JButton("Load Bit String");
@@ -237,7 +237,7 @@ public class Host extends JFrame implements AsioDriverListener {
   }
 
   // state switch wrapper
-  private void setState(State state) {
+  public static void setState(State state) {
     // the mapper from state to label
     switch (state) {
       case IDLE:
@@ -256,7 +256,7 @@ public class Host extends JFrame implements AsioDriverListener {
         stateLabel.setText("Unknown");
         break;
     }
-    this.state = state;
+    Host.state = state;
   }
 
   // receiveState switch wrapper
@@ -373,11 +373,7 @@ public class Host extends JFrame implements AsioDriverListener {
           driverInit();
         }
         
-        // set player
-        setState(State.PLAYING);
         macManager.event = MacManager.Event.TxPENDING;
-      //  player = new Player(MacManager.send(bitString.getBitString()));
- 
       }
     });
 

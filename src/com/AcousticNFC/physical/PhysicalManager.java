@@ -30,6 +30,7 @@ public class PhysicalManager {
 
         // play the samples
         Host.player = new Player(samples);
+        Host.setState(Host.State.PLAYING);
     }
 
     /**
