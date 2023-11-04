@@ -7,7 +7,7 @@ import java.util.Arrays;
 public class TypeConvertion {
 
 
-    public static byte[] booleanListByteArrayTo(ArrayList<Boolean> booleanList) {
+    public static byte[] booleanList2ByteArray(ArrayList<Boolean> booleanList) {
         byte[] byteArray = new byte[(booleanList.size() + 7) / 8];
         for (int i = 0; i < booleanList.size(); i++) {
             if (booleanList.get(i)) {
@@ -17,7 +17,7 @@ public class TypeConvertion {
         return byteArray;
     }
 
-    public static String byteArrayToString(byte[] byteArray) {
+    public static String byteArray2String(byte[] byteArray) {
         StringBuilder sb = new StringBuilder();
         for (byte b : byteArray) {
             sb.append(String.format("%02X", b));
@@ -31,10 +31,17 @@ public class TypeConvertion {
         return Arrays.copyOfRange(res, 4, 8);
     }
 
-    public static ArrayList<Boolean> byteArrayToBooleanList(byte[] byteArray) {
+    public static Long byteArray2Long(byte[] byteArray) {
+        byte[] res = new byte[8];
+        // add the first 4 bytes (leading 0s)
+        System.arraycopy(byteArray, 0, res, 4, 4);
+        return ByteBuffer.wrap(res).getLong();
+    }
+
+    public static ArrayList<Boolean> byteArray2BooleanList(byte[] byteArray) {
         ArrayList<Boolean> booleanList = new ArrayList<>();
         for (byte b : byteArray) {
-            for (int i = 0; i < 8; i++) {
+            for (int i = 7 ; i >= 0 ; i--) {
                 boolean bit = ((b >> i) & 1) == 1;
                 booleanList.add(bit);
             }
@@ -42,7 +49,7 @@ public class TypeConvertion {
         return booleanList;
     }
 
-    public static float[] floatListtoFloatarray(ArrayList<Float> floatList) {
+    public static float[] floatList2Floatarray(ArrayList<Float> floatList) {
         float[] floatArray = new float[floatList.size()];
         for (int i = 0; i < floatList.size(); i++) {
             floatArray[i] = floatList.get(i);

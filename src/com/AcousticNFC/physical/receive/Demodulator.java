@@ -9,7 +9,7 @@ import com.AcousticNFC.utils.ECC;
 import java.io.File;
 
 import com.AcousticNFC.Config;
-import com.AcousticNFC.mac.EthernetFrame;
+import com.AcousticNFC.mac.MacFrame;
 import com.AcousticNFC.physical.transmit.OFDM;
 import com.AcousticNFC.utils.FileOp;
 
@@ -165,7 +165,7 @@ public class Demodulator {
             scanTest();
         }
 
-        while ( receiver.unpacking && frameBuffer.size() < EthernetFrame.getFrameBitLen()) {
+        while ( receiver.unpacking && frameBuffer.size() < MacFrame.getFrameBitLen()) {
             while (receiver.tickDone + cfg.cyclicPrefixNSamples + cfg.symbolLength >= receiver.getLength()) {
                 // waiting for the next symbol
                 Thread.yield();
@@ -175,17 +175,17 @@ public class Demodulator {
                 frameBuffer.add(resultBuffer.get(i));
             }
         }
-        if (frameBuffer.size() >= EthernetFrame.getFrameBitLen()) {
+        if (frameBuffer.size() >= MacFrame.getFrameBitLen()) {
             // print log
-            System.out.println("Received a frame of length " + EthernetFrame.getFrameBitLen());
+            System.out.println("Received a frame of length " + MacFrame.getFrameBitLen());
             receiver.unpacking = false;
             // pop back until the length is Config.frameLength
-            while (frameBuffer.size() > EthernetFrame.getFrameBitLen()) {
+            while (frameBuffer.size() > MacFrame.getFrameBitLen()) {
                 frameBuffer.remove(frameBuffer.size() - 1);
             }
             // get the string for decoding
-            boolean[] receivedCodewords = new boolean[EthernetFrame.getFrameBitLen()];
-            for (int i = 0; i < EthernetFrame.getFrameBitLen(); i++) {
+            boolean[] receivedCodewords = new boolean[MacFrame.getFrameBitLen()];
+            for (int i = 0; i < MacFrame.getFrameBitLen(); i++) {
                 receivedCodewords[i] = frameBuffer.get(i);
             }
             // decode
