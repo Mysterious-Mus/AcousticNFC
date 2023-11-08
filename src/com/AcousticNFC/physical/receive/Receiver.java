@@ -76,32 +76,6 @@ public class Receiver {
 
             // dump received bits
             FileOp.outputBitString(receiveBuffer, "received.txt");
-
-            int numErrors = 0;
-            for (int i = 0; i < cfg.transmitBitLen; i++) {
-                if (receiveBuffer.get((i)) != cfg.transmitted.get(i)) {
-                    numErrors++;
-                }
-            }
-            // print first bits of transmitted and get
-            int packCnt = Math.ceilDiv(cfg.transmitBitLen, cfg.packBitLen);
-            int bound = cfg.transmitBitLen;
-            int groupLen = 40;
-            for (int packIdx = 0; packIdx < packCnt; packIdx ++) {
-                System.out.println("GroupDiffs " + packIdx + ":");
-                for (int groupId = 0; groupId < Math.ceil((double) cfg.packBitLen / groupLen); groupId++) {
-                    int groupDiff = 0;
-                    for (int i = 0; i < groupLen; i++) {
-                        if (packIdx * cfg.packBitLen + groupId * groupLen + i < bound) {
-                            groupDiff += cfg.transmitted.get(packIdx * cfg.packBitLen + groupId * groupLen + i) == 
-                                receiveBuffer.get(packIdx * cfg.packBitLen + groupId * groupLen + i) ? 0 : 1;
-                        }
-                    }
-                    System.out.print(groupDiff + " ");
-                }
-                System.out.println();
-            }
-            cfg.UpdBER((double)numErrors / cfg.transmitBitLen);
             receiveBuffer.clear();
         }
     }

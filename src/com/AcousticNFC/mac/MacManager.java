@@ -4,6 +4,9 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import javax.crypto.Mac;
+import javax.sound.sampled.AudioFileFormat.Type;
+
 import com.AcousticNFC.Host;
 import com.AcousticNFC.physical.PhysicalManager;
 import com.AcousticNFC.utils.ANSI;
@@ -99,6 +102,7 @@ public class MacManager {
             case CRC_ERROR:
                 currentState = State.IDLE;
                 //TODO: drop the frame
+                event = Event.IDLE;
                 break;
             case VALID_ACK:
                 currentState = State.IDLE;
@@ -138,44 +142,36 @@ public class MacManager {
      * @param bitString to be sent
      * @return Macframes
      */
-    public static byte[][] distribute( ArrayList<Boolean> bitString) {
+    public static MacFrame[] distribute( ArrayList<Boolean> bitString) {
         /* break the large data into frames */
-        byte[] input = TypeConvertion.booleanListByteArrayTo(bitString);
+        byte[] input = TypeConvertion.booleanList2ByteArray(bitString);
 
         int payloadlen = Math.ceilDiv(Host.cfg.packBitLen , 8);
         int frameNum = Math.ceilDiv(Host.cfg.transmitBitLen, Host.cfg.packBitLen);
          
-        byte[][] frames = new byte[frameNum][payloadlen];
 
-        byte[] destinationAddress = new byte[] {(byte)0x91};
-        byte[] sourceAddress = new byte[] {(byte)0x5F};
-        byte[] type = new byte[] {0x00};
+        byte destinationAddress = 1;
+        byte sourceAddress = 1;
+        byte type = 0;
 
+        MacFrame[] macFrames = new MacFrame[frameNum];
         for (int i = 0; i < frameNum; i++) {
             int start = i * payloadlen;
             int end = Math.min(start + payloadlen, Host.cfg.transmitBitLen);
             // Copy the input bytes to the frame array
-            System.arraycopy(input, start, frames[i], 0, end - start);
+            byte[] data = new byte[payloadlen];
+
+            System.arraycopy(input, start, data, 0, end - start);
             
             // pad the data with 0s
             if (end - start < payloadlen) {
-                Arrays.fill(frames[i], end - start, payloadlen, (byte) 0);
+                Arrays.fill(data, end - start, payloadlen, (byte) 0);
             }
             // Add mac header
-            frames[i] = EthernetFrame.CreateFrame(destinationAddress, sourceAddress, type, frames[i]);
-            System.out.println("length" + frames[i].length);
-            for (byte element : frames[i]) {
-            String hexString = Integer.toHexString(element & 0xFF);
-            if (hexString.length() == 1) {
-                hexString = "0" + hexString;
-            }
-            System.out.print(hexString + " ");
-            }
-            System.out.println();
-
+            macFrames[i] = new MacFrame(destinationAddress, sourceAddress, type, data);
         }
 
-        return frames;
+        return macFrames;
     }
 
     /**
@@ -186,7 +182,7 @@ public class MacManager {
     public void send( ArrayList<Boolean> bitString) {
 
         System.out.println("start sending data");
-        byte[][] frames = distribute(bitString);
+        MacFrame[] frames = distribute(bitString);
 
         //! Test !!! transmit the first frame
         for (int frameID = 0; frameID < 1; frameID++) {
@@ -198,26 +194,49 @@ public class MacManager {
 
     public Event receive() {
         System.out.println("Start receiving");
-        byte[] frame = physicalManager.receive();
+        MacFrame frame = new MacFrame(physicalManager.receive());
+        computeBRR(frame);
         // The frame is received, now check the CRC
-        if (EthernetFrame.checkCRC(frame)) {
+        if (frame.is_valid == false) {
             return Event.CRC_ERROR;
         }
-        else if (EthernetFrame.getType(frame) == new byte[] {(byte)0xFF}) {
+        else if (frame.type == 0xFF) {
             // check Data type 
             // TODO: check the destination address
             return Event.VALID_ACK;
         }
-        byte[] data = EthernetFrame.getData(frame);
-        for (byte element : frame) {
-            String hexString = Integer.toHexString(element & 0xFF);
-            if (hexString.length() == 1) {
-                hexString = "0" + hexString;
-            }
-            System.out.print(hexString + " ");
-        }
-        System.out.println();
         return Event.VALID_DATA;
+    }
+
+    public void computeBRR(MacFrame frame) {
+        ArrayList<Boolean> data =  TypeConvertion.byteArray2BooleanList(frame.data);
+
+        int numErrors = 0;
+
+        for (int i = 0; i < Host.cfg.packBitLen; i++) {
+            if (data.get(i) != Host.cfg.transmitted.get(i)) {
+                numErrors++;
+            }
+        }
+        // print first bits of transmitted and get
+        int packCnt = Math.ceilDiv(Host.cfg.packBitLen, Host.cfg.packBitLen);
+        int bound = Host.cfg.packBitLen;
+        int groupLen = 40;
+        for (int packIdx = 0; packIdx < packCnt; packIdx ++) {
+            System.out.println("GroupDiffs " + packIdx + ":");
+            for (int groupId = 0; groupId < Math.ceil((double) Host.cfg.packBitLen / groupLen); groupId++) {
+                int groupDiff = 0;
+                for (int i = 0; i < groupLen; i++) {
+                    if (packIdx * Host.cfg.packBitLen + groupId * groupLen + i < bound) {
+                        groupDiff += Host.cfg.transmitted.get(packIdx * Host.cfg.packBitLen + groupId * groupLen + i) == 
+                            data.get(packIdx * Host.cfg.packBitLen + groupId * groupLen + i) ? 0 : 1;
+                    }
+                }
+                System.out.print(groupDiff + " ");
+            }
+            System.out.println();
+        }
+        Host.cfg.UpdBER((double)numErrors / Host.cfg.packBitLen);
     }
 
 }

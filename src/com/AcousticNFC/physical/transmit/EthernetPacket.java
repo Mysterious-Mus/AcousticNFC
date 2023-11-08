@@ -44,7 +44,7 @@ public class EthernetPacket {
         * Output: packet to physical layer
         */
 
-        ArrayList<Boolean> MacFrameBits = TypeConvertion.byteArrayToBooleanList(MacFrame);
+        ArrayList<Boolean> MacFrameBits = TypeConvertion.byteArray2BooleanList(MacFrame);
         ArrayList<Boolean> alignBits = sof.alignBits();
         ArrayList<Boolean> bitsTransmit =TypeConvertion.concatList(alignBits, MacFrameBits);
 
