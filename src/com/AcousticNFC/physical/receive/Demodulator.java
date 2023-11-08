@@ -104,11 +104,13 @@ public class Demodulator {
         if (lastSampleIdx < receiver.getLength()) {
             int bestDoneIdx = receiver.tickDone;
             double bestDistortion = 1000;
+            double bestBER = 1;
             for (int doneIdx = receiver.tickDone - cfg.scanWindow; 
             doneIdx <= receiver.tickDone + cfg.scanWindow; doneIdx++) {
                 int testReceiverPtr = doneIdx;
                 double avgAbsDistortion = 0;
                 double avgDistortion = 0;
+                double BER = 0;
                 for (int testSymId = 0; testSymId < cfg.alignNSymbol; testSymId++) {
                     testReceiverPtr += cfg.cyclicPrefixNSamples;
                     float nxtSymbolSamples[] = new float[cfg.symbolLength];
@@ -136,13 +138,20 @@ public class Demodulator {
                         avgDistortion += distortion
                                             / (2 * Math.PI * (cfg.bandWidthLow + subCId * cfg.subCarrierWidth));
                     }
+                    // add to BER
+                    ArrayList<Boolean> demodulated = demodulateSymbol(nxtSymbolSamples);
+                    for (int symBitId = 0; symBitId < cfg.keyingCapacity * cfg.numSubCarriers; symBitId ++) {
+                        BER += (demodulated.get(symBitId) != cfg.alignBitFunc(testSymId * cfg.keyingCapacity * cfg.numSubCarriers + symBitId) ? 1 : 0);
+                    }
                 }
                 avgAbsDistortion /= alignBitLen;
                 avgDistortion /= alignBitLen;
+                BER /= alignBitLen;
                 if (Math.abs(avgAbsDistortion) < Math.abs(bestDistortion)) {
                     bestDistortion = avgAbsDistortion;
                     bestDoneIdx = doneIdx;
                     timeCompensation = -avgDistortion;
+                    bestBER = BER;
                 }
             }
             // print compensation: bestdone - tickdone
@@ -150,6 +159,8 @@ public class Demodulator {
             // timeCompensation = -bestDistortion;
             // print avg distort samples
             System.out.println("Avg Distort: " + bestDistortion * cfg.sampleRate);
+            // print BER
+            System.out.println("BER: " + bestBER);
 
             receiver.scanAligning = false;
             receiver.tickDone = bestDoneIdx + alignNSample;
