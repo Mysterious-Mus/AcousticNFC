@@ -104,7 +104,7 @@ public class MacFrame {
         this.type = frameBuffer[preambleLen++];
 
         // Data (800 bits)
-        int dataLen = Math.ceilDiv(Host.cfg.packBitLen, Byte.SIZE);
+        int dataLen = Math.ceilDiv(Config.packBitLen, Byte.SIZE);
         this.data = Arrays.copyOfRange(frameBuffer, preambleLen, dataLen + preambleLen);
 
         // CRC (32 bits)
@@ -120,7 +120,7 @@ public class MacFrame {
      * The Length of a mac frame
      */
     public static int getFrameBitLen() {
-        return Host.cfg.packBitLen + Byte.SIZE * 3 + Long.SIZE / 2;
+        return Config.packBitLen + Byte.SIZE * 3 + Long.SIZE / 2;
     }
      
     /** check CRC

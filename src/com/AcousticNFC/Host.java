@@ -163,13 +163,13 @@ public class Host extends JFrame implements AsioDriverListener {
 
     // get the bit string
     bitString = new BitString("bit_string.txt");
-    cfg.transmitted = bitString.getBitString();
+    Config.transmitted = bitString.getBitString();
   
     // layout panel
     layoutPanel();
 
     // init receiver
-    receiver = new Receiver(cfg);
+    receiver = new Receiver();
 
     
     // launch the SoF calculation thread
@@ -333,7 +333,7 @@ public class Host extends JFrame implements AsioDriverListener {
         // restart the recorder
         recorder = new Recorder();
         // generate music
-        music = new Music(cfg);
+        music = new Music();
         // set player to play the music
         player = new Player(music.generateChordProgression());
       }
@@ -346,7 +346,7 @@ public class Host extends JFrame implements AsioDriverListener {
         driverInit();
         setState(State.PLAYING);
         // generate music
-        music = new Music(cfg);
+        music = new Music();
         // set player to play the music
         player = new Player(music.generateProj1Pt2Sound());
       }
@@ -361,7 +361,7 @@ public class Host extends JFrame implements AsioDriverListener {
     initOFDM.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent event) {
         // init OFDM
-        OFDM ofdm = new OFDM(cfg);
+        OFDM ofdm = new OFDM();
       }
     });
 
@@ -383,7 +383,7 @@ public class Host extends JFrame implements AsioDriverListener {
         driverShutdown();
         driverInit();
         // init receiver
-        receiver = new Receiver(cfg);
+        receiver = new Receiver();
         setReceiverState(ReceiverState.RECEIVING);
         // // delay 2 seconds for warmup
         // try {

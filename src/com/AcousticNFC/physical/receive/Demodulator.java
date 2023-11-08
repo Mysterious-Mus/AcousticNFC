@@ -16,43 +16,41 @@ import com.AcousticNFC.utils.FileOp;
 public class Demodulator {
     
     Receiver receiver;
-    Config cfg;
 
     public ArrayList<Boolean> frameBuffer;
     double timeCompensation = 0; // compensate the sampling offset
 
     ECC Ecc;
 
-    public Demodulator(Receiver receiver, Config cfg_src) {
+    public Demodulator(Receiver receiver) {
         this.receiver = receiver;
         frameBuffer = new ArrayList<Boolean>();
-        cfg = cfg_src;
-        Ecc = new ECC(cfg);
+        Ecc = new ECC();
     }
 
     private float[] getNxtSample() {
         // skip the cyclic prefix
-        receiver.tickDone += cfg.cyclicPrefixNSamples;
+        receiver.tickDone += Config.cyclicPrefixNSamples;
 
 
         // get the samples of the symbol
-        float[] samples = new float[cfg.symbolLength];
-        for (int i = 0; i < cfg.symbolLength; i++) {
+        float[] samples = new float[Config.symbolLength];
+        for (int i = 0; i < Config.symbolLength; i++) {
             samples[i] = receiver.getSample(receiver.tickDone + i + 1);
         }
-        receiver.tickDone += cfg.symbolLength;
+        receiver.tickDone += Config.symbolLength;
 
         return samples;
     }
 
     public double[] subCarrPhases(float[] samples) {
-        double[] result = new double[cfg.numSubCarriers];
+        double[] result = new double[Config.numSubCarriers];
         Complex[] fftResult = FFT.fft(samples);
-        for (int i = 0; i < cfg.numSubCarriers; i++) {
+        for (int i = 0; i < Config.numSubCarriers; i++) {
             result[i] = fftResult[
-                    (int) Math.round((cfg.bandWidthLow + i * cfg.subCarrierWidth) / 
-                    cfg.sampleRate * cfg.symbolLength)].phase() + 
-                    timeCompensation * 2 * Math.PI * (cfg.bandWidthLow + i * cfg.subCarrierWidth);
+                    (int) Math.round((Config.bandWidthLow + i * Config.subCarrierWidth) / 
+                    Config.sampleRate * Config.symbolLength)].phase() + 
+                    timeCompensation * 2 * Math.PI * (Config.bandWidthLow + i * Config.subCarrierWidth);
         }
         return result;
     }
@@ -69,34 +67,34 @@ public class Demodulator {
         // if the frameBuffer is empty
         if (frameBuffer.size() == 0) {
             String panelInfo = "";
-            for (int i = 0; i < cfg.numSubCarriers; i++) {
+            for (int i = 0; i < Config.numSubCarriers; i++) {
                 panelInfo += String.format("%.2f ", phases[i]);
             }
-            cfg.UpdFirstSymbolPhases(panelInfo);
+            Config.UpdFirstSymbolPhases(panelInfo);
         }
 
         // calculate the keys of the subcarriers
-        for (int i = 0; i < cfg.numSubCarriers; i++) {
+        for (int i = 0; i < Config.numSubCarriers; i++) {
             // see notes.ipynb for the derivation
             double thisCarrierPhase = phases[i];
 
-            int numKeys = (int) Math.round(Math.pow(2, cfg.keyingCapacity));
+            int numKeys = (int) Math.round(Math.pow(2, Config.keyingCapacity));
             double lastPhaseSegment = 2 * Math.PI / numKeys / 2;
             int thisCarrierIndex = (int)Math.floor((thisCarrierPhase + 2 * Math.PI + lastPhaseSegment) % (2 * Math.PI) / 
                 (2 * Math.PI) * numKeys);
             
             // push the bits into the receiver's buffer
-            for (int j = 0; j < cfg.keyingCapacity; j++) {
-                resultBuffer.add((thisCarrierIndex & (1 << (cfg.keyingCapacity - j - 1))) != 0);
+            for (int j = 0; j < Config.keyingCapacity; j++) {
+                resultBuffer.add((thisCarrierIndex & (1 << (Config.keyingCapacity - j - 1))) != 0);
             }
         }
         return resultBuffer;
     }
 
     private void scanTest() {
-        int alignNSample = cfg.alignNSymbol * (cfg.cyclicPrefixNSamples + cfg.symbolLength);
-        int alignBitLen = cfg.alignNSymbol * cfg.keyingCapacity * cfg.numSubCarriers;
-        int lastSampleIdx = receiver.tickDone + cfg.scanWindow + alignNSample;
+        int alignNSample = Config.alignNSymbol * (Config.cyclicPrefixNSamples + Config.symbolLength);
+        int alignBitLen = Config.alignNSymbol * Config.keyingCapacity * Config.numSubCarriers;
+        int lastSampleIdx = receiver.tickDone + Config.scanWindow + alignNSample;
         while (lastSampleIdx >= receiver.getLength()) {
             // busy waiting
             Thread.yield();
@@ -105,28 +103,28 @@ public class Demodulator {
             int bestDoneIdx = receiver.tickDone;
             double bestDistortion = 1000;
             double bestBER = 1;
-            for (int doneIdx = receiver.tickDone - cfg.scanWindow; 
-            doneIdx <= receiver.tickDone + cfg.scanWindow; doneIdx++) {
+            for (int doneIdx = receiver.tickDone - Config.scanWindow; 
+            doneIdx <= receiver.tickDone + Config.scanWindow; doneIdx++) {
                 int testReceiverPtr = doneIdx;
                 double avgAbsDistortion = 0;
                 double avgDistortion = 0;
                 double BER = 0;
-                for (int testSymId = 0; testSymId < cfg.alignNSymbol; testSymId++) {
-                    testReceiverPtr += cfg.cyclicPrefixNSamples;
-                    float nxtSymbolSamples[] = new float[cfg.symbolLength];
-                    for (int i = 0; i < cfg.symbolLength; i++) {
+                for (int testSymId = 0; testSymId < Config.alignNSymbol; testSymId++) {
+                    testReceiverPtr += Config.cyclicPrefixNSamples;
+                    float nxtSymbolSamples[] = new float[Config.symbolLength];
+                    for (int i = 0; i < Config.symbolLength; i++) {
                         nxtSymbolSamples[i] = receiver.samples.get(testReceiverPtr + i + 1);
                     }
-                    testReceiverPtr += cfg.symbolLength;
+                    testReceiverPtr += Config.symbolLength;
                     // calculate average time distortion
                     double[] phases = subCarrPhases(nxtSymbolSamples);
-                    for (int subCId = 0; subCId < cfg.numSubCarriers; subCId ++) {
+                    for (int subCId = 0; subCId < Config.numSubCarriers; subCId ++) {
                         double thisCarrierPhase = phases[subCId];
-                        int numKeys = (int) Math.round(Math.pow(2, cfg.keyingCapacity));
+                        int numKeys = (int) Math.round(Math.pow(2, Config.keyingCapacity));
                         int thisCarrierIdx = 0;
-                        for (int bitId = 0; bitId < cfg.keyingCapacity; bitId ++) {
-                            thisCarrierIdx += (cfg.alignBitFunc(testSymId * cfg.keyingCapacity * cfg.numSubCarriers + subCId * cfg.keyingCapacity + bitId) ? 1 : 0)
-                             << (cfg.keyingCapacity - bitId - 1);
+                        for (int bitId = 0; bitId < Config.keyingCapacity; bitId ++) {
+                            thisCarrierIdx += (Config.alignBitFunc(testSymId * Config.keyingCapacity * Config.numSubCarriers + subCId * Config.keyingCapacity + bitId) ? 1 : 0)
+                             << (Config.keyingCapacity - bitId - 1);
                         }
                         double requiredPhase = 2 * Math.PI / numKeys * thisCarrierIdx;
                         double distortion = ((thisCarrierPhase - requiredPhase + 4 * Math.PI) % (2 * Math.PI) < 
@@ -134,14 +132,14 @@ public class Demodulator {
                             (thisCarrierPhase - requiredPhase + 4 * Math.PI) % (2 * Math.PI) : 
                             (thisCarrierPhase - requiredPhase + 4 * Math.PI) % (2 * Math.PI) - 2 * Math.PI);
                         avgAbsDistortion += Math.abs(distortion)
-                                            / (2 * Math.PI * (cfg.bandWidthLow + subCId * cfg.subCarrierWidth));
+                                            / (2 * Math.PI * (Config.bandWidthLow + subCId * Config.subCarrierWidth));
                         avgDistortion += distortion
-                                            / (2 * Math.PI * (cfg.bandWidthLow + subCId * cfg.subCarrierWidth));
+                                            / (2 * Math.PI * (Config.bandWidthLow + subCId * Config.subCarrierWidth));
                     }
                     // add to BER
                     ArrayList<Boolean> demodulated = demodulateSymbol(nxtSymbolSamples);
-                    for (int symBitId = 0; symBitId < cfg.keyingCapacity * cfg.numSubCarriers; symBitId ++) {
-                        BER += (demodulated.get(symBitId) != cfg.alignBitFunc(testSymId * cfg.keyingCapacity * cfg.numSubCarriers + symBitId) ? 1 : 0);
+                    for (int symBitId = 0; symBitId < Config.keyingCapacity * Config.numSubCarriers; symBitId ++) {
+                        BER += (demodulated.get(symBitId) != Config.alignBitFunc(testSymId * Config.keyingCapacity * Config.numSubCarriers + symBitId) ? 1 : 0);
                     }
                 }
                 avgAbsDistortion /= alignBitLen;
@@ -158,7 +156,7 @@ public class Demodulator {
             System.out.println("Compensation: " + (bestDoneIdx - receiver.tickDone));
             // timeCompensation = -bestDistortion;
             // print avg distort samples
-            System.out.println("Avg Distort: " + bestDistortion * cfg.sampleRate);
+            System.out.println("Avg Distort: " + bestDistortion * Config.sampleRate);
             // print BER
             System.out.println("BER: " + bestBER);
 
@@ -177,7 +175,7 @@ public class Demodulator {
         }
 
         while ( receiver.unpacking && frameBuffer.size() < MacFrame.getFrameBitLen()) {
-            while (receiver.tickDone + cfg.cyclicPrefixNSamples + cfg.symbolLength >= receiver.getLength()) {
+            while (receiver.tickDone + Config.cyclicPrefixNSamples + Config.symbolLength >= receiver.getLength()) {
                 // waiting for the next symbol
                 Thread.yield();
             }
@@ -200,7 +198,7 @@ public class Demodulator {
                 receivedCodewords[i] = frameBuffer.get(i);
             }
             // decode
-            boolean[] decoded = cfg.ECCOn? Ecc.viterbiDecode(receivedCodewords) : receivedCodewords;
+            boolean[] decoded = Config.ECCOn? Ecc.viterbiDecode(receivedCodewords) : receivedCodewords;
             // push the frame into the receiver's buffer
             for (int i = 0; i < decoded.length; i++) {
                 receiver.receiveBuffer.add(decoded[i]);

@@ -15,8 +15,8 @@ public class PhysicalManager {
     private EthernetPacket ethernetPacket;
 
     public PhysicalManager() {
-        ethernetPacket = new EthernetPacket(Host.cfg);
-        Host.receiver = new Receiver(Host.cfg);
+        ethernetPacket = new EthernetPacket();
+        Host.receiver = new Receiver();
     }
 
     /**

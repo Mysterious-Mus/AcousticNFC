@@ -10,61 +10,58 @@ import java.util.ArrayList;
  */
 public class SoF {
 
-    Config cfg;
-
-    public SoF(Config cfg_src) {
-        cfg = cfg_src;
+    public SoF() {
     }
 
     int warmUpL = 10;
     public float[] generateWarmupSoF() {
-        float[] withWarmup = new float[warmUpL + cfg.sofNSamples + cfg.sofSilentNSamples];
+        float[] withWarmup = new float[warmUpL + Config.sofNSamples + Config.sofSilentNSamples];
 
-        // the warmUp section should be a sine wave, with lenght cfg.sofNSamples
+        // the warmUp section should be a sine wave, with lenght Config.sofNSamples
         for (int idx = 0; idx < warmUpL; idx ++) {
-            withWarmup[idx] = 0.8f * (float) Math.sin(2 * Math.PI * 8000 * idx / cfg.sampleRate);
+            withWarmup[idx] = 0.8f * (float) Math.sin(2 * Math.PI * 8000 * idx / Config.sampleRate);
         }
 
         float[] samplesNoSilence = generateSoFNoSilence();
-        System.arraycopy(samplesNoSilence, 0, withWarmup, warmUpL, cfg.sofNSamples);
+        System.arraycopy(samplesNoSilence, 0, withWarmup, warmUpL, Config.sofNSamples);
         return withWarmup;
     }
 
     public float[] generateSoF() {
-        float[] samples = new float[cfg.sofNSamples + cfg.sofSilentNSamples];
+        float[] samples = new float[Config.sofNSamples + Config.sofSilentNSamples];
         
         float[] samplesNoSilence = generateSoFNoSilence();
-        System.arraycopy(samplesNoSilence, 0, samples, 0, cfg.sofNSamples);
+        System.arraycopy(samplesNoSilence, 0, samples, 0, Config.sofNSamples);
         return samples;
     }
 
     public float[] generateSoFNoSilence() {
-        float[] samples = new float[cfg.sofNSamples];
-        float a = (float)((cfg.SoF_fmax - cfg.SoF_fmin) / cfg.SoF_T);
-        float phi0 = (float)(Math.PI * a * cfg.SoF_T * cfg.SoF_T);
+        float[] samples = new float[Config.sofNSamples];
+        float a = (float)((Config.SoF_fmax - Config.SoF_fmin) / Config.SoF_T);
+        float phi0 = (float)(Math.PI * a * Config.SoF_T * Config.SoF_T);
         // stage 1
-        for (int i = 0; i < cfg.sofNSamples / 2; i++) {
-            float time = (float) i / (float) cfg.sofNSamples;
+        for (int i = 0; i < Config.sofNSamples / 2; i++) {
+            float time = (float) i / (float) Config.sofNSamples;
             float phase = (float) (Math.PI * a * time * time);
-            samples[i] = cfg.SoF_amplitude * (float) Math.cos(phase);
+            samples[i] = Config.SoF_amplitude * (float) Math.cos(phase);
         }
         // stage 2
-        for (int i = cfg.sofNSamples / 2; i < cfg.sofNSamples; i++) {
-            float t = (float) i / (float) cfg.sampleRate;
-            float phase = (float) (phi0 + cfg.SoF_fmax*(t-cfg.SoF_T) - Math.PI * a * (t-cfg.SoF_T) * (t-cfg.SoF_T));
-            samples[i] = cfg.SoF_amplitude * (float) Math.cos(phase);
+        for (int i = Config.sofNSamples / 2; i < Config.sofNSamples; i++) {
+            float t = (float) i / (float) Config.sampleRate;
+            float phase = (float) (phi0 + Config.SoF_fmax*(t-Config.SoF_T) - Math.PI * a * (t-Config.SoF_T) * (t-Config.SoF_T));
+            samples[i] = Config.SoF_amplitude * (float) Math.cos(phase);
         }
         return samples;
     }
 
     public int NSample() {
-        return (int) (2 * cfg.SoF_T * cfg.SoF_amplitude);
+        return (int) (2 * Config.SoF_T * Config.SoF_amplitude);
     }
 
     public ArrayList<Boolean> alignBits() {
         ArrayList<Boolean> bits = new ArrayList<Boolean>();
-        for (int i = 0; i < cfg.alignBitLen; i++) {
-            bits.add(cfg.alignBitFunc(i));
+        for (int i = 0; i < Config.alignBitLen; i++) {
+            bits.add(Config.alignBitFunc(i));
         }
         return bits;
     }

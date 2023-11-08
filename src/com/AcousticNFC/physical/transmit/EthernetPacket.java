@@ -22,12 +22,9 @@ public class EthernetPacket {
     SoF sof;
     OFDM ofdm;
 
-    Config cfg;
-
-    public EthernetPacket(Config cfg_src) {
-        cfg = cfg_src;
-        sof = new SoF(cfg);
-        ofdm = new OFDM(cfg);
+    public EthernetPacket() {
+        sof = new SoF();
+        ofdm = new OFDM();
     }
     /**
      * Get the packet to be sent to 
@@ -55,7 +52,7 @@ public class EthernetPacket {
         float[] SoFSamples = sof.generateSoF();
 
         // add interpacket gap
-        float[] interPacketGapSamples = new float[cfg.interPacketGapNSamples];
+        float[] interPacketGapSamples = new float[Config.interPacketGapNSamples];
 
         // concatenate all the samples
         float[] packetSamples = new float[SoFSamples.length + MacFrameSamples.length + interPacketGapSamples.length];
@@ -69,7 +66,7 @@ public class EthernetPacket {
 
     // public float[] frame(ArrayList<Boolean> bitString) {
     //     // calculate how many frames are needed
-    //     int numFrames = (int) Math.ceil((double) cfg.transmitBitLen / cfg.packBitLen);
+    //     int numFrames = (int) Math.ceil((double) Config.transmitBitLen / Config.packBitLen);
 
     //     // the final playBuffer
     //     ArrayList<Float> playBuffer = new ArrayList<Float>();
@@ -78,9 +75,9 @@ public class EthernetPacket {
     //     for (int frameIdx = 0; frameIdx < numFrames; frameIdx++) {
     //         // get the bit string to pack
     //         ArrayList<Boolean> bitStringToPack = new ArrayList<Boolean>();
-    //         for (int bitIdx = 0; bitIdx < cfg.packBitLen; bitIdx++) {
-    //             if (frameIdx * cfg.packBitLen + bitIdx < cfg.transmitBitLen) {
-    //                 bitStringToPack.add(bitString.get(frameIdx * cfg.packBitLen + bitIdx));
+    //         for (int bitIdx = 0; bitIdx < Config.packBitLen; bitIdx++) {
+    //             if (frameIdx * Config.packBitLen + bitIdx < Config.transmitBitLen) {
+    //                 bitStringToPack.add(bitString.get(frameIdx * Config.packBitLen + bitIdx));
     //             } else {
     //                 bitStringToPack.add(false);
     //             }

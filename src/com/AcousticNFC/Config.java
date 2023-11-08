@@ -26,64 +26,63 @@ public class Config {
 
     // buffer size should be small!
     
-    public double sampleRate = 44100;
+    public static double sampleRate = 44100;
 
-    public int frameLength;
-    public int symbolLength = 64;
+    public static int frameLength;
+    public static int symbolLength = 64;
 
-    public double cyclicPrefixLength = 0.001;
-    public int cyclicPrefixNSamples;
-    public boolean cyclicPrefixMute = false;      
+    public static double cyclicPrefixLength = 0.001;
+    public static int cyclicPrefixNSamples;
+    public static boolean cyclicPrefixMute = false;      
 
-    public int subcarrierDist = 1;
-    public double subCarrierWidth;
-    public double bandWidthLowEdit = 3000;
-    public double bandWidthHighEdit = 8000;
-    public double bandWidthLow;
-    public double bandWidthHigh;
-    public int numSubCarriers;
+    public static int subcarrierDist = 1;
+    public static double subCarrierWidth;
+    public static double bandWidthLowEdit = 3000;
+    public static double bandWidthHighEdit = 8000;
+    public static double bandWidthLow;
+    public static double bandWidthHigh;
+    public static int numSubCarriers;
     
-    public int keyingCapacity = 1;
-    public int symbolCapacity;
+    public static int keyingCapacity = 1;
+    public static int symbolCapacity;
 
-    public float SoF_amplitude = 1f;
-    public double SoF_T = 0.002905; // The 'T' parameter of SoF, see DOC
-    public int sofNSamples;
-    public double SoF_fmin = 6000;
-    public double SoF_fmax = 16000;
-    public double SofSilencePeriod = 0.000;
-    public int sofSilentNSamples;
+    public static float SoF_amplitude = 1f;
+    public static double SoF_T = 0.002905; // The 'T' parameter of SoF, see DOC
+    public static int sofNSamples;
+    public static double SoF_fmin = 6000;
+    public static double SoF_fmax = 16000;
+    public static double SofSilencePeriod = 0.000;
+    public static int sofSilentNSamples;
 
-    public double maxSofCorrDetect = 0;
-    public double SofDetectThreshld = 0.02; // The threshold for correlation detection
+    public static double maxSofCorrDetect = 0;
+    public static double SofDetectThreshld = 0.02; // The threshold for correlation detection
 
-    public double interPacketGapPeriod = 0.001; 
-    public int interPacketGapNSamples;
+    public static double interPacketGapPeriod = 0.001; 
+    public static int interPacketGapNSamples;
 
     // debug shared info
-    public ArrayList<Boolean> transmitted;
-    public int alignNSymbol = 10;
-    public int scanWindow = 100;
-    public boolean alignBitFunc(int idx) {return (idx % 5 <= 2);}
+    public static ArrayList<Boolean> transmitted;
+    public static int alignNSymbol = 10;
+    public static int scanWindow = 100;
+    public static boolean alignBitFunc(int idx) {return (idx % 5 <= 2);}
 
-    public int transmitBitLen = 800;
+    public static int transmitBitLen = 800;
 
-    public int packBitLen = 800;
-    public int alignBitLen;
-    public int decodeBitLen;
+    public static int packBitLen = 800;
+    public static int alignBitLen;
+    public static int decodeBitLen;
 
-    public boolean ECCOn = false;
-    public boolean[][] ECCMat = {
+    public static boolean ECCOn = false;
+    public static boolean[][] ECCMat = {
         { true, true, true, true, false, false, true },
         { true, false, true, true, false, true, false },
     };
-    public int ECCBitRate;
+    public static int ECCBitRate;
 
     // compensation
-    public int sofAlignCompensate = 0;
+    public static int sofAlignCompensate = 0;
 
     public class ConfigPanel extends JPanel {
-        private Config config;
 
         JLabel sampleRateField;
         JTextField subcarrierDistField;
@@ -120,37 +119,35 @@ public class Config {
         // statistics
         JLabel BERField;
 
-        public ConfigPanel(Config config_src) {
-            this.config = config_src;
-
+        public ConfigPanel() {
             // init the UI elems
-            sampleRateField = new JLabel(Double.toString(config.sampleRate));
-            subcarrierDistField = new JTextField(Integer.toString(config.subcarrierDist));
-            transmitLenField = new JTextField(Integer.toString(config.transmitBitLen));
-            symbolLengthField = new JTextField(Integer.toString(config.symbolLength));
-            cyclicPrefixLengthField = new JTextField(Double.toString(config.cyclicPrefixLength));
-            cyclicPrefixNSamplesField = new JLabel(Integer.toString(config.cyclicPrefixNSamples));
-            cyclicPrefixMuteField = new JCheckBox("", config.cyclicPrefixMute);
-            subCarrierWidthField = new JLabel(Double.toString(config.subCarrierWidth));
-            bandWidthLowEditField = new JTextField(Double.toString(config.bandWidthLowEdit));
-            bandWidthLowField = new JLabel(Double.toString(config.bandWidthLow));
-            bandWidthHighEditField = new JTextField(Double.toString(config.bandWidthHighEdit));
-            bandWidthHighField = new JLabel(Double.toString(config.bandWidthHigh));
-            numSubCarriersField = new JLabel(Integer.toString(config.numSubCarriers));
-            keyingCapacityField = new JTextField(Integer.toString(config.keyingCapacity));
-            symbolCapacityField = new JLabel(Integer.toString(config.symbolCapacity));
-            SoF_amplitudeField = new JTextField(Float.toString(config.SoF_amplitude));
-            SoF_TField = new JTextField(Double.toString(config.SoF_T));
-            sofNSamplesField = new JLabel(Integer.toString(config.sofNSamples));
-            SoF_fminField = new JTextField(Double.toString(config.SoF_fmin));
-            SoF_fmaxField = new JTextField(Double.toString(config.SoF_fmax));
-            SofSilencePeriodField = new JTextField(Double.toString(config.SofSilencePeriod));
-            sofSilentNSamplesField = new JLabel(Integer.toString(config.sofSilentNSamples));
-            maxSofCorrDectField = new JLabel(Double.toString(config.maxSofCorrDetect));
-            SofDetectThresholdField = new JTextField(Double.toString(config.SofDetectThreshld));
-            alignNSymbolField = new JTextField(Integer.toString(config.alignNSymbol));
-            frameLenField = new JLabel(Integer.toString(config.frameLength));
-            packBitLenField = new JTextField(Integer.toString(config.packBitLen));
+            sampleRateField = new JLabel(Double.toString(Config.sampleRate));
+            subcarrierDistField = new JTextField(Integer.toString(Config.subcarrierDist));
+            transmitLenField = new JTextField(Integer.toString(Config.transmitBitLen));
+            symbolLengthField = new JTextField(Integer.toString(Config.symbolLength));
+            cyclicPrefixLengthField = new JTextField(Double.toString(Config.cyclicPrefixLength));
+            cyclicPrefixNSamplesField = new JLabel(Integer.toString(Config.cyclicPrefixNSamples));
+            cyclicPrefixMuteField = new JCheckBox("", Config.cyclicPrefixMute);
+            subCarrierWidthField = new JLabel(Double.toString(Config.subCarrierWidth));
+            bandWidthLowEditField = new JTextField(Double.toString(Config.bandWidthLowEdit));
+            bandWidthLowField = new JLabel(Double.toString(Config.bandWidthLow));
+            bandWidthHighEditField = new JTextField(Double.toString(Config.bandWidthHighEdit));
+            bandWidthHighField = new JLabel(Double.toString(Config.bandWidthHigh));
+            numSubCarriersField = new JLabel(Integer.toString(Config.numSubCarriers));
+            keyingCapacityField = new JTextField(Integer.toString(Config.keyingCapacity));
+            symbolCapacityField = new JLabel(Integer.toString(Config.symbolCapacity));
+            SoF_amplitudeField = new JTextField(Float.toString(Config.SoF_amplitude));
+            SoF_TField = new JTextField(Double.toString(Config.SoF_T));
+            sofNSamplesField = new JLabel(Integer.toString(Config.sofNSamples));
+            SoF_fminField = new JTextField(Double.toString(Config.SoF_fmin));
+            SoF_fmaxField = new JTextField(Double.toString(Config.SoF_fmax));
+            SofSilencePeriodField = new JTextField(Double.toString(Config.SofSilencePeriod));
+            sofSilentNSamplesField = new JLabel(Integer.toString(Config.sofSilentNSamples));
+            maxSofCorrDectField = new JLabel(Double.toString(Config.maxSofCorrDetect));
+            SofDetectThresholdField = new JTextField(Double.toString(Config.SofDetectThreshld));
+            alignNSymbolField = new JTextField(Integer.toString(Config.alignNSymbol));
+            frameLenField = new JLabel(Integer.toString(Config.frameLength));
+            packBitLenField = new JTextField(Integer.toString(Config.packBitLen));
 
             // debug fields
             firstSymbolPhasesField = new JLabel("");
@@ -163,23 +160,23 @@ public class Config {
             JButton updateButton = new JButton("Update");
             updateButton.addActionListener(e -> {
                 // update all config
-                config.sampleRate = Double.parseDouble(sampleRateField.getText());
-                config.subcarrierDist = Integer.parseInt(subcarrierDistField.getText());
-                config.transmitBitLen = Integer.parseInt(transmitLenField.getText());
-                config.symbolLength = Integer.parseInt(symbolLengthField.getText());
-                config.cyclicPrefixLength = Double.parseDouble(cyclicPrefixLengthField.getText());
-                config.cyclicPrefixMute = cyclicPrefixMuteField.isSelected();
-                config.bandWidthLowEdit = Double.parseDouble(bandWidthLowEditField.getText());
-                config.bandWidthHighEdit = Double.parseDouble(bandWidthHighEditField.getText());
-                config.keyingCapacity = Integer.parseInt(keyingCapacityField.getText());
-                config.SoF_amplitude = Float.parseFloat(SoF_amplitudeField.getText());
-                config.SoF_T = Double.parseDouble(SoF_TField.getText());
-                config.SoF_fmin = Double.parseDouble(SoF_fminField.getText());
-                config.SoF_fmax = Double.parseDouble(SoF_fmaxField.getText());
-                config.SofSilencePeriod = Double.parseDouble(SofSilencePeriodField.getText());
-                config.SofDetectThreshld = Double.parseDouble(SofDetectThresholdField.getText());
-                config.alignNSymbol = Integer.parseInt(alignNSymbolField.getText());
-                config.packBitLen = Integer.parseInt(packBitLenField.getText());
+                Config.sampleRate = Double.parseDouble(sampleRateField.getText());
+                Config.subcarrierDist = Integer.parseInt(subcarrierDistField.getText());
+                Config.transmitBitLen = Integer.parseInt(transmitLenField.getText());
+                Config.symbolLength = Integer.parseInt(symbolLengthField.getText());
+                Config.cyclicPrefixLength = Double.parseDouble(cyclicPrefixLengthField.getText());
+                Config.cyclicPrefixMute = cyclicPrefixMuteField.isSelected();
+                Config.bandWidthLowEdit = Double.parseDouble(bandWidthLowEditField.getText());
+                Config.bandWidthHighEdit = Double.parseDouble(bandWidthHighEditField.getText());
+                Config.keyingCapacity = Integer.parseInt(keyingCapacityField.getText());
+                Config.SoF_amplitude = Float.parseFloat(SoF_amplitudeField.getText());
+                Config.SoF_T = Double.parseDouble(SoF_TField.getText());
+                Config.SoF_fmin = Double.parseDouble(SoF_fminField.getText());
+                Config.SoF_fmax = Double.parseDouble(SoF_fmaxField.getText());
+                Config.SofSilencePeriod = Double.parseDouble(SofSilencePeriodField.getText());
+                Config.SofDetectThreshld = Double.parseDouble(SofDetectThresholdField.getText());
+                Config.alignNSymbol = Integer.parseInt(alignNSymbolField.getText());
+                Config.packBitLen = Integer.parseInt(packBitLenField.getText());
                 
                 ConfigChange();
             });
@@ -187,22 +184,22 @@ public class Config {
             // The button to reset the observed max correlation
             JButton resetMaxCorrButton = new JButton("Reset Max Corr");
             resetMaxCorrButton.addActionListener(e -> {
-                config.maxSofCorrDetect = 0;
-                maxSofCorrDectField.setText(Double.toString(config.maxSofCorrDetect));
+                Config.maxSofCorrDetect = 0;
+                maxSofCorrDectField.setText(Double.toString(Config.maxSofCorrDetect));
             });
 
             // The button to set the SoF detect threshold as 90% of the observed max correlation
             JButton setSofDetectThresholdButton = new JButton("Set 70%");
             setSofDetectThresholdButton.addActionListener(e -> {
-                config.SofDetectThreshld = 0.7 * config.maxSofCorrDetect;
-                SofDetectThresholdField.setText(Double.toString(config.SofDetectThreshld));
+                Config.SofDetectThreshld = 0.7 * Config.maxSofCorrDetect;
+                SofDetectThresholdField.setText(Double.toString(Config.SofDetectThreshld));
             });
 
             // The button to set the threshold back to the default value, disabling the SoF detection
             JButton disableSofDetectThresholdButton = new JButton("Disable Detection");
             disableSofDetectThresholdButton.addActionListener(e -> {
-                config.SofDetectThreshld = 1000;
-                SofDetectThresholdField.setText(Double.toString(config.SofDetectThreshld));
+                Config.SofDetectThreshld = 1000;
+                SofDetectThresholdField.setText(Double.toString(Config.SofDetectThreshld));
             });
 
             this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
@@ -321,43 +318,43 @@ public class Config {
 
         public void updateDisplay() {
             // update all text fields
-            sampleRateField.setText(Double.toString(config.sampleRate));
-            subcarrierDistField.setText(Integer.toString(config.subcarrierDist));
-            transmitLenField.setText(Integer.toString(config.transmitBitLen));
-            symbolLengthField.setText(Integer.toString(config.symbolLength));
-            cyclicPrefixLengthField.setText(Double.toString(config.cyclicPrefixLength));
-            cyclicPrefixNSamplesField.setText(Integer.toString(config.cyclicPrefixNSamples));
-            cyclicPrefixMuteField.setSelected(config.cyclicPrefixMute);
-            subCarrierWidthField.setText(Double.toString(config.subCarrierWidth));
-            bandWidthLowEditField.setText(Double.toString(config.bandWidthLowEdit));
-            bandWidthLowField.setText(Double.toString(config.bandWidthLow));
-            bandWidthHighEditField.setText(Double.toString(config.bandWidthHighEdit));
-            bandWidthHighField.setText(Double.toString(config.bandWidthHigh));
-            numSubCarriersField.setText(Integer.toString(config.numSubCarriers));
-            keyingCapacityField.setText(Integer.toString(config.keyingCapacity));
-            symbolCapacityField.setText(Integer.toString(config.symbolCapacity));
-            SoF_amplitudeField.setText(Float.toString(config.SoF_amplitude));
-            SoF_TField.setText(Double.toString(config.SoF_T));
-            sofNSamplesField.setText(Integer.toString(config.sofNSamples));
-            SoF_fminField.setText(Double.toString(config.SoF_fmin));
-            SoF_fmaxField.setText(Double.toString(config.SoF_fmax));
-            SofSilencePeriodField.setText(Double.toString(config.SofSilencePeriod));
-            sofSilentNSamplesField.setText(Integer.toString(config.sofSilentNSamples));
-            maxSofCorrDectField.setText(Double.toString(config.maxSofCorrDetect));
-            SofDetectThresholdField.setText(Double.toString(config.SofDetectThreshld));
-            alignNSymbolField.setText(Integer.toString(config.alignNSymbol));
-            frameLenField.setText(Integer.toString(config.frameLength));
-            packBitLenField.setText(Integer.toString(config.packBitLen));
+            sampleRateField.setText(Double.toString(Config.sampleRate));
+            subcarrierDistField.setText(Integer.toString(Config.subcarrierDist));
+            transmitLenField.setText(Integer.toString(Config.transmitBitLen));
+            symbolLengthField.setText(Integer.toString(Config.symbolLength));
+            cyclicPrefixLengthField.setText(Double.toString(Config.cyclicPrefixLength));
+            cyclicPrefixNSamplesField.setText(Integer.toString(Config.cyclicPrefixNSamples));
+            cyclicPrefixMuteField.setSelected(Config.cyclicPrefixMute);
+            subCarrierWidthField.setText(Double.toString(Config.subCarrierWidth));
+            bandWidthLowEditField.setText(Double.toString(Config.bandWidthLowEdit));
+            bandWidthLowField.setText(Double.toString(Config.bandWidthLow));
+            bandWidthHighEditField.setText(Double.toString(Config.bandWidthHighEdit));
+            bandWidthHighField.setText(Double.toString(Config.bandWidthHigh));
+            numSubCarriersField.setText(Integer.toString(Config.numSubCarriers));
+            keyingCapacityField.setText(Integer.toString(Config.keyingCapacity));
+            symbolCapacityField.setText(Integer.toString(Config.symbolCapacity));
+            SoF_amplitudeField.setText(Float.toString(Config.SoF_amplitude));
+            SoF_TField.setText(Double.toString(Config.SoF_T));
+            sofNSamplesField.setText(Integer.toString(Config.sofNSamples));
+            SoF_fminField.setText(Double.toString(Config.SoF_fmin));
+            SoF_fmaxField.setText(Double.toString(Config.SoF_fmax));
+            SofSilencePeriodField.setText(Double.toString(Config.SofSilencePeriod));
+            sofSilentNSamplesField.setText(Integer.toString(Config.sofSilentNSamples));
+            maxSofCorrDectField.setText(Double.toString(Config.maxSofCorrDetect));
+            SofDetectThresholdField.setText(Double.toString(Config.SofDetectThreshld));
+            alignNSymbolField.setText(Integer.toString(Config.alignNSymbol));
+            frameLenField.setText(Integer.toString(Config.frameLength));
+            packBitLenField.setText(Integer.toString(Config.packBitLen));
         }
     }
 
-    ConfigPanel panel;
+    static ConfigPanel panel;
 
     public Config(Host host) {
         this.host = host;
 
         // Create a panel with text fields for each field in the Config class
-        panel = new ConfigPanel(this);
+        panel = new ConfigPanel();
 
         ConfigChange();
     }
@@ -366,7 +363,7 @@ public class Config {
         ConfigChange();
     }
     
-    public void ConfigChange() {
+    public static void ConfigChange() {
         // update all config
         cyclicPrefixNSamples = 
             (int)(sampleRate * cyclicPrefixLength);
@@ -389,33 +386,33 @@ public class Config {
         decodeBitLen = ECCOn? packBitLen * ECCBitRate : packBitLen;
         frameLength = alignBitLen + decodeBitLen;
         
-        this.panel.updateDisplay();
+        panel.updateDisplay();
     }
 
-    public void UpdSampleRate(double sampleRate) {
-        this.sampleRate = sampleRate;
+    public static void UpdSampleRate(double sampleRate) {
+        Config.sampleRate = sampleRate;
 
         ConfigChange();
         // tell the panel to update the text fields
         panel.updateDisplay();
     }
 
-    public void UpdCorrdetect(double corr) {
+    public static void UpdCorrdetect(double corr) {
         if (corr > maxSofCorrDetect) {
             maxSofCorrDetect = corr;
             panel.maxSofCorrDectField.setText(Double.toString(maxSofCorrDetect));
         }
     }
 
-    public void UpdFirstSymbolPhases(String info) {
+    public static void UpdFirstSymbolPhases(String info) {
         panel.firstSymbolPhasesField.setText(info);
     }
 
-    public void UpdFirstSymbolData(String info) {
+    public static void UpdFirstSymbolData(String info) {
         panel.firstSymbolDataField.setText(info);
     }
 
-    public void UpdBER(double BER) {
+    public static void UpdBER(double BER) {
         panel.BERField.setText(Double.toString(BER));
     }
 }

@@ -7,6 +7,7 @@ import java.util.Arrays;
 import javax.crypto.Mac;
 import javax.sound.sampled.AudioFileFormat.Type;
 
+import com.AcousticNFC.Config;
 import com.AcousticNFC.Host;
 import com.AcousticNFC.physical.PhysicalManager;
 import com.AcousticNFC.utils.ANSI;
@@ -57,7 +58,7 @@ public class MacManager {
         switch (event) {
             case TxPENDING:
                 currentState = State.SENDING;
-                send(Host.cfg.transmitted);
+                send(Config.transmitted);
                 event = Event.TxDONE;
                 break;
                 
@@ -146,8 +147,8 @@ public class MacManager {
         /* break the large data into frames */
         byte[] input = TypeConvertion.booleanList2ByteArray(bitString);
 
-        int payloadlen = Math.ceilDiv(Host.cfg.packBitLen , 8);
-        int frameNum = Math.ceilDiv(Host.cfg.transmitBitLen, Host.cfg.packBitLen);
+        int payloadlen = Math.ceilDiv(Config.packBitLen , 8);
+        int frameNum = Math.ceilDiv(Config.transmitBitLen, Config.packBitLen);
          
 
         byte destinationAddress = 1;
@@ -157,7 +158,7 @@ public class MacManager {
         MacFrame[] macFrames = new MacFrame[frameNum];
         for (int i = 0; i < frameNum; i++) {
             int start = i * payloadlen;
-            int end = Math.min(start + payloadlen, Host.cfg.transmitBitLen);
+            int end = Math.min(start + payloadlen, Config.transmitBitLen);
             // Copy the input bytes to the frame array
             byte[] data = new byte[payloadlen];
 
@@ -195,7 +196,7 @@ public class MacManager {
     public Event receive() {
         System.out.println("Start receiving");
         MacFrame frame = new MacFrame(physicalManager.receive());
-        computeBRR(frame);
+        computeBER(frame);
         // The frame is received, now check the CRC
         if (frame.is_valid == false) {
             return Event.CRC_ERROR;
@@ -208,35 +209,35 @@ public class MacManager {
         return Event.VALID_DATA;
     }
 
-    public void computeBRR(MacFrame frame) {
+    public void computeBER(MacFrame frame) {
         ArrayList<Boolean> data =  TypeConvertion.byteArray2BooleanList(frame.data);
 
         int numErrors = 0;
 
-        for (int i = 0; i < Host.cfg.packBitLen; i++) {
-            if (data.get(i) != Host.cfg.transmitted.get(i)) {
+        for (int i = 0; i < Config.packBitLen; i++) {
+            if (data.get(i) != Config.transmitted.get(i)) {
                 numErrors++;
             }
         }
         // print first bits of transmitted and get
-        int packCnt = Math.ceilDiv(Host.cfg.packBitLen, Host.cfg.packBitLen);
-        int bound = Host.cfg.packBitLen;
+        int packCnt = Math.ceilDiv(Config.packBitLen, Config.packBitLen);
+        int bound = Config.packBitLen;
         int groupLen = 40;
         for (int packIdx = 0; packIdx < packCnt; packIdx ++) {
             System.out.println("GroupDiffs " + packIdx + ":");
-            for (int groupId = 0; groupId < Math.ceil((double) Host.cfg.packBitLen / groupLen); groupId++) {
+            for (int groupId = 0; groupId < Math.ceil((double) Config.packBitLen / groupLen); groupId++) {
                 int groupDiff = 0;
                 for (int i = 0; i < groupLen; i++) {
-                    if (packIdx * Host.cfg.packBitLen + groupId * groupLen + i < bound) {
-                        groupDiff += Host.cfg.transmitted.get(packIdx * Host.cfg.packBitLen + groupId * groupLen + i) == 
-                            data.get(packIdx * Host.cfg.packBitLen + groupId * groupLen + i) ? 0 : 1;
+                    if (packIdx * Config.packBitLen + groupId * groupLen + i < bound) {
+                        groupDiff += Config.transmitted.get(packIdx * Config.packBitLen + groupId * groupLen + i) == 
+                            data.get(packIdx * Config.packBitLen + groupId * groupLen + i) ? 0 : 1;
                     }
                 }
                 System.out.print(groupDiff + " ");
             }
             System.out.println();
         }
-        Host.cfg.UpdBER((double)numErrors / Host.cfg.packBitLen);
+        Config.UpdBER((double)numErrors / Config.packBitLen);
     }
 
 }

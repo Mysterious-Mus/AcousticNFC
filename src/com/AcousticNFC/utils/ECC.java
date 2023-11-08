@@ -13,18 +13,15 @@ public class ECC {
   private int symbolLength;
   private int constraintLength;
 
-  Config cfg;
-
-  public ECC(Config cfg_src) {
+  public ECC() {
     /**
      * Convolutional code constructor
      *  g: generator matrix
      *  L: constraint length
      */
-    this.cfg = cfg_src;
-    this.generatorMatrix = cfg_src.ECCMat;
-    this.symbolLength = cfg_src.ECCMat.length;
-    this.constraintLength = cfg_src.ECCMat[0].length;
+    this.generatorMatrix = Config.ECCMat;
+    this.symbolLength = Config.ECCMat.length;
+    this.constraintLength = Config.ECCMat[0].length;
     // convert boolen array to int 
     this.generatorMatrix_bit = new int[this.symbolLength];
     for (int i = 0; i < this.symbolLength; i++) {
@@ -201,7 +198,7 @@ public class ECC {
     for (int i = 0; i < arraySize; i++) {
         input[i] = random.nextBoolean();
     }
-    ECC ECC = new ECC(new Config());
+    ECC ECC = new ECC();
 
    
     //ECC.PrintBoolenArray(input);

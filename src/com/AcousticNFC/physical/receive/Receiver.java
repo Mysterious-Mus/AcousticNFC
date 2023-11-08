@@ -24,15 +24,12 @@ public class Receiver {
 
     public ArrayList<Boolean> receiveBuffer;
 
-    Config cfg;
-
-    public Receiver(Config cfg_src) {
-        cfg = cfg_src;
+    public Receiver() {
         samples = new ArrayList<Float>();
-        tickDone = cfg.sofNSamples - 1;  // can't be sure these points are SoF ends
-        sofDetector = new SoFDetector(cfg);
+        tickDone = Config.sofNSamples - 1;  // can't be sure these points are SoF ends
+        sofDetector = new SoFDetector();
         unpacking = false;
-        demodulator = new Demodulator(this, cfg);
+        demodulator = new Demodulator(this);
         receiveBuffer = new ArrayList<Boolean>();
     }
 
@@ -68,9 +65,9 @@ public class Receiver {
 
         // if transmit done, update results
         // calculate BER
-        if (receiveBuffer.size() >= cfg.transmitBitLen) {
+        if (receiveBuffer.size() >= Config.transmitBitLen) {
             // remove paddings
-            while (receiveBuffer.size() > cfg.transmitBitLen) {
+            while (receiveBuffer.size() > Config.transmitBitLen) {
                 receiveBuffer.remove(receiveBuffer.size() - 1);
             }
 
