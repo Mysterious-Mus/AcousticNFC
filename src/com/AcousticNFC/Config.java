@@ -82,6 +82,8 @@ public class Config {
     // compensation
     public static int sofAlignCompensate = 0;
 
+    public static int PHYSICAL_BUFFER_SIZE = 200000;
+
     public class ConfigPanel extends JPanel {
 
         JLabel sampleRateField;
@@ -360,6 +362,8 @@ public class Config {
     }
 
     public Config() {
+        // Create a panel with text fields for each field in the Config class
+        panel = new ConfigPanel();
         ConfigChange();
     }
     

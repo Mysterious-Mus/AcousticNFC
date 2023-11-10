@@ -466,18 +466,8 @@ public class Host extends JFrame implements AsioDriverListener {
     return null;
   }
 
-  int guard = 0;
-  int lastPosition = 0;
   // IO handler below, should be fast
   public synchronized void bufferSwitch(long systemTime, long samplePosition, Set<AsioChannel> channels) {
-    guard ++;
-    // if (guard > 1) {
-    //   System.out.println("Warning: bufferSwitch() callback received while another callback is still executing.");
-    // }
-    // if (samplePosition - lastPosition != bufferSize) {
-    //   System.out.println("Warning: bufferSwitch() callback received with unexpected sample position.");
-    // }
-    lastPosition = (int)samplePosition;
     // pick the first active input channel
     AsioChannel inputChannel = findAsioChannel(ChannelType.INPUT, channels);
     // pick the first active output channel
@@ -554,7 +544,6 @@ public class Host extends JFrame implements AsioDriverListener {
       // unlock
       // BufferIntrLock.unlock();
     }
-    guard --;
   }
   
   public void bufferSizeChanged(int bufferSize) {

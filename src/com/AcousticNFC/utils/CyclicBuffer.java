@@ -28,15 +28,24 @@ public class CyclicBuffer<T> {
     }
 
     public boolean full() {
-        return lastIdx - FIW == buffer.size();
+        return lastIdx - FIW >= buffer.size();
     }
 
     public void push(T t) {
-        // assert buffer is not full
-        assert !full();
+        // if buffer is full, terminate
+        if (full()) {
+            System.out.println("Buffer is full, can't push more. Too much not handled or FIW not set properly.");
+            System.exit(0);
+        }
 
         buffer.set(getBufferIdx(lastIdx), t);
         lastIdx++;
+    }
+
+    public void pusharr(ArrayList<T> arr) {
+        for (T t : arr) {
+            push(t);
+        }
     }
 
     public T get(int i) {

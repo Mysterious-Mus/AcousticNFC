@@ -63,4 +63,12 @@ public class TypeConvertion {
         res.addAll(list2);
         return res;
     }
+
+    public static ArrayList<Float> floatArr2FloatList(float[] arr) {
+        ArrayList<Float> res = new ArrayList<>();
+        for (float f : arr) {
+            res.add(f);
+        }
+        return res;
+    }
 }
