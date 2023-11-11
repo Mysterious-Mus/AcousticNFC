@@ -18,7 +18,7 @@ public class Demodulator {
     Receiver receiver;
 
     public ArrayList<Boolean> frameBuffer;
-    double timeCompensation = 0; // compensate the sampling offset
+    // double timeCompensation = 0; // compensate the sampling offset
 
     ECC Ecc;
 
@@ -43,14 +43,17 @@ public class Demodulator {
         return samples;
     }
 
-    public double[] subCarrPhases(float[] samples) {
+    public static double[] subCarrPhases(float[] samples) {
         double[] result = new double[Config.numSubCarriers];
         Complex[] fftResult = FFT.fft(samples);
         for (int i = 0; i < Config.numSubCarriers; i++) {
             result[i] = fftResult[
                     (int) Math.round((Config.bandWidthLow + i * Config.subCarrierWidth) / 
-                    Config.sampleRate * Config.symbolLength)].phase() + 
-                    timeCompensation * 2 * Math.PI * (Config.bandWidthLow + i * Config.subCarrierWidth);
+                    Config.sampleRate * Config.symbolLength)].phase();
+            // result[i] = fftResult[
+            //         (int) Math.round((Config.bandWidthLow + i * Config.subCarrierWidth) / 
+            //         Config.sampleRate * Config.symbolLength)].phase() + 
+            //         timeCompensation * 2 * Math.PI * (Config.bandWidthLow + i * Config.subCarrierWidth);
         }
         return result;
     }
@@ -58,20 +61,20 @@ public class Demodulator {
     /* Demodulate the next symbol 
      * Push result bits into the receiver's buffer
     */
-    public ArrayList<Boolean> demodulateSymbol(float[] samples) {
+    public static ArrayList<Boolean> demodulateSymbol(float[] samples) {
         ArrayList<Boolean> resultBuffer = new ArrayList<Boolean>();
         // get Phases
         double phases[] = subCarrPhases(samples);
 
-        // log the first symbol phases
-        // if the frameBuffer is empty
-        if (frameBuffer.size() == 0) {
-            String panelInfo = "";
-            for (int i = 0; i < Config.numSubCarriers; i++) {
-                panelInfo += String.format("%.2f ", phases[i]);
-            }
-            Config.UpdFirstSymbolPhases(panelInfo);
-        }
+        // // log the first symbol phases
+        // // if the frameBuffer is empty
+        // if (frameBuffer.size() == 0) {
+        //     String panelInfo = "";
+        //     for (int i = 0; i < Config.numSubCarriers; i++) {
+        //         panelInfo += String.format("%.2f ", phases[i]);
+        //     }
+        //     Config.UpdFirstSymbolPhases(panelInfo);
+        // }
 
         // calculate the keys of the subcarriers
         for (int i = 0; i < Config.numSubCarriers; i++) {
@@ -148,7 +151,7 @@ public class Demodulator {
                 if (Math.abs(avgAbsDistortion) < Math.abs(bestDistortion)) {
                     bestDistortion = avgAbsDistortion;
                     bestDoneIdx = doneIdx;
-                    timeCompensation = -avgDistortion;
+                    // timeCompensation = -avgDistortion;
                     bestBER = BER;
                 }
             }

@@ -56,7 +56,7 @@ public class OFDM {
      * Maximum amplitude is 0.2
      * Cyclical Prefix is added before the data
     */
-    public float[] symbolGen(int[] data) {
+    public static float[] symbolGen(int[] data) {
         // Sanity: data length should be equal to numSubCarriers * keyingCapacity
         assert data.length == Config.numSubCarriers * Config.keyingCapacity;
 
@@ -100,7 +100,7 @@ public class OFDM {
      * The maximum amplitude is 0.2.
      * Cyclical Prefix is added before each symbol.
      */
-    public float[] modulate(ArrayList<Boolean> data) {
+    public static float[] modulate(ArrayList<Boolean> data) {
         // pad the input with 0s to make the length a multiple of symbolCapacity
         int numSymbols = (int) Math.ceil((double) data.size() / Config.symbolCapacity);
         boolean[] paddedData = new boolean[numSymbols * Config.symbolCapacity];

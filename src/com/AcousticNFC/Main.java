@@ -3,7 +3,9 @@ package com.AcousticNFC;
 import java.util.ArrayList;
 import com.AcousticNFC.ASIO.ASIOHost;
 import com.AcousticNFC.UI.UIHost;
+import com.AcousticNFC.mac.MacManager;
 import com.AcousticNFC.physical.PhysicalManager;
+import com.AcousticNFC.utils.BitString;
 import com.AcousticNFC.Config;
 
 public class Main {
@@ -11,15 +13,15 @@ public class Main {
     Config config;
 
     ASIOHost asioHost;
-    public static ArrayList<PhysicalManager> physicalManagers = new ArrayList<>();
-    UIHost uiHost;
+    public static MacManager macManager;
+    public static UIHost uiHost;
 
     public Main() {
         config = new Config();
+        BitString bitStr = new BitString("bit_string.txt");
+        Config.transmitted = bitStr.getBitString();
         asioHost = new ASIOHost();
-        for (int i = 0; i < 2; i++) {
-            physicalManagers.add(new PhysicalManager("PhysicalManager" + i));
-        }
+        macManager = new MacManager();
         uiHost = new UIHost();
     }
 

@@ -12,6 +12,7 @@ import com.AcousticNFC.Host;
 import com.AcousticNFC.physical.PhysicalManager;
 import com.AcousticNFC.utils.ANSI;
 import com.AcousticNFC.utils.TypeConvertion;
+import com.AcousticNFC.utils.sync.Permission;
 
 
 public class MacManager {
@@ -28,115 +29,64 @@ public class MacManager {
 
     private PhysicalManager physicalManager;
 
-    public MacManager() {
-        physicalManager = new PhysicalManager();
-        // Initial state is IDLE
-        currentState = State.IDLE;
-        event = Event.IDLE;
+    public interface physicalCallback {
+        public void frameDetected();
+        public void frameReceived(MacFrame frame);
     }
 
-    public void process() {
-        switch (currentState) {
-            case IDLE:
-                handleIdleState();
-                break;
-            case SENDING:
-                handleSendingState();
-                break;
-            case RECEIVING:
-                handleReceivingState();
-                break;
-            case ERROR:
-                handleErrorState();
-                break;
-            default:
-                break;
-        }
-    }
-
-    private void handleIdleState() {
-        switch (event) {
-            case TxPENDING:
-                currentState = State.SENDING;
-                send(Config.transmitted);
-                event = Event.TxDONE;
-                break;
-                
-                case FRAME_DETECTED:
-                currentState = State.RECEIVING;
-                System.out.println(ANSI.ANSI_GREEN + "Frame Detected!" + ANSI.ANSI_RESET);
-                event = receive();
-                break;
-
+    /**
+     * Atomic operations for physical callbacks
+     */
+    private physicalCallback phyInterface = new physicalCallback() {
+        @Override
+        public synchronized void frameDetected() {
+            // first disable detection
+            physicalManager.permissions.detect.unpermit();
+            switch (currentState) {
                 case IDLE:
-                currentState = State.IDLE;
-                if (Host.receiver.sofDetector.detect() == true) {
-                    
-                    // Note: If data race happened to "event", the "event" will be overwritten, receiver comes first.
-                    event = Event.FRAME_DETECTED;
-                }
-                break;
-
-            default:
-                currentState = State.ERROR;
-                break;
+                    // we can start receiving
+                    // enable decoding
+                    physicalManager.permissions.decode.permit();
+                    // set the state to receiving
+                    currentState = State.RECEIVING;
+                    break;
+                default:
+                    break;
+            }
         }
-        return;
-    }
 
-    private void handleSendingState() {
-        switch (event) {
-            case TxDONE:
-                currentState = State.IDLE;
-                event = Event.IDLE;
-                break;
-
-            default:
-                currentState = State.ERROR;
-
-                break;
+        @Override
+        public synchronized void frameReceived(MacFrame frame) {
+            // first disable decoding
+            physicalManager.permissions.decode.unpermit();
+            switch (currentState) {
+                case RECEIVING:
+                    computeBER(frame);
+                    backToIdle();
+                    break;
+                default:
+                    break;
+            }
         }
+    };
+
+    public MacManager() {
+        physicalManager = new PhysicalManager(
+            "Physical Manager",
+            phyInterface);
+
+        backToIdle();
     }
 
-    private void handleReceivingState() {
-        switch (event) {
-            case CRC_ERROR:
-                currentState = State.IDLE;
-                //TODO: drop the frame
-                event = Event.IDLE;
-                break;
-            case VALID_ACK:
-                currentState = State.IDLE;
-                //TODO: clear timeout
-                break;
-            
-            case VALID_DATA:
-                currentState = State.SENDING;
-                //TODO: MAC layer process the data
-                event = Event.TxDONE;
-                break;
-            default:
-                currentState = State.ERROR;
-
-                break;
-        }
+    /**
+     * Go back to idle state
+     * immediately start transmitting the next frame if there is any
+     */
+    private synchronized void backToIdle() {
+        currentState = State.IDLE;
+        // enable detection
+        physicalManager.permissions.detect.permit();
     }
-
-    private void handleErrorState() {
-        System.err.println(ANSI.ANSI_RED + "Error State" + ANSI.ANSI_RESET);
-    }
-
-    public enum Event {
-        TxPENDING,
-        TxDONE,
-        FRAME_DETECTED,
-        CRC_ERROR,
-        VALID_ACK,
-        VALID_DATA,
-        IDLE
-    }
-
-    public Event event;
 
     /**
      * break the data into mac frames
@@ -176,9 +126,9 @@ public class MacManager {
     }
 
     /**
-     * Send the data
+     * Send the data, the thread will wait till send complete or send error
      * @param bitString to be sent 
-     * @return None
+     * @return Void
      */
     public void send( ArrayList<Boolean> bitString) {
 
@@ -193,23 +143,11 @@ public class MacManager {
         System.out.println(ANSI.ANSI_BLUE + "send successfully" + ANSI.ANSI_RESET);
     }
 
-    public Event receive() {
-        System.out.println("Start receiving");
-        MacFrame frame = new MacFrame(physicalManager.receive());
-        computeBER(frame);
-        // The frame is received, now check the CRC
-        if (frame.is_valid == false) {
-            return Event.CRC_ERROR;
-        }
-        else if (frame.type == 0xFF) {
-            // check Data type 
-            // TODO: check the destination address
-            return Event.VALID_ACK;
-        }
-        return Event.VALID_DATA;
-    }
-
-    public void computeBER(MacFrame frame) {
+    /**
+     * A method for testing
+     * compute BER for the first frame sent and report
+     */
+    public static void computeBER(MacFrame frame) {
         ArrayList<Boolean> data =  TypeConvertion.byteArray2BooleanList(frame.data);
 
         int numErrors = 0;

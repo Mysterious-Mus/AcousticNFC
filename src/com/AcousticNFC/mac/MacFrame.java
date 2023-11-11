@@ -116,6 +116,10 @@ public class MacFrame {
         this.is_valid = checkCRC();
     }
 
+    public MacFrame (ArrayList<Boolean> frameBuffer) {
+        this(TypeConvertion.booleanList2ByteArray(frameBuffer));
+    }
+
     /**
      * The Length of a mac frame
      */

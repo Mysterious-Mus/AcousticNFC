@@ -1,6 +1,8 @@
 package com.AcousticNFC.physical.transmit;
 
 import com.AcousticNFC.Config;
+import com.AcousticNFC.utils.CyclicBuffer;
+
 import java.util.ArrayList;
 
 /* Dataframe SoF generator
@@ -10,24 +12,21 @@ import java.util.ArrayList;
  */
 public class SoF {
 
-    public SoF() {
-    }
+    // int warmUpL = 10;
+    // public float[] generateWarmupSoF() {
+    //     float[] withWarmup = new float[warmUpL + Config.sofNSamples + Config.sofSilentNSamples];
 
-    int warmUpL = 10;
-    public float[] generateWarmupSoF() {
-        float[] withWarmup = new float[warmUpL + Config.sofNSamples + Config.sofSilentNSamples];
+    //     // the warmUp section should be a sine wave, with lenght Config.sofNSamples
+    //     for (int idx = 0; idx < warmUpL; idx ++) {
+    //         withWarmup[idx] = 0.8f * (float) Math.sin(2 * Math.PI * 8000 * idx / Config.sampleRate);
+    //     }
 
-        // the warmUp section should be a sine wave, with lenght Config.sofNSamples
-        for (int idx = 0; idx < warmUpL; idx ++) {
-            withWarmup[idx] = 0.8f * (float) Math.sin(2 * Math.PI * 8000 * idx / Config.sampleRate);
-        }
+    //     float[] samplesNoSilence = generateSoFNoSilence();
+    //     System.arraycopy(samplesNoSilence, 0, withWarmup, warmUpL, Config.sofNSamples);
+    //     return withWarmup;
+    // }
 
-        float[] samplesNoSilence = generateSoFNoSilence();
-        System.arraycopy(samplesNoSilence, 0, withWarmup, warmUpL, Config.sofNSamples);
-        return withWarmup;
-    }
-
-    public float[] generateSoF() {
+    public static float[] generateSoF() {
         float[] samples = new float[Config.sofNSamples + Config.sofSilentNSamples];
         
         float[] samplesNoSilence = generateSoFNoSilence();
@@ -35,7 +34,7 @@ public class SoF {
         return samples;
     }
 
-    public float[] generateSoFNoSilence() {
+    public static float[] generateSoFNoSilence() {
         float[] samples = new float[Config.sofNSamples];
         float a = (float)((Config.SoF_fmax - Config.SoF_fmin) / Config.SoF_T);
         float phi0 = (float)(Math.PI * a * Config.SoF_T * Config.SoF_T);
@@ -54,15 +53,34 @@ public class SoF {
         return samples;
     }
 
-    public int NSample() {
+    public static int NSample() {
         return (int) (2 * Config.SoF_T * Config.SoF_amplitude);
     }
 
-    public ArrayList<Boolean> alignBits() {
+    public static ArrayList<Boolean> alignBits() {
         ArrayList<Boolean> bits = new ArrayList<Boolean>();
         for (int i = 0; i < Config.alignBitLen; i++) {
             bits.add(Config.alignBitFunc(i));
         }
         return bits;
+    }
+
+    public static double calcCorr(ArrayList<Float> buffer, int startIdx) {
+        double corr = 0;
+        for (int i = 0; i < Config.sofNSamples; i++) {
+            corr += buffer.get(startIdx+i) * Config.SofNoSilence[i];
+        }
+        corr /= Config.sofNSamples;
+        return corr;
+    }
+
+    public static double calcCorr(CyclicBuffer<Float> buffer, int startIdx) {
+        double corr = 0;
+        for (int i = 0; i < Config.sofNSamples; i++) {
+            corr += buffer.get(startIdx+i) * Config.SofNoSilence[i];
+        }
+        corr /= Config.sofNSamples;
+        Config.UpdCorrdetect(corr);
+        return corr;
     }
 }

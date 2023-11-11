@@ -2,10 +2,13 @@ package com.AcousticNFC.utils;
 
 import java.util.ArrayList;
 
-/* A ring buffer that contains FIRSTINDEXWANTED
- * everything before FIRSTINDEXWANTED is discarded
+/**
+ * A ring buffer that contains FIRSTINDEXWANTED(FIW)<p>
+ * everything before FIRSTINDEXWANTED is discarded<p>
  * also tells the buffer feeder which index to start feeding,
- * since the FIW can be set > last index in the buffer
+ * since the FIW can be set > last index in the buffer<p>
+ * 
+ * cyclic manner, okay if tail - FIW <= buffer size
  */
 public class CyclicBuffer<T> {
     
@@ -52,7 +55,9 @@ public class CyclicBuffer<T> {
         return buffer.get(getBufferIdx(i));
     }
 
-    // index of the elem behind the last item(doesn't exist yet but next to feed)
+    /** 
+     * index of the elem behind the last item(doesn't exist yet but next to feed)
+     */
     public int tailIdx() {
         return lastIdx; // this should be the index of the next element to be fed
     }
@@ -65,5 +70,20 @@ public class CyclicBuffer<T> {
         if (FIW > lastIdx) {
             lastIdx = FIW;
         }
+    }
+
+    public int size() {
+        return lastIdx - FIW;
+    }
+
+    public T popFront() {
+        if (size() == 0) {
+            System.out.println("Buffer is empty, can't pop.");
+            System.exit(0);
+        }
+
+        T t = buffer.get(getBufferIdx(FIW));
+        FIW++;
+        return t;
     }
 }

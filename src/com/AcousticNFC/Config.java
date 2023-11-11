@@ -3,6 +3,7 @@ package com.AcousticNFC;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
+import com.AcousticNFC.physical.transmit.SoF;
 
 /*
  * Steps to add one parameter to panel:
@@ -48,21 +49,26 @@ public class Config {
 
     public static float SoF_amplitude = 1f;
     public static double SoF_T = 0.002905; // The 'T' parameter of SoF, see DOC
+    /**
+     * the number of SoF samples without silence
+     */
     public static int sofNSamples;
     public static double SoF_fmin = 6000;
     public static double SoF_fmax = 16000;
     public static double SofSilencePeriod = 0.000;
     public static int sofSilentNSamples;
+    public static float[] SofNoSilence;
 
     public static double maxSofCorrDetect = 0;
     public static double SofDetectThreshld = 0.02; // The threshold for correlation detection
+    public static int SofDetectWindow = 20;
 
     public static double interPacketGapPeriod = 0.001; 
     public static int interPacketGapNSamples;
 
     // debug shared info
     public static ArrayList<Boolean> transmitted;
-    public static int alignNSymbol = 10;
+    public static int alignNSymbol = 0;
     public static int scanWindow = 100;
     public static boolean alignBitFunc(int idx) {return (idx % 5 <= 2);}
 
@@ -83,6 +89,12 @@ public class Config {
     public static int sofAlignCompensate = 0;
 
     public static int PHYSICAL_BUFFER_SIZE = 200000;
+
+    public static class UIParams {
+        public int UIHeight = 600;
+        public int UIWidth = 1000;
+    }
+    public static UIParams uiParams = new UIParams();
 
     public class ConfigPanel extends JPanel {
 
@@ -350,7 +362,7 @@ public class Config {
         }
     }
 
-    static ConfigPanel panel;
+    public static ConfigPanel panel;
 
     public Config(Host host) {
         this.host = host;
@@ -389,6 +401,7 @@ public class Config {
         ECCBitRate = ECCMat.length;
         decodeBitLen = ECCOn? packBitLen * ECCBitRate : packBitLen;
         frameLength = alignBitLen + decodeBitLen;
+        SofNoSilence = SoF.generateSoFNoSilence();
         
         panel.updateDisplay();
     }

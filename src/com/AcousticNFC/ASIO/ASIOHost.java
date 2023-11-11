@@ -23,18 +23,30 @@ import java.util.HashMap;
 import com.AcousticNFC.utils.Player;
 import com.AcousticNFC.utils.TypeConvertion;
 
+import java.util.concurrent.Semaphore;
+
 public class ASIOHost implements AsioDriverListener{
 
-    private AsioDriver asioDriver;
+    private static AsioDriver asioDriver;
     private Set<AsioChannel> activeChannels = new HashSet<AsioChannel>();
     
     private int bufferSize;
 
-    private static Map<AsioChannel, Player> contentPlayer = new HashMap<>();
-	private static Map<AsioChannel, CyclicBuffer<Float>> receiveBuffer = new HashMap<>();
+    private static Map<AsioChannel, Player> playChannels = new HashMap<>();
+
+    public interface NewBufferListener {
+        public void handleNewBuffer(float[] newbuffer);
+    }
+
+	private static Map<AsioChannel, NewBufferListener> receiveChannels = new HashMap<>();
 
 	public static Set<AsioChannel> availableInChannels = new HashSet<>();
 	public static Set<AsioChannel> availableOutChannels = new HashSet<>();
+
+    /**
+     * a map from channel to the semaphore that is used to wait for the channel to complete transmitting
+     */
+    private static Map<AsioChannel, Semaphore> channelWaiters = new HashMap<>();
 
 	/**
 	 * construct the ASIO host<p>
@@ -65,7 +77,7 @@ public class ASIOHost implements AsioDriverListener{
             return;
         }
         // assign an empty player to the channel
-        contentPlayer.put(channel, new Player());
+        playChannels.put(channel, new Player());
         // maintain the available list
         availableOutChannels.remove(channel);
 	}
@@ -78,19 +90,23 @@ public class ASIOHost implements AsioDriverListener{
     public static void play(AsioChannel channel, ArrayList<Float> content) {
         if (channel == null) return;
         // sanity check
-        if (!contentPlayer.containsKey(channel)) {
+        if (!playChannels.containsKey(channel)) {
             System.out.println("Channel " + channel + " is not registered.");
             return;
         }
         // get the player
-        Player player = contentPlayer.get(channel);
+        Player player = playChannels.get(channel);
+        // print warning message if the player is not empty
+        if (!player.empty()) {
+            System.out.println("Warning: channel " + channel + " is not empty.");
+        }
         // add the content to the player
         player.addContent(content);
     }
 
     public static void unregisterPlayer(AsioChannel channel) {
         if (channel == null) return;
-        contentPlayer.remove(channel);
+        playChannels.remove(channel);
         // maintain the available list
         availableOutChannels.add(channel);
     }
@@ -98,11 +114,11 @@ public class ASIOHost implements AsioDriverListener{
     /**
      * register a cyclic buffer to receive data from the channel
      * @param channel
-     * @param buffer
+     * @param listener
      */
-	public static void registerReceiver(AsioChannel channel, CyclicBuffer<Float> buffer) {
+	public static void registerReceiver(AsioChannel channel, NewBufferListener listener) {
         if (channel == null) return;
-		receiveBuffer.put(channel, buffer);
+		receiveChannels.put(channel, listener);
         // maintain the available list
         availableInChannels.remove(channel);
 	}
@@ -113,20 +129,50 @@ public class ASIOHost implements AsioDriverListener{
      */
     public static void unregisterReceiver(AsioChannel channel) {
         if (channel == null) return;
-        receiveBuffer.remove(channel);
+        receiveChannels.remove(channel);
         // maintain the available list
         availableInChannels.add(channel);
     }
 
+    /**
+     * wait for the channel to complete transmitting
+     * @param channel
+     */
+    public synchronized static void waitTransmit(AsioChannel channel) {
+        // if the channel is not registered, print log
+        if (!playChannels.containsKey(channel)) {
+            System.out.println("Warning: channel " + channel + " is not registered.");
+            return;
+        }
+
+        // if the channel is already empty, do nothing
+        if (playChannels.get(channel).empty()) return;
+
+        // now the channel has something to play, give it a semaphore and down
+        channelWaiters.put(channel, new Semaphore(0));
+        try {
+            channelWaiters.get(channel).acquire();
+        }
+        catch (InterruptedException e) {
+            System.out.println("Warning: channel " + channel + " is interrupted.");
+        }
+    }
+
     public synchronized void bufferSwitch(long systemTime, long samplePosition, Set<AsioChannel> channels) {
 		// Create a copy of the keySet because we are removing during the loop
-		Set<AsioChannel> keys = new HashSet<>(contentPlayer.keySet());
+		Set<AsioChannel> keys = new HashSet<>(playChannels.keySet());
 		// look up all the play channels
 		for (AsioChannel channel : keys) {
 			// get the player
             if (channel == null) continue;
-			Player player = contentPlayer.get(channel);
-            if (player.empty()) continue;
+			Player player = playChannels.get(channel);
+            if (player.empty()) {
+                // up the waiter if exists
+                if (channelWaiters.containsKey(channel)) {
+                    channelWaiters.get(channel).release();
+                    channelWaiters.remove(channel);
+                }
+            }
 			// check if the channel exists
 			if (channel == null || !channels.contains(channel)) {
 				// report channel not found
@@ -137,14 +183,19 @@ public class ASIOHost implements AsioDriverListener{
 			else {
 				// get the float[] from the player
 				float[] content = new float[bufferSize];
-				boolean isLastBuffer = player.playContent(bufferSize, content);
+				boolean notLastBuffer = player.playContent(bufferSize, content);
+                // if last buffer, up the waiter
+                if (!notLastBuffer && channelWaiters.containsKey(channel)) {
+                    channelWaiters.get(channel).release();
+                    channelWaiters.remove(channel);
+                }
 				// copy the content to the channel
 				channel.write(content);
 			}
 		}
 		
 		// look up all receiving channels
-		for (AsioChannel channel : receiveBuffer.keySet()) {
+		for (AsioChannel channel : receiveChannels.keySet()) {
 			// check if the channel exists
             if (channel == null) continue;
 			if (!channels.contains(channel)) {
@@ -153,13 +204,13 @@ public class ASIOHost implements AsioDriverListener{
 				unregisterReceiver(channel);		
 			}
 			else {
-				// get the buffer
-				CyclicBuffer<Float> buffer = receiveBuffer.get(channel);
+				// get the listener
+				NewBufferListener listener = receiveChannels.get(channel);
 				// read the content from the channel
 				float[] content = new float[bufferSize];
 				channel.read(content);
-				// write the content to the buffer
-				buffer.pusharr(TypeConvertion.floatArr2FloatList(content));
+				// invoke the listener
+                listener.handleNewBuffer(content);
 			}
 		}
     }
@@ -196,10 +247,6 @@ public class ASIOHost implements AsioDriverListener{
             availableInChannels.add(asioChannel);
         }
 
-		// print the number of input and output channels
-		System.out.println("Number of input channels: " + asioDriver.getNumChannelsInput());
-		System.out.println("Number of output channels: " + asioDriver.getNumChannelsOutput());
-		
         bufferSize = asioDriver.getBufferPreferredSize();
         double sampleRate = asioDriver.getSampleRate();
         // if sample rate is not 44100, throw warning
@@ -209,15 +256,22 @@ public class ASIOHost implements AsioDriverListener{
         Config.UpdSampleRate(sampleRate);
         asioDriver.createBuffers(activeChannels);
         asioDriver.start();
-      }
+    }
     
-      public void driverShutdown() {
+    public void driverShutdown() {
         if (asioDriver != null) {
-          asioDriver.shutdownAndUnloadDriver();
-          activeChannels.clear();
-          asioDriver = null;
+            asioDriver.shutdownAndUnloadDriver();
+            activeChannels.clear();
+            asioDriver = null;
         }
-      }
+    }
+
+    public static void openControlPanel() {
+        if (asioDriver != null && 
+            asioDriver.getCurrentState().ordinal() >= AsioDriverState.INITIALIZED.ordinal()) {
+            asioDriver.openControlPanel();          
+        }
+    }
 
     public void bufferSizeChanged(int bufferSize) {
         System.out.println("bufferSizeChanged() callback received.");

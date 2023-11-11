@@ -32,7 +32,7 @@ public class EthernetPacket {
      * @param MacFrame
      * @return {@code float[]} packet samples to physical layer
      */
-    public float[] getPacket(byte[] MacFrame) {
+    public static float[] getPacket(byte[] MacFrame) {
         /* 
         * Input: frame from mac layer
         * Modulate the packet using OFDM (byte[] -> float[])
@@ -42,14 +42,14 @@ public class EthernetPacket {
         */
 
         ArrayList<Boolean> MacFrameBits = TypeConvertion.byteArray2BooleanList(MacFrame);
-        ArrayList<Boolean> alignBits = sof.alignBits();
+        ArrayList<Boolean> alignBits = SoF.alignBits();
         ArrayList<Boolean> bitsTransmit =TypeConvertion.concatList(alignBits, MacFrameBits);
 
         // modulate the MacFrame 
-        float[] MacFrameSamples = ofdm.modulate(bitsTransmit);
+        float[] MacFrameSamples = OFDM.modulate(bitsTransmit);
 
         // add preamble and SoF
-        float[] SoFSamples = sof.generateSoF();
+        float[] SoFSamples = SoF.generateSoF();
 
         // add interpacket gap
         float[] interPacketGapSamples = new float[Config.interPacketGapNSamples];

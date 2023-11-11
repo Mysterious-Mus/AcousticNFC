@@ -4,6 +4,9 @@ import javax.swing.JPanel;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JComboBox;
+
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.event.PopupMenuEvent;
@@ -13,6 +16,7 @@ import java.util.Set;
 import com.AcousticNFC.ASIO.ASIOHost;
 import com.AcousticNFC.physical.PhysicalManager.ChannelChangedListener;
 import com.synthbot.jasiohost.AsioChannel;
+import com.AcousticNFC.UI.UIHost;
 
 public class ChannelSelectPanel extends JPanel{
     
@@ -119,34 +123,48 @@ public class ChannelSelectPanel extends JPanel{
         inChannelCombo = new channelSelectCombo(ASIOHost.availableInChannels, inChannel, inChangedListener);
         outChannelCombo = new channelSelectCombo(ASIOHost.availableOutChannels, outChannel, outChangedListener);
         layoutComponents();
+
+        // add to UIHost
+        UIHost.channelSelectPanels.add(this);
     }
 
 
     private void layoutComponents() {
         // set box layout along Y axis
-        this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        this.setLayout(new GridBagLayout());
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
 
         // on the top should be the the label of whose channel is being selected
-        this.add(new JLabel("Select the channel for " + physMgrName));
+        this.add(new JLabel("Select the channel for " + physMgrName), gbc);
 
         // then there should be a subpannel, 2 by 2, on the left are labels
         // notifying input or output, on the right are the channel names comboBoxes
         JPanel subPanel = new JPanel();
-        subPanel.setLayout(new GridLayout(2, 2));
+        subPanel.setLayout(new GridBagLayout());
 
         // row 1
         // "input" label
-        subPanel.add(new JLabel("Input"));
+        subPanel.add(new JLabel("Input"), gbc);
         // input channel comboBox
-        subPanel.add(inChannelCombo);
+        gbc.gridx = 1;
+        subPanel.add(inChannelCombo, gbc);
 
         // row 2
         // "output" label
-        subPanel.add(new JLabel("Output"));
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        subPanel.add(new JLabel("Output"), gbc);
         // output channel comboBox
-        subPanel.add(outChannelCombo);
+        gbc.gridx = 1;
+        subPanel.add(outChannelCombo, gbc);
 
         // add the subpanel to the main panel
-        this.add(subPanel);
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        this.add(subPanel, gbc);
     }
 }
