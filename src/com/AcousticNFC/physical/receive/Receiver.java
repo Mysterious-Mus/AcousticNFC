@@ -9,8 +9,6 @@ public class Receiver {
     
     ArrayList<Float> samples;
 
-    public SoFDetector sofDetector;
-
     public boolean scanAligning;
     public boolean unpacking; // the receiver is either unpacking or waiting for SoF
 
@@ -27,7 +25,6 @@ public class Receiver {
     public Receiver() {
         samples = new ArrayList<Float>();
         tickDone = Config.sofNSamples - 1;  // can't be sure these points are SoF ends
-        sofDetector = new SoFDetector();
         unpacking = false;
         demodulator = new Demodulator(this);
         receiveBuffer = new ArrayList<Boolean>();

@@ -18,8 +18,6 @@ import com.AcousticNFC.physical.transmit.SoF;
 
 public class Config {
 
-    Host host;
-
     /* values directly assigned are editable on the panel 
      * The calculated ones are not editable, but can be changed by changing the editable ones
      *      Once one of the editable ones is changed, the calculated ones are updated
@@ -363,15 +361,6 @@ public class Config {
     }
 
     public static ConfigPanel panel;
-
-    public Config(Host host) {
-        this.host = host;
-
-        // Create a panel with text fields for each field in the Config class
-        panel = new ConfigPanel();
-
-        ConfigChange();
-    }
 
     public Config() {
         // Create a panel with text fields for each field in the Config class

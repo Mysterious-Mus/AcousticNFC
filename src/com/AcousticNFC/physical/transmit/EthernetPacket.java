@@ -1,7 +1,6 @@
 package com.AcousticNFC.physical.transmit;
 
 import com.AcousticNFC.Config;
-import com.AcousticNFC.Host;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;

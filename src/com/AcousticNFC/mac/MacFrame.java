@@ -9,7 +9,6 @@ import javax.print.DocFlavor.BYTE_ARRAY;
 import java.io.ByteArrayOutputStream;
 
 import com.AcousticNFC.Config;
-import com.AcousticNFC.Host;
 import com.AcousticNFC.utils.TypeConvertion;
 
 

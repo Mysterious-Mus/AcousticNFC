@@ -8,7 +8,6 @@ import javax.crypto.Mac;
 import javax.sound.sampled.AudioFileFormat.Type;
 
 import com.AcousticNFC.Config;
-import com.AcousticNFC.Host;
 import com.AcousticNFC.physical.PhysicalManager;
 import com.AcousticNFC.utils.ANSI;
 import com.AcousticNFC.utils.TypeConvertion;

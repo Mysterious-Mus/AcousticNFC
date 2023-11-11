@@ -1,1 +1,1 @@
-Main-Class: com.AcousticNFC.Host
+Main-Class: com.AcousticNFC.Main

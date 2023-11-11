@@ -5,7 +5,6 @@ import javax.swing.JPanel;
 import java.util.ArrayList;
 
 import com.AcousticNFC.Config;
-import com.AcousticNFC.Host;
 import com.AcousticNFC.mac.MacFrame;
 import com.AcousticNFC.physical.receive.Receiver;
 import com.AcousticNFC.physical.transmit.EthernetPacket;
