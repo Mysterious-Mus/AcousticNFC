@@ -60,7 +60,7 @@ public class Config {
     public static float[] SofNoSilence;
 
     public static double maxSofCorrDetect = 0;
-    public static double SofDetectThreshld = 0.02; // The threshold for correlation detection
+    public static double SofDetectThreshld = 0.003; // The threshold for correlation detection
     public static int SofDetectWindow = 200;
 
     public static double interPacketGapPeriod = 0.001; 

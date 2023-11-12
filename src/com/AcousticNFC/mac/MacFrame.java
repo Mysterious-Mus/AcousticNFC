@@ -72,6 +72,15 @@ public class MacFrame {
         public Header() {
         }
 
+        public Header(byte[] headerBuffer) {
+            // sanity: length check
+            if (headerBuffer.length != Configs.HeaderFields.COUNT.ordinal()) {
+                System.out.println("Error: header length not match");
+                return;
+            }
+            this.contents = headerBuffer;
+        }
+
         public void SetField(Configs.HeaderFields field, Byte value) {
             contents[field.ordinal()] = value;
         }
@@ -87,10 +96,25 @@ public class MacFrame {
             return CRC8.compute(Arrays.copyOfRange(contents, 0, Configs.HeaderFields.COUNT.ordinal() - 1)) 
                 == contents[Configs.HeaderFields.CRC8.ordinal()];
         }
+
+        public static int getNbit() {
+            return Configs.HeaderFields.COUNT.ordinal() * 8;
+        }
+
+        public byte getField(Configs.HeaderFields field) {
+            return contents[field.ordinal()];
+        }
+
+        public Configs.Types getType() {
+            return Configs.Types.fromByte(getField(Configs.HeaderFields.TYPE));
+        }
     }
 
     private byte[] wholeContents; // everything including header/crc
     private Header header;
+    public Header getHeader() {
+        return header;
+    }
 
     /**
      * Create the frame to be sent
@@ -125,13 +149,7 @@ public class MacFrame {
             return;
         }
         this.wholeContents = frameBuffer;
-        this.header = new Header();
-        for (Configs.HeaderFields field : Configs.HeaderFields.values()) {
-            if (field == Configs.HeaderFields.COUNT) {
-                continue;
-            }
-            this.header.SetField(field, frameBuffer[field.ordinal()]);
-        }
+        this.header = new Header(Arrays.copyOfRange(frameBuffer, 0, Configs.HeaderFields.COUNT.ordinal()));
     }
 
     public MacFrame (ArrayList<Boolean> frameBuffer) {

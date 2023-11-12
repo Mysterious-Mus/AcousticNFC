@@ -44,8 +44,8 @@ public class TransmitApp {
             while (true) {
                 transmitNotify.waitTask();
                 // the former Config.transmitbitlen of config.transmitted
+                macManager.syncAddr(transmitCtrl.getSrcAddress());
                 macManager.send(
-                    transmitCtrl.getSrcAddress(),
                     transmitCtrl.getTgtAddress(),
                     new ArrayList<>(Config.transmitted.subList(0, Config.transmitBitLen))
                 );
@@ -123,7 +123,7 @@ public class TransmitApp {
     // start working thread
     public TransmitApp() {
         // claim mac manager
-        macManager = new MacManager("TransmitApp", frameReceivedListener);
+        macManager = new MacManager((byte) 0, "TransmitApp", frameReceivedListener);
         mTransmitThread.start();
         // launch UI
         transmitCtrl = new TransmitCtrl();

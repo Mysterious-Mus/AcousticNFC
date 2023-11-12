@@ -2,6 +2,7 @@ package com.AcousticNFC.physical;
 
 import javax.swing.JPanel;
 
+import java.sql.Array;
 import java.util.ArrayList;
 
 import com.AcousticNFC.Config;
@@ -35,7 +36,7 @@ public class PhysicalManager {
     /**
      * Interface for ASIOHost for sample receiving
      */
-    private NewBufferListener receiveListener = new NewBufferListener() {
+    private NewBufferListener newBufferListener = new NewBufferListener() {
         @Override
         public void handleNewBuffer(float[] buffer) {
             // if both detect and decode are not permitted, discard the samples
@@ -60,7 +61,7 @@ public class PhysicalManager {
         public void ChannelChanged(AsioChannel channel) {
             ASIOHost.unregisterReceiver(receiveChannel);
             receiveChannel = channel;
-            ASIOHost.registerReceiver(receiveChannel, receiveListener);
+            ASIOHost.registerReceiver(receiveChannel, newBufferListener);
         }
     };
     private ChannelChangedListener outChangedListener = new ChannelChangedListener() {
@@ -79,22 +80,6 @@ public class PhysicalManager {
     }
 
     public Permissions permissions = new Permissions();
-
-    private class ReceivingStates {
-        public enum Status {
-            DETECTING,
-            DECODING,
-        };
-        Status status;
-        public int decodeStartIdx;
-
-        public ReceivingStates() {
-            status = Status.DETECTING;
-            decodeStartIdx = 0;
-        }
-    }
-
-    ReceivingStates receivingStates = new ReceivingStates();
 
     private Thread detectThread = new Thread(new Runnable() {
         @Override
@@ -128,7 +113,7 @@ public class PhysicalManager {
         // at construction, defaultly register the first available channel
         // for both input and output
         receiveChannel = ASIOHost.availableInChannels.iterator().next();
-        ASIOHost.registerReceiver(receiveChannel, receiveListener);
+        ASIOHost.registerReceiver(receiveChannel, newBufferListener);
         sendChannel = ASIOHost.availableOutChannels.iterator().next();
         ASIOHost.registerPlayer(sendChannel);
 
@@ -200,13 +185,11 @@ public class PhysicalManager {
         macInterface.frameDetected();
         // if decoding is permitted
         if (permissions.decode.isPermitted()) {
-            // update states
-            receivingStates.decodeStartIdx = maxCorrIdx + Config.sofNSamples + Config.sofSilentNSamples;
-            receivingStates.status = ReceivingStates.Status.DECODING;
             // discard SoF samples
-            sampleBuffer.setFIW(receivingStates.decodeStartIdx);
+            sampleBuffer.setFIW(maxCorrIdx + Config.sofNSamples + Config.sofSilentNSamples);
             // clear frameBuffer
             frameBuffer.clear();
+            headerReported = false;
         }
         else {
             // discard all samples
@@ -215,13 +198,8 @@ public class PhysicalManager {
     }
 
     ArrayList<Boolean> frameBuffer = new ArrayList<Boolean>();
+    boolean headerReported = false;
     private void decode() {
-        // sanity check
-        if(receivingStates.status != ReceivingStates.Status.DECODING) {
-            System.out.println("Error: decode() called when not in DECODING state");
-            return;
-        }
-
         // decode till samples are used up or we have a frame
         while (frameBuffer.size() < MacFrame.getFrameBitLen()) {
             // get the next sample
@@ -234,6 +212,27 @@ public class PhysicalManager {
             ArrayList<Boolean> bits = Demodulator.demodulateSymbol(symbolSamples);
             // add the bits to the frameBuffer
             frameBuffer.addAll(bits);
+        }
+
+        // if we get enough for a header, report to MAC
+        // if the header is already wrong or is ack, don't do full frame got report
+        // otherwise this function can go on
+        if (!headerReported && frameBuffer.size() >= MacFrame.Header.getNbit()) {
+            headerReported = true;
+            macInterface.headerReceived(
+                new MacFrame.Header(
+                    TypeConvertion.booleanList2ByteArray(
+                        new ArrayList<>(frameBuffer.subList(0, MacFrame.Header.getNbit()))
+                    )
+                )
+            );
+            // if now we don't have the permission to decode
+            if (!permissions.decode.isPermitted()) {
+                // clear frameBuffer
+                frameBuffer.clear();
+                headerReported = false;
+                return;
+            }
         }
 
         // if we gets a frame

@@ -17,6 +17,12 @@ import com.AcousticNFC.utils.sync.Permission;
 
 public class MacManager {
 
+    byte ADDR;
+
+    public void syncAddr(byte ADDR) {
+        this.ADDR = ADDR;
+    }
+
     public interface FrameReceivedListener {
         public void frameReceived(MacFrame frame);
     }
@@ -26,16 +32,18 @@ public class MacManager {
         IDLE,
         SENDING,
         SENDING_ACK,
-        RECEIVING,
+        RECEIVING_HEADER,
+        RECEIVING_PAYLOAD,
         ERROR
     }
 
-    private State currentState;
+    private State state;
 
     private PhysicalManager physicalManager;
 
     public interface physicalCallback {
         public void frameDetected();
+        public void headerReceived(MacFrame.Header header);
         public void frameReceived(MacFrame frame);
     }
 
@@ -47,15 +55,51 @@ public class MacManager {
         public synchronized void frameDetected() {
             // first disable detection
             physicalManager.permissions.detect.unpermit();
-            switch (currentState) {
+            switch (state) {
                 case IDLE:
                     // we can start receiving
                     // enable decoding
                     physicalManager.permissions.decode.permit();
                     // set the state to receiving
-                    currentState = State.RECEIVING;
+                    state = State.RECEIVING_HEADER;
                     break;
                 default:
+                    // print error
+                    System.out.println("Error: frame detected in wrong state:" + state);
+                    break;
+            }
+        }
+
+        @Override
+        public synchronized void headerReceived(MacFrame.Header header) {
+            switch (state) {
+                case RECEIVING_HEADER:
+                    if (header.check()) {
+                        switch (header.getType()) {
+                            case DATA:
+                                // set the state to receiving
+                                state = State.RECEIVING_PAYLOAD;
+                                break;
+                            case ACK:
+                                // receiving is done
+                                physicalManager.permissions.decode.unpermit();
+                                physicalManager.permissions.detect.permit();
+                                state = State.IDLE;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    else {
+                        // receiving is done
+                        physicalManager.permissions.decode.unpermit();
+                        physicalManager.permissions.detect.permit();
+                        state = State.IDLE;
+                    }
+                    break;
+                default:
+                    // print error
+                    System.out.println("Error: header received in wrong state:" + state);
                     break;
             }
         }
@@ -64,33 +108,43 @@ public class MacManager {
         public synchronized void frameReceived(MacFrame frame) {
             // first disable decoding
             physicalManager.permissions.decode.unpermit();
-            switch (currentState) {
-                case RECEIVING:
-                    frameReceivedListener.frameReceived(frame);
-                    backToIdle();
+            switch (state) {
+                case RECEIVING_PAYLOAD:
+                
+                physicalManager.permissions.detect.permit();
+                state = State.IDLE;
+                
+                if (frame.verify() && frame.getHeader().getField(MacFrame.Configs.HeaderFields.DEST_ADDR) == ADDR) {
+                        frameReceivedListener.frameReceived(frame);
+                        // send ack
+                        // MacFrame.Header ackHeader = new MacFrame.Header();
+                        // ackHeader.SetField(MacFrame.Configs.HeaderFields.DEST_ADDR, 
+                        //     frame.getHeader().getField(MacFrame.Configs.HeaderFields.SRC_ADDR));
+                        // ackHeader.SetField(MacFrame.Configs.HeaderFields.SRC_ADDR, ADDR);
+                        // ackHeader.SetField(MacFrame.Configs.HeaderFields.TYPE, MacFrame.Configs.Types.ACK.getValue());
+                        // MacFrame ackFrame = new MacFrame(
+                        //     ackHeader,
+                        //     new byte[0]
+                        // );
+                        // physicalManager.send(ackFrame);
+                    }
                     break;
                 default:
+                    // print error
+                    System.out.println("Error: frame received in wrong state:" + state);
                     break;
             }
         }
     };
 
-    public MacManager(String appName, FrameReceivedListener frameReceivedListener) {
+    public MacManager(byte ADDR, String appName, FrameReceivedListener frameReceivedListener) {
+        this.ADDR = ADDR;
         this.frameReceivedListener = frameReceivedListener;
         physicalManager = new PhysicalManager(
             appName,
             phyInterface);
 
-        backToIdle();
-    }
-
-    /**
-     * Go back to idle state
-     * immediately start transmitting the next frame if there is any
-     */
-    private synchronized void backToIdle() {
-        currentState = State.IDLE;
-        // enable detection
+        state = State.IDLE;
         physicalManager.permissions.detect.permit();
     }
 
@@ -126,7 +180,7 @@ public class MacManager {
      * @param bitString to be sent 
      * @return Void
      */
-    public void send(byte dstAddr, byte srcAddr, ArrayList<Boolean> bitString) {
+    public void send(byte dstAddr, ArrayList<Boolean> bitString) {
 
         System.out.println("start sending data");
         // record time
@@ -134,7 +188,7 @@ public class MacManager {
         // make frame header
         MacFrame.Header header = new MacFrame.Header();
         header.SetField(MacFrame.Configs.HeaderFields.DEST_ADDR, dstAddr);
-        header.SetField(MacFrame.Configs.HeaderFields.SRC_ADDR, srcAddr);
+        header.SetField(MacFrame.Configs.HeaderFields.SRC_ADDR, ADDR);
         header.SetField(MacFrame.Configs.HeaderFields.TYPE, MacFrame.Configs.Types.DATA.getValue());
 
         MacFrame[] frames = distribute(header, bitString);

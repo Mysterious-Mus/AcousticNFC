@@ -62,6 +62,7 @@ public class ReceiveApp {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         receivedFrames.clear();
+                        macManager.syncAddr((byte) hostAddrTxtField.getAddress());
                         isReceiving = true;
                         errPackCnt = 0;
                         errCrcCnt = 0;
@@ -113,7 +114,7 @@ public class ReceiveApp {
     // start working thread
     public ReceiveApp() {
         // claim mac manager
-        macManager = new MacManager("ReceiveApp", frameReceivedListener);
+        macManager = new MacManager((byte) 0, "ReceiveApp", frameReceivedListener);
         // launch UI
         receiveCtrl = new ReceiveCtrl();
     }
