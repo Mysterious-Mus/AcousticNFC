@@ -51,29 +51,6 @@ public class Receiver {
         }
     }
     
-    /* Do the computation heavy operations */
-    public void receive() {
-
-        // clear the frameBuffer
-        demodulator.frameBuffer.clear();
-
-        // demodulation
-        demodulator.demodulate();
-
-        // if transmit done, update results
-        // calculate BER
-        if (receiveBuffer.size() >= Config.transmitBitLen) {
-            // remove paddings
-            while (receiveBuffer.size() > Config.transmitBitLen) {
-                receiveBuffer.remove(receiveBuffer.size() - 1);
-            }
-
-            // dump received bits
-            FileOp.outputBitString(receiveBuffer, "received.txt");
-            receiveBuffer.clear();
-        }
-    }
-    
     public void dumpResults() {
         // FileOp.outputFloatSeq(samples, "samples.csv");
     }

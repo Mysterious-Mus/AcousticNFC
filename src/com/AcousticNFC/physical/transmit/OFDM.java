@@ -126,7 +126,6 @@ public class OFDM {
                 for (int j = 0; j < Config.symbolCapacity; j++) {
                     panelInfo += symbolData[j] + " ";
                 }
-                Config.UpdFirstSymbolData(panelInfo);
             }
 
             

@@ -20,6 +20,9 @@ import javax.swing.JTextField;
 // action listener
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+// array list
+import java.util.Arrays;
 
 public class TransmitApp {
 
@@ -40,10 +43,11 @@ public class TransmitApp {
         public void run() {
             while (true) {
                 transmitNotify.waitTask();
+                // the former Config.transmitbitlen of config.transmitted
                 macManager.send(
                     transmitCtrl.getSrcAddress(),
                     transmitCtrl.getTgtAddress(),
-                    Config.transmitted
+                    new ArrayList<>(Config.transmitted.subList(0, Config.transmitBitLen))
                 );
             }
         }

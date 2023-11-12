@@ -30,16 +30,16 @@ public class Config {
     public static double sampleRate = 44100;
 
     public static int frameLength;
-    public static int symbolLength = 64;
+    public static int symbolLength = 32;
 
-    public static double cyclicPrefixLength = 0.001;
+    public static double cyclicPrefixLength = 0;
     public static int cyclicPrefixNSamples;
     public static boolean cyclicPrefixMute = false;      
 
     public static int subcarrierDist = 1;
     public static double subCarrierWidth;
-    public static double bandWidthLowEdit = 3000;
-    public static double bandWidthHighEdit = 8000;
+    public static double bandWidthLowEdit = 0;
+    public static double bandWidthHighEdit = 13000;
     public static double bandWidthLow;
     public static double bandWidthHigh;
     public static int numSubCarriers;
@@ -48,20 +48,20 @@ public class Config {
     public static int symbolCapacity;
 
     public static float SoF_amplitude = 1f;
-    public static double SoF_T = 0.002905; // The 'T' parameter of SoF, see DOC
+    public static double SoF_T = 0.0008; // The 'T' parameter of SoF, see DOC
     /**
      * the number of SoF samples without silence
      */
     public static int sofNSamples;
     public static double SoF_fmin = 6000;
     public static double SoF_fmax = 16000;
-    public static double SofSilencePeriod = 0.000;
+    public static double SofSilencePeriod = 0;
     public static int sofSilentNSamples;
     public static float[] SofNoSilence;
 
     public static double maxSofCorrDetect = 0;
     public static double SofDetectThreshld = 0.02; // The threshold for correlation detection
-    public static int SofDetectWindow = 20;
+    public static int SofDetectWindow = 200;
 
     public static double interPacketGapPeriod = 0.001; 
     public static int interPacketGapNSamples;
@@ -72,7 +72,7 @@ public class Config {
     public static int scanWindow = 100;
     public static boolean alignBitFunc(int idx) {return (idx % 5 <= 2);}
 
-    public static int transmitBitLen = 6000;
+    public static int transmitBitLen = 6250*8;
 
     public static int alignBitLen;
     public static int decodeBitLen;
@@ -124,10 +124,6 @@ public class Config {
         JLabel frameLenField;
         JTextField payloadNBytesField;
 
-        // debug info
-        JLabel firstSymbolPhasesField;
-        JLabel firstSymbolDataField;
-
         // statistics
         JLabel BERField;
 
@@ -160,10 +156,6 @@ public class Config {
             alignNSymbolField = new JTextField(Integer.toString(Config.alignNSymbol));
             frameLenField = new JLabel(Integer.toString(Config.frameLength));
             payloadNBytesField = new JTextField(Integer.toString(MacFrame.Configs.payloadNumBytes));
-
-            // debug fields
-            firstSymbolPhasesField = new JLabel("");
-            firstSymbolDataField = new JLabel("");
 
             // statistics
             BERField = new JLabel("");
@@ -285,7 +277,7 @@ public class Config {
             grid1.add(new JLabel("Align N Symbol:"));
             grid1.add(alignNSymbolField);
 
-            grid1.add(new JLabel("Pack Bit Len:"));
+            grid1.add(new JLabel("Pack Byte Len:"));
             grid1.add(payloadNBytesField);
             grid1.add(new JLabel("Frame Length:"));
             grid1.add(frameLenField);
@@ -311,15 +303,6 @@ public class Config {
             grid2.add(new JLabel(""));
 
             this.add(grid2);
-
-            JPanel debugPanel = new JPanel(new GridLayout(0,2));
-            debugPanel.add(new JLabel("First Symbol Phases:"));
-            debugPanel.add(firstSymbolPhasesField);
-
-            debugPanel.add(new JLabel("First Symbol Data:"));
-            debugPanel.add(firstSymbolDataField);
-
-            this.add(debugPanel);
 
             JPanel statisticsPanel = new JPanel(new GridLayout(0,2));
             statisticsPanel.add(new JLabel("BER:"));
@@ -390,7 +373,7 @@ public class Config {
         alignBitLen = alignNSymbol * keyingCapacity * numSubCarriers;
         ECCBitRate = ECCMat.length;
         decodeBitLen = ECCOn? MacFrame.Configs.payloadNumBytes * 8 * ECCBitRate : MacFrame.Configs.payloadNumBytes * 8;
-        frameLength = alignBitLen + decodeBitLen;
+        frameLength = MacFrame.getFrameBitLen();
         SofNoSilence = SoF.generateSoFNoSilence();
         
         panel.updateDisplay();
@@ -409,14 +392,6 @@ public class Config {
             maxSofCorrDetect = corr;
             panel.maxSofCorrDectField.setText(Double.toString(maxSofCorrDetect));
         }
-    }
-
-    public static void UpdFirstSymbolPhases(String info) {
-        panel.firstSymbolPhasesField.setText(info);
-    }
-
-    public static void UpdFirstSymbolData(String info) {
-        panel.firstSymbolDataField.setText(info);
     }
 
     public static void UpdBER(double BER) {

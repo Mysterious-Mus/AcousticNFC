@@ -36,7 +36,7 @@ public class MacFrame {
             COUNT
         }
 
-        public static int payloadNumBytes = 100;
+        public static int payloadNumBytes = 80;
 
         public static enum Types {
             DATA((byte) 0x00),
@@ -151,9 +151,10 @@ public class MacFrame {
     public boolean verify() {
         // CRC (32 bits)
         CRC32 crc = new CRC32();
-        crc.update(Arrays.copyOfRange(this.wholeContents, Configs.HeaderFields.COUNT.ordinal(), this.wholeContents.length));
+        crc.update(Arrays.copyOfRange(this.wholeContents, Configs.HeaderFields.COUNT.ordinal(), this.wholeContents.length - 4));
         return crc.getValue() == TypeConvertion.byteArray2Long(
-            Arrays.copyOfRange(this.wholeContents, this.wholeContents.length - 4, this.wholeContents.length));
+            Arrays.copyOfRange(this.wholeContents, this.wholeContents.length - 4, this.wholeContents.length))
+            && this.header.check();
     }
 
     public byte[] getWhole() {

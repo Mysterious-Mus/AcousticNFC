@@ -147,40 +147,4 @@ public class MacManager {
         // print time consumed
         System.out.println("Time consumed: " + (System.currentTimeMillis() - startTime) + "ms");
     }
-
-    // /**
-    //  * A method for testing
-    //  * compute BER by frame for all bits transmitted
-    //  */
-    // public static void computeBER(MacFrame[] frames) {
-    //     ArrayList<Boolean> data =  TypeConvertion.byteArray2BooleanList(frame.data);
-
-    //     int numErrors = 0;
-
-    //     for (int i = 0; i < Config.packBitLen; i++) {
-    //         if (data.get(i) != Config.transmitted.get(i)) {
-    //             numErrors++;
-    //         }
-    //     }
-    //     // print first bits of transmitted and get
-    //     int packCnt = Math.ceilDiv(Config.packBitLen, Config.packBitLen);
-    //     int bound = Config.packBitLen;
-    //     int groupLen = 40;
-    //     for (int packIdx = 0; packIdx < packCnt; packIdx ++) {
-    //         System.out.println("GroupDiffs " + packIdx + ":");
-    //         for (int groupId = 0; groupId < Math.ceil((double) Config.packBitLen / groupLen); groupId++) {
-    //             int groupDiff = 0;
-    //             for (int i = 0; i < groupLen; i++) {
-    //                 if (packIdx * Config.packBitLen + groupId * groupLen + i < bound) {
-    //                     groupDiff += Config.transmitted.get(packIdx * Config.packBitLen + groupId * groupLen + i) == 
-    //                         data.get(packIdx * Config.packBitLen + groupId * groupLen + i) ? 0 : 1;
-    //                 }
-    //             }
-    //             System.out.print(groupDiff + " ");
-    //         }
-    //         System.out.println();
-    //     }
-    //     Config.UpdBER((double)numErrors / Config.packBitLen);
-    // }
-
 }
