@@ -10,6 +10,7 @@ import java.io.ByteArrayOutputStream;
 
 import com.AcousticNFC.Config;
 import com.AcousticNFC.utils.TypeConvertion;
+import com.AcousticNFC.utils.CRC8;
 
 
 /*
@@ -23,65 +24,94 @@ import com.AcousticNFC.utils.TypeConvertion;
 
 public class MacFrame {
 
+    public static class Configs {
+        public static int addrLb = 0;
+        public static int addrUb = 255;
 
-    public byte[] frame;
-    public byte destinationAddress;
-    public byte sourceAddress;
-    public byte type;
+        public static enum HeaderFields {
+            DEST_ADDR,
+            SRC_ADDR,
+            TYPE,
+            CRC8,
+            COUNT
+        }
+
+        public static int payloadNumBytes = 100;
+
+        public static enum Types {
+            DATA((byte) 0x00),
+            ACK((byte) 0xFF);
+
+            private byte value;
+
+            private Types(byte value) {
+                this.value = value;
+            }
+
+            public byte getValue() {
+                return value;
+            }
+
+            public static Types fromByte(byte b) {
+                for (Types type : Types.values()) {
+                    if (type.getValue() == b) {
+                        return type;
+                    }
+                }
+                // print error
+                System.out.println("Error: type not found");
+                return null;
+            }
+        }
+    }
+
+    public static class Header {
+
+        private byte[] contents = new byte[Configs.HeaderFields.COUNT.ordinal()];
+
+        public Header() {
+        }
+
+        public void SetField(Configs.HeaderFields field, Byte value) {
+            contents[field.ordinal()] = value;
+        }
+
+        public byte[] stream() {
+            // calc CRC8
+            SetField(Configs.HeaderFields.CRC8, 
+                CRC8.compute(Arrays.copyOfRange(contents, 0, Configs.HeaderFields.COUNT.ordinal() - 1)));
+            return contents;
+        }
+
+        public boolean check() {
+            return CRC8.compute(Arrays.copyOfRange(contents, 0, Configs.HeaderFields.COUNT.ordinal() - 1)) 
+                == contents[Configs.HeaderFields.CRC8.ordinal()];
+        }
+    }
+
+    private byte[] wholeContents; // everything including header/crc
+    private Header header;
+
     /**
-     * Data field in the frame (100 bytes)
+     * Create the frame to be sent
+     * @param header
+     * @param data
      */
-    public byte[] data;
-    /**
-     * CRC field in the frame (4 bytes)
-     */
-    public Long CRC;
-    /**
-     * True if CRC is correct
-     */
-    public Boolean is_valid;
-    /**
-     * Construct for sender 
-     * autogenerate CRC 
-     * @param destinationAddress 1 byte
-     * @param sourceAddress 1 byte
-     * @param Type : 1 byte 0x00 for data, 0xFF for ack
-     * @param data : payload
-     */
-    public MacFrame (byte destinationAddress, byte sourceAddress, byte type, byte[] data) {
+    public MacFrame (Header header, byte[] data) {
+        this.header = header;
         ByteArrayOutputStream stream = new ByteArrayOutputStream( );
         try {
-
-            // Destination Address (8 bits)
-            stream.write(destinationAddress);
-            
-            // Source Address (8 bits)
-            stream.write(sourceAddress);
-
-            // Type (8 bits)
-            stream.write(type); 
-
-            // Data (800 bits)
-            stream.write(data);
-            
-            
-            // CRC (32 bits)
+            stream.write(header.stream());
             CRC32 crc = new CRC32();
             crc.update(data);
+            stream.write(data);
             stream.write(TypeConvertion.Long2ByteArray(crc.getValue()));
             
-            this.frame = stream.toByteArray();
-            this.destinationAddress = destinationAddress;
-            this.sourceAddress = sourceAddress;
-            this.type = type;
-            this.data = data;
-            this.CRC = crc.getValue();
-            this.is_valid = true;
+            this.wholeContents = stream.toByteArray();
         } 
         catch (Exception e) {
             System.out.println("Create Frame Error: " + e);
         }
-        
     }
 
     /** 
@@ -89,30 +119,19 @@ public class MacFrame {
      * @param array: byte array
      */
     public MacFrame (byte[] frameBuffer) {
-        this.frame = frameBuffer;
-
-        int preambleLen = 0;
-
-        // Destination Address (8 bits)
-        this.destinationAddress = frameBuffer[preambleLen++];
-
-        // Source Address (8 bits)
-        this.sourceAddress = frameBuffer[preambleLen++];
-
-        // Type (8 bits)
-        this.type = frameBuffer[preambleLen++];
-
-        // Data (800 bits)
-        int dataLen = Math.ceilDiv(Config.packBitLen, Byte.SIZE);
-        this.data = Arrays.copyOfRange(frameBuffer, preambleLen, dataLen + preambleLen);
-
-        // CRC (32 bits)
-        this.CRC = TypeConvertion.byteArray2Long(
-            Arrays.copyOfRange(frameBuffer, preambleLen + dataLen, preambleLen + dataLen + Long.BYTES / 2)
-        );
-
-        // check CRC
-        this.is_valid = checkCRC();
+        // sanity: length check
+        if (frameBuffer.length != getFrameBitLen() / 8) {
+            System.out.println("Error: frame length not match");
+            return;
+        }
+        this.wholeContents = frameBuffer;
+        this.header = new Header();
+        for (Configs.HeaderFields field : Configs.HeaderFields.values()) {
+            if (field == Configs.HeaderFields.COUNT) {
+                continue;
+            }
+            this.header.SetField(field, frameBuffer[field.ordinal()]);
+        }
     }
 
     public MacFrame (ArrayList<Boolean> frameBuffer) {
@@ -123,17 +142,25 @@ public class MacFrame {
      * The Length of a mac frame
      */
     public static int getFrameBitLen() {
-        return Config.packBitLen + Byte.SIZE * 3 + Long.SIZE / 2;
+        return Configs.HeaderFields.COUNT.ordinal() * 8 + Configs.payloadNumBytes * 8 + 32;
     }
      
     /** check CRC
      * @return true if CRC is correct
      */
-    public boolean checkCRC() {
+    public boolean verify() {
         // CRC (32 bits)
         CRC32 crc = new CRC32();
-        crc.update(this.data);
-        return crc.getValue() == this.CRC;     
+        crc.update(Arrays.copyOfRange(this.wholeContents, Configs.HeaderFields.COUNT.ordinal(), this.wholeContents.length));
+        return crc.getValue() == TypeConvertion.byteArray2Long(
+            Arrays.copyOfRange(this.wholeContents, this.wholeContents.length - 4, this.wholeContents.length));
     }
 
+    public byte[] getWhole() {
+        return wholeContents;
+    }
+
+    public byte[] getData() {
+        return Arrays.copyOfRange(this.wholeContents, Configs.HeaderFields.COUNT.ordinal(), this.wholeContents.length - 4);
+    }
 }

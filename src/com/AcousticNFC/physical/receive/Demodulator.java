@@ -169,45 +169,4 @@ public class Demodulator {
         }
     }
 
-    /* Demodulate all to demodulate */
-    public void demodulate() {
-
-        // see if we do the scan test
-        if (receiver.scanAligning) {
-            scanTest();
-        }
-
-        while ( receiver.unpacking && frameBuffer.size() < MacFrame.getFrameBitLen()) {
-            while (receiver.tickDone + Config.cyclicPrefixNSamples + Config.symbolLength >= receiver.getLength()) {
-                // waiting for the next symbol
-                Thread.yield();
-            }
-            ArrayList<Boolean> resultBuffer = demodulateSymbol(getNxtSample());
-            for (int i = 0; i < resultBuffer.size(); i++) {
-                frameBuffer.add(resultBuffer.get(i));
-            }
-        }
-        if (frameBuffer.size() >= MacFrame.getFrameBitLen()) {
-            // print log
-            System.out.println("Received a frame of length " + MacFrame.getFrameBitLen());
-            receiver.unpacking = false;
-            // pop back until the length is Config.frameLength
-            while (frameBuffer.size() > MacFrame.getFrameBitLen()) {
-                frameBuffer.remove(frameBuffer.size() - 1);
-            }
-            // get the string for decoding
-            boolean[] receivedCodewords = new boolean[MacFrame.getFrameBitLen()];
-            for (int i = 0; i < MacFrame.getFrameBitLen(); i++) {
-                receivedCodewords[i] = frameBuffer.get(i);
-            }
-            // decode
-            boolean[] decoded = Config.ECCOn? Ecc.viterbiDecode(receivedCodewords) : receivedCodewords;
-            // push the frame into the receiver's buffer
-            for (int i = 0; i < decoded.length; i++) {
-                receiver.receiveBuffer.add(decoded[i]);
-            }
-
-        }
-    }
-
 }

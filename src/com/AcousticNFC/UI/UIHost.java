@@ -20,7 +20,9 @@ import com.AcousticNFC.ASIO.ASIOHost;
 
 public class UIHost extends JFrame{
 
+    // panel collectors
     public static ArrayList<JPanel> channelSelectPanels = new ArrayList<JPanel>();
+    public static ArrayList<JPanel> appCtrls = new ArrayList<JPanel>();
     
     public UIHost() {
         super("Acoustic NFC");
@@ -47,13 +49,15 @@ public class UIHost extends JFrame{
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL; gbc.gridx = 0; gbc.gridy = 0;
 
-        // add first column: channel panel
-        this.add(new ChannelPanel(), gbc);
-        gbc.gridx++; this.add(new ControlPanel(), gbc);
-        // add second column: config
-        gbc.gridy++; gbc.gridx = 0; gbc.gridwidth = 2; this.add(Config.panel, gbc);
+        gbc.gridy = 1;
+        for (JPanel panel : appCtrls) {
+            gbc.gridx++; this.add(panel, gbc);
+        }
+        gbc.gridy = 0; gbc.gridwidth = gbc.gridx + 1; gbc.gridx = 0; this.add(new ChannelPanel(), gbc);
+        // add second row: config
+        gbc.gridheight = 2; gbc.gridy = 0; gbc.gridx = gbc.gridwidth; gbc.gridwidth = 1; this.add(Config.panel, gbc);
 
-        this.setSize(Config.uiParams.UIWidth, Config.uiParams.UIHeight);
+        this.setSize(Config.UIParams.UIWidth, Config.UIParams.UIHeight);
         this.setResizable(false);
         this.setVisible(true);
     }
@@ -87,26 +91,5 @@ public class UIHost extends JFrame{
                 add(panel, gbc);
             }
         }
-    }
-
-    private class ControlPanel extends JPanel {
-
-        public ControlPanel() {
-            super();
-            setLayout(new GridBagLayout());
-
-            GridBagConstraints gbc = new GridBagConstraints();
-            gbc.gridx = gbc.gridy = 0;
-
-            JButton transmitButton = new JButton("Transmit");
-            transmitButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    Main.macManager.send(Config.transmitted);
-                }
-            });
-            add(transmitButton, gbc);
-        }
-
     }
 }

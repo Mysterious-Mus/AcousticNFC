@@ -8,6 +8,7 @@ import javax.crypto.Mac;
 import javax.sound.sampled.AudioFileFormat.Type;
 
 import com.AcousticNFC.Config;
+import com.AcousticNFC.mac.MacFrame.Header;
 import com.AcousticNFC.physical.PhysicalManager;
 import com.AcousticNFC.utils.ANSI;
 import com.AcousticNFC.utils.TypeConvertion;
@@ -15,6 +16,11 @@ import com.AcousticNFC.utils.sync.Permission;
 
 
 public class MacManager {
+
+    public interface FrameReceivedListener {
+        public void frameReceived(MacFrame frame);
+    }
+    private FrameReceivedListener frameReceivedListener;
 
     enum State {
         IDLE,
@@ -60,7 +66,7 @@ public class MacManager {
             physicalManager.permissions.decode.unpermit();
             switch (currentState) {
                 case RECEIVING:
-                    computeBER(frame);
+                    frameReceivedListener.frameReceived(frame);
                     backToIdle();
                     break;
                 default:
@@ -69,9 +75,10 @@ public class MacManager {
         }
     };
 
-    public MacManager() {
+    public MacManager(String appName, FrameReceivedListener frameReceivedListener) {
+        this.frameReceivedListener = frameReceivedListener;
         physicalManager = new PhysicalManager(
-            "Physical Manager",
+            appName,
             phyInterface);
 
         backToIdle();
@@ -92,89 +99,88 @@ public class MacManager {
      * @param bitString to be sent
      * @return Macframes
      */
-    public static MacFrame[] distribute( ArrayList<Boolean> bitString) {
+    public static MacFrame[] distribute(MacFrame.Header header, ArrayList<Boolean> bitString) {
         /* break the large data into frames */
         byte[] input = TypeConvertion.booleanList2ByteArray(bitString);
 
-        int payloadlen = Math.ceilDiv(Config.packBitLen , 8);
-        int frameNum = Math.ceilDiv(Config.transmitBitLen, Config.packBitLen);
-         
-
-        byte destinationAddress = 1;
-        byte sourceAddress = 1;
-        byte type = 0;
+        int frameNum = Math.ceilDiv(input.length, MacFrame.Configs.payloadNumBytes);
 
         MacFrame[] macFrames = new MacFrame[frameNum];
         for (int i = 0; i < frameNum; i++) {
-            int start = i * payloadlen;
-            int end = Math.min(start + payloadlen, Config.transmitBitLen);
-            // Copy the input bytes to the frame array
-            byte[] data = new byte[payloadlen];
-
-            System.arraycopy(input, start, data, 0, end - start);
+            byte[] data = Arrays.copyOfRange(input, i * MacFrame.Configs.payloadNumBytes, 
+                Math.min((i + 1) * MacFrame.Configs.payloadNumBytes, input.length));
             
-            // pad the data with 0s
-            if (end - start < payloadlen) {
-                Arrays.fill(data, end - start, payloadlen, (byte) 0);
+            // padding
+            if (data.length < MacFrame.Configs.payloadNumBytes) {
+                data = Arrays.copyOf(data, MacFrame.Configs.payloadNumBytes);
             }
             // Add mac header
-            macFrames[i] = new MacFrame(destinationAddress, sourceAddress, type, data);
+            macFrames[i] = new MacFrame(header, data);
         }
 
         return macFrames;
     }
 
     /**
-     * Send the data, the thread will wait till send complete or send error
+     * Send the data, the thread will work till send complete or send error
      * @param bitString to be sent 
      * @return Void
      */
-    public void send( ArrayList<Boolean> bitString) {
+    public void send(byte dstAddr, byte srcAddr, ArrayList<Boolean> bitString) {
 
         System.out.println("start sending data");
-        MacFrame[] frames = distribute(bitString);
+        // record time
+        long startTime = System.currentTimeMillis();
+        // make frame header
+        MacFrame.Header header = new MacFrame.Header();
+        header.SetField(MacFrame.Configs.HeaderFields.DEST_ADDR, dstAddr);
+        header.SetField(MacFrame.Configs.HeaderFields.SRC_ADDR, srcAddr);
+        header.SetField(MacFrame.Configs.HeaderFields.TYPE, MacFrame.Configs.Types.DATA.getValue());
 
-        //! Test !!! transmit the first frame
-        for (int frameID = 0; frameID < 1; frameID++) {
+        MacFrame[] frames = distribute(header, bitString);
+
+        for (int frameID = 0; frameID < frames.length; frameID++) {
             // physical Layer
             physicalManager.send(frames[frameID]);
         }
         System.out.println(ANSI.ANSI_BLUE + "send successfully" + ANSI.ANSI_RESET);
+        // print time consumed
+        System.out.println("Time consumed: " + (System.currentTimeMillis() - startTime) + "ms");
     }
 
-    /**
-     * A method for testing
-     * compute BER for the first frame sent and report
-     */
-    public static void computeBER(MacFrame frame) {
-        ArrayList<Boolean> data =  TypeConvertion.byteArray2BooleanList(frame.data);
+    // /**
+    //  * A method for testing
+    //  * compute BER by frame for all bits transmitted
+    //  */
+    // public static void computeBER(MacFrame[] frames) {
+    //     ArrayList<Boolean> data =  TypeConvertion.byteArray2BooleanList(frame.data);
 
-        int numErrors = 0;
+    //     int numErrors = 0;
 
-        for (int i = 0; i < Config.packBitLen; i++) {
-            if (data.get(i) != Config.transmitted.get(i)) {
-                numErrors++;
-            }
-        }
-        // print first bits of transmitted and get
-        int packCnt = Math.ceilDiv(Config.packBitLen, Config.packBitLen);
-        int bound = Config.packBitLen;
-        int groupLen = 40;
-        for (int packIdx = 0; packIdx < packCnt; packIdx ++) {
-            System.out.println("GroupDiffs " + packIdx + ":");
-            for (int groupId = 0; groupId < Math.ceil((double) Config.packBitLen / groupLen); groupId++) {
-                int groupDiff = 0;
-                for (int i = 0; i < groupLen; i++) {
-                    if (packIdx * Config.packBitLen + groupId * groupLen + i < bound) {
-                        groupDiff += Config.transmitted.get(packIdx * Config.packBitLen + groupId * groupLen + i) == 
-                            data.get(packIdx * Config.packBitLen + groupId * groupLen + i) ? 0 : 1;
-                    }
-                }
-                System.out.print(groupDiff + " ");
-            }
-            System.out.println();
-        }
-        Config.UpdBER((double)numErrors / Config.packBitLen);
-    }
+    //     for (int i = 0; i < Config.packBitLen; i++) {
+    //         if (data.get(i) != Config.transmitted.get(i)) {
+    //             numErrors++;
+    //         }
+    //     }
+    //     // print first bits of transmitted and get
+    //     int packCnt = Math.ceilDiv(Config.packBitLen, Config.packBitLen);
+    //     int bound = Config.packBitLen;
+    //     int groupLen = 40;
+    //     for (int packIdx = 0; packIdx < packCnt; packIdx ++) {
+    //         System.out.println("GroupDiffs " + packIdx + ":");
+    //         for (int groupId = 0; groupId < Math.ceil((double) Config.packBitLen / groupLen); groupId++) {
+    //             int groupDiff = 0;
+    //             for (int i = 0; i < groupLen; i++) {
+    //                 if (packIdx * Config.packBitLen + groupId * groupLen + i < bound) {
+    //                     groupDiff += Config.transmitted.get(packIdx * Config.packBitLen + groupId * groupLen + i) == 
+    //                         data.get(packIdx * Config.packBitLen + groupId * groupLen + i) ? 0 : 1;
+    //                 }
+    //             }
+    //             System.out.print(groupDiff + " ");
+    //         }
+    //         System.out.println();
+    //     }
+    //     Config.UpdBER((double)numErrors / Config.packBitLen);
+    // }
 
 }

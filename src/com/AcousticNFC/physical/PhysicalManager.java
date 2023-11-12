@@ -153,7 +153,7 @@ public class PhysicalManager {
      * @return void
      */
     public void send(MacFrame macframe) {
-        float [] samples = EthernetPacket.getPacket(macframe.frame);
+        float [] samples = EthernetPacket.getPacket(macframe.getWhole());
 
         // play the samples
         ASIOHost.play(sendChannel, TypeConvertion.floatArr2FloatList(samples));
@@ -242,8 +242,6 @@ public class PhysicalManager {
             while (frameBuffer.size() > MacFrame.getFrameBitLen()) {
                 frameBuffer.remove(frameBuffer.size() - 1);
             }
-            // print log
-            System.out.println("Received a frame of length " + MacFrame.getFrameBitLen());
             // convert to MacFrame
             MacFrame frame = new MacFrame(frameBuffer);
             // invoke callback

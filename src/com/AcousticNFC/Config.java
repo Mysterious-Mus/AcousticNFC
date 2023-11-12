@@ -3,6 +3,8 @@ package com.AcousticNFC;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
+
+import com.AcousticNFC.mac.MacFrame;
 import com.AcousticNFC.physical.transmit.SoF;
 
 /*
@@ -70,9 +72,8 @@ public class Config {
     public static int scanWindow = 100;
     public static boolean alignBitFunc(int idx) {return (idx % 5 <= 2);}
 
-    public static int transmitBitLen = 800;
+    public static int transmitBitLen = 6000;
 
-    public static int packBitLen = 800;
     public static int alignBitLen;
     public static int decodeBitLen;
 
@@ -89,10 +90,9 @@ public class Config {
     public static int PHYSICAL_BUFFER_SIZE = 200000;
 
     public static class UIParams {
-        public int UIHeight = 600;
-        public int UIWidth = 1000;
+        public static int UIHeight = 600;
+        public static int UIWidth = 1600;
     }
-    public static UIParams uiParams = new UIParams();
 
     public class ConfigPanel extends JPanel {
 
@@ -122,7 +122,7 @@ public class Config {
         JTextField SofDetectThresholdField;
         JTextField alignNSymbolField;
         JLabel frameLenField;
-        JTextField packBitLenField;
+        JTextField payloadNBytesField;
 
         // debug info
         JLabel firstSymbolPhasesField;
@@ -159,7 +159,7 @@ public class Config {
             SofDetectThresholdField = new JTextField(Double.toString(Config.SofDetectThreshld));
             alignNSymbolField = new JTextField(Integer.toString(Config.alignNSymbol));
             frameLenField = new JLabel(Integer.toString(Config.frameLength));
-            packBitLenField = new JTextField(Integer.toString(Config.packBitLen));
+            payloadNBytesField = new JTextField(Integer.toString(MacFrame.Configs.payloadNumBytes));
 
             // debug fields
             firstSymbolPhasesField = new JLabel("");
@@ -188,7 +188,7 @@ public class Config {
                 Config.SofSilencePeriod = Double.parseDouble(SofSilencePeriodField.getText());
                 Config.SofDetectThreshld = Double.parseDouble(SofDetectThresholdField.getText());
                 Config.alignNSymbol = Integer.parseInt(alignNSymbolField.getText());
-                Config.packBitLen = Integer.parseInt(packBitLenField.getText());
+                MacFrame.Configs.payloadNumBytes = Integer.parseInt(payloadNBytesField.getText());
                 
                 ConfigChange();
             });
@@ -286,7 +286,7 @@ public class Config {
             grid1.add(alignNSymbolField);
 
             grid1.add(new JLabel("Pack Bit Len:"));
-            grid1.add(packBitLenField);
+            grid1.add(payloadNBytesField);
             grid1.add(new JLabel("Frame Length:"));
             grid1.add(frameLenField);
 
@@ -356,7 +356,7 @@ public class Config {
             SofDetectThresholdField.setText(Double.toString(Config.SofDetectThreshld));
             alignNSymbolField.setText(Integer.toString(Config.alignNSymbol));
             frameLenField.setText(Integer.toString(Config.frameLength));
-            packBitLenField.setText(Integer.toString(Config.packBitLen));
+            payloadNBytesField.setText(Integer.toString(MacFrame.Configs.payloadNumBytes));
         }
     }
 
@@ -375,7 +375,8 @@ public class Config {
         subCarrierWidth =
             sampleRate / symbolLength * subcarrierDist;
         bandWidthLow =
-            Math.ceil(bandWidthLowEdit / subCarrierWidth) * subCarrierWidth;
+            Math.max(Math.ceil(bandWidthLowEdit / subCarrierWidth), 1) 
+            * subCarrierWidth;
         bandWidthHigh =
             Math.floor(bandWidthHighEdit / subCarrierWidth) * subCarrierWidth;
         numSubCarriers =
@@ -388,7 +389,7 @@ public class Config {
 
         alignBitLen = alignNSymbol * keyingCapacity * numSubCarriers;
         ECCBitRate = ECCMat.length;
-        decodeBitLen = ECCOn? packBitLen * ECCBitRate : packBitLen;
+        decodeBitLen = ECCOn? MacFrame.Configs.payloadNumBytes * 8 * ECCBitRate : MacFrame.Configs.payloadNumBytes * 8;
         frameLength = alignBitLen + decodeBitLen;
         SofNoSilence = SoF.generateSoFNoSilence();
         

@@ -15,16 +15,6 @@ import com.AcousticNFC.utils.TypeConvertion;
  * 3. Bit string
  */
 public class EthernetPacket {
-    
-    double sampleRate;
-
-    SoF sof;
-    OFDM ofdm;
-
-    public EthernetPacket() {
-        sof = new SoF();
-        ofdm = new OFDM();
-    }
     /**
      * Get the packet to be sent to 
      * Recieve a mac frame
@@ -62,40 +52,4 @@ public class EthernetPacket {
         return packetSamples;
 
     } 
-
-    // public float[] frame(ArrayList<Boolean> bitString) {
-    //     // calculate how many frames are needed
-    //     int numFrames = (int) Math.ceil((double) Config.transmitBitLen / Config.packBitLen);
-
-    //     // the final playBuffer
-    //     ArrayList<Float> playBuffer = new ArrayList<Float>();
-
-    //     // pack each pack
-    //     for (int frameIdx = 0; frameIdx < numFrames; frameIdx++) {
-    //         // get the bit string to pack
-    //         ArrayList<Boolean> bitStringToPack = new ArrayList<Boolean>();
-    //         for (int bitIdx = 0; bitIdx < Config.packBitLen; bitIdx++) {
-    //             if (frameIdx * Config.packBitLen + bitIdx < Config.transmitBitLen) {
-    //                 bitStringToPack.add(bitString.get(frameIdx * Config.packBitLen + bitIdx));
-    //             } else {
-    //                 bitStringToPack.add(false);
-    //             }
-    //         }
-
-    //         // pack the bit string
-    //         float[] samples = pack(bitStringToPack);
-
-    //         // add to the playBuffer
-    //         for (int sampleIdx = 0; sampleIdx < samples.length; sampleIdx++) {
-    //             playBuffer.add(samples[sampleIdx]);
-    //         }
-    //     }
-
-    //     // convert to float[] and return
-    //     float[] playBufferFloat = new float[playBuffer.size()];
-    //     for (int sampleIdx = 0; sampleIdx < playBuffer.size(); sampleIdx++) {
-    //         playBufferFloat[sampleIdx] = playBuffer.get(sampleIdx);
-    //     }
-    //     return playBufferFloat;
-    // }
 }
