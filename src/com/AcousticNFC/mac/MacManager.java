@@ -20,7 +20,7 @@ public class MacManager {
 
     public static class Configs {
         public static int ACK_EXPIRE_TIME = 250;
-        public static int BACKOFF_UNIT = 100;
+        public static int BACKOFF_UNIT = 150;
 
         public static int BACKOFF_MAX_TIMES = 4;
     }
@@ -244,8 +244,8 @@ public class MacManager {
                 }
 
                 // enter sending state
-                state = State.SENDING;
                 physicalManager.permissions.detect.unpermit();
+                state = State.SENDING;
 
                 physicalManager.send(frames[frameID]);
 

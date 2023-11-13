@@ -5,6 +5,7 @@ import java.awt.*;
 import java.util.ArrayList;
 
 import com.AcousticNFC.mac.MacFrame;
+import com.AcousticNFC.physical.transmit.OFDM;
 import com.AcousticNFC.physical.transmit.SoF;
 
 /*
@@ -25,12 +26,10 @@ public class Config {
      *      Once one of the editable ones is changed, the calculated ones are updated
     */
 
-    // buffer size should be small!
-    
     public static double sampleRate = 44100;
 
     public static int frameLength;
-    public static int symbolLength = 32;
+    public static int symbolLength = 128;
 
     public static double cyclicPrefixLength = 0;
     public static int cyclicPrefixNSamples;
@@ -38,17 +37,17 @@ public class Config {
 
     public static int subcarrierDist = 1;
     public static double subCarrierWidth;
-    public static double bandWidthLowEdit = 0;
-    public static double bandWidthHighEdit = 13000;
+    public static double bandWidthLowEdit = 4000;
+    public static double bandWidthHighEdit = 14000;
     public static double bandWidthLow;
     public static double bandWidthHigh;
     public static int numSubCarriers;
     
-    public static int keyingCapacity = 1;
+    public static int PSkeyingCapacity = 1;
     public static int symbolCapacity;
 
     public static float SoF_amplitude = 1f;
-    public static double SoF_T = 0.0008; // The 'T' parameter of SoF, see DOC
+    public static double SoF_T = 0.0004; // The 'T' parameter of SoF, see DOC
     /**
      * the number of SoF samples without silence
      */
@@ -142,7 +141,7 @@ public class Config {
             bandWidthHighEditField = new JTextField(Double.toString(Config.bandWidthHighEdit));
             bandWidthHighField = new JLabel(Double.toString(Config.bandWidthHigh));
             numSubCarriersField = new JLabel(Integer.toString(Config.numSubCarriers));
-            keyingCapacityField = new JTextField(Integer.toString(Config.keyingCapacity));
+            keyingCapacityField = new JTextField(Integer.toString(Config.PSkeyingCapacity));
             symbolCapacityField = new JLabel(Integer.toString(Config.symbolCapacity));
             SoF_amplitudeField = new JTextField(Float.toString(Config.SoF_amplitude));
             SoF_TField = new JTextField(Double.toString(Config.SoF_T));
@@ -172,7 +171,7 @@ public class Config {
                 Config.cyclicPrefixMute = cyclicPrefixMuteField.isSelected();
                 Config.bandWidthLowEdit = Double.parseDouble(bandWidthLowEditField.getText());
                 Config.bandWidthHighEdit = Double.parseDouble(bandWidthHighEditField.getText());
-                Config.keyingCapacity = Integer.parseInt(keyingCapacityField.getText());
+                Config.PSkeyingCapacity = Integer.parseInt(keyingCapacityField.getText());
                 Config.SoF_amplitude = Float.parseFloat(SoF_amplitudeField.getText());
                 Config.SoF_T = Double.parseDouble(SoF_TField.getText());
                 Config.SoF_fmin = Double.parseDouble(SoF_fminField.getText());
@@ -326,7 +325,7 @@ public class Config {
             bandWidthHighEditField.setText(Double.toString(Config.bandWidthHighEdit));
             bandWidthHighField.setText(Double.toString(Config.bandWidthHigh));
             numSubCarriersField.setText(Integer.toString(Config.numSubCarriers));
-            keyingCapacityField.setText(Integer.toString(Config.keyingCapacity));
+            keyingCapacityField.setText(Integer.toString(Config.PSkeyingCapacity));
             symbolCapacityField.setText(Integer.toString(Config.symbolCapacity));
             SoF_amplitudeField.setText(Float.toString(Config.SoF_amplitude));
             SoF_TField.setText(Double.toString(Config.SoF_T));
@@ -364,13 +363,13 @@ public class Config {
             Math.floor(bandWidthHighEdit / subCarrierWidth) * subCarrierWidth;
         numSubCarriers =
             (int) Math.round((bandWidthHigh - bandWidthLow) / subCarrierWidth) + 1;
-        symbolCapacity = numSubCarriers * keyingCapacity;
+        symbolCapacity = numSubCarriers * PSkeyingCapacity + (numSubCarriers - 1) * OFDM.Configs.ASK_CAPACITY;
         sofNSamples = (int)(2 * SoF_T * sampleRate);
         sofSilentNSamples = (int)(SofSilencePeriod * sampleRate);
 
         interPacketGapNSamples = (int)(interPacketGapPeriod * sampleRate);
 
-        alignBitLen = alignNSymbol * keyingCapacity * numSubCarriers;
+        alignBitLen = alignNSymbol * PSkeyingCapacity * numSubCarriers;
         ECCBitRate = ECCMat.length;
         decodeBitLen = ECCOn? MacFrame.Configs.payloadNumBytes * 8 * ECCBitRate : MacFrame.Configs.payloadNumBytes * 8;
         frameLength = MacFrame.getFrameBitLen();

@@ -27,6 +27,10 @@ import java.util.concurrent.Semaphore;
 
 public class ASIOHost implements AsioDriverListener{
 
+    public static class Configs {
+        public static int BUFFER_SIZE = 256;
+    }
+
     private static AsioDriver asioDriver;
     private Set<AsioChannel> activeChannels = new HashSet<AsioChannel>();
     
@@ -248,6 +252,11 @@ public class ASIOHost implements AsioDriverListener{
         }
 
         bufferSize = asioDriver.getBufferPreferredSize();
+        // report to the user if the buffer size is not as set
+        if (bufferSize != Configs.BUFFER_SIZE) {
+            System.out.println("Warning: buffer size is not " + Configs.BUFFER_SIZE + 
+                ". System will probably fail. Please reset and reboot");
+        }
         double sampleRate = asioDriver.getSampleRate();
         // if sample rate is not 44100, throw warning
         if (Math.abs(sampleRate - 44100) > 1e-6) {

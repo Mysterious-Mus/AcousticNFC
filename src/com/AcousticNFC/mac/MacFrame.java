@@ -37,7 +37,7 @@ public class MacFrame {
             COUNT
         }
 
-        public static int payloadNumBytes = 150;
+        public static int payloadNumBytes = 180;
 
         public static enum Types {
             DATA((byte) 0x00),

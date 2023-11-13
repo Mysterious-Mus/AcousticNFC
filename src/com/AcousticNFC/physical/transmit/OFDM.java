@@ -12,6 +12,10 @@ import com.AcousticNFC.physical.receive.Receiver;
  */
 public class OFDM {
 
+    public static class Configs {
+        public static Integer ASK_CAPACITY = 1;
+    }
+
     public OFDM() {
     }
 
@@ -25,15 +29,15 @@ public class OFDM {
     */
     public static float[] phaseShiftKeying(int[] data, double carrierFreq) {
         // sanity: data length should be equal to keyingCapacity
-        assert data.length == Config.keyingCapacity;
+        assert data.length == Config.PSkeyingCapacity;
 
         // number of keys
-        int numKeys = (int) Math.pow(2, Config.keyingCapacity);
+        int numKeys = (int) Math.pow(2, Config.PSkeyingCapacity);
 
         // Index
         int index = 0;
-        for (int i = 0; i < Config.keyingCapacity; i++) {
-            index += data[i] * Math.pow(2, Config.keyingCapacity - i - 1);
+        for (int i = 0; i < Config.PSkeyingCapacity; i++) {
+            index += data[i] * Math.pow(2, Config.PSkeyingCapacity - i - 1);
         }
 
         // Phase
@@ -58,25 +62,45 @@ public class OFDM {
     */
     public static float[] symbolGen(int[] data) {
         // Sanity: data length should be equal to numSubCarriers * keyingCapacity
-        assert data.length == Config.numSubCarriers * Config.keyingCapacity;
+        assert data.length == Config.numSubCarriers * Config.PSkeyingCapacity;
 
         // Determine the number of samples per symbol
         int numSamplesPerWholeSymbol = Config.cyclicPrefixNSamples + Config.symbolLength;
 
         // Generate the symbol
         float[] symbol = new float[numSamplesPerWholeSymbol];
+        int usedDataPtr = 0;
         for (int i = 0; i < Config.numSubCarriers; i++) {
             // Get the subcarrier frequency
             double carrierFreq = Config.bandWidthLow + i * Config.subCarrierWidth;
 
-            // Get the data for this subcarrier
-            int[] subCarrierData = new int[Config.keyingCapacity];
-            for (int j = 0; j < Config.keyingCapacity; j++) {
-                subCarrierData[j] = data[i * Config.keyingCapacity + j];
+            int[] subCarrierPhaseData = new int[Config.PSkeyingCapacity];
+            System.arraycopy(data, usedDataPtr, subCarrierPhaseData, 0, Config.PSkeyingCapacity);
+            usedDataPtr += Config.PSkeyingCapacity;
+            // apply PSK modulation to the subcarrier
+            float[] modulatedSubCarrier = phaseShiftKeying(subCarrierPhaseData, carrierFreq);
+
+            int ampIdx;
+            // the first carrier is special, it should determine the unit amplitude
+            if (i == 0) {
+                ampIdx = 0;
+            }
+            else {
+                int[] subCarrierAmpData = new int[Configs.ASK_CAPACITY];
+                System.arraycopy(data, usedDataPtr, subCarrierAmpData, 0, Configs.ASK_CAPACITY);
+                usedDataPtr += Configs.ASK_CAPACITY;
+                // calc ampIdx
+                ampIdx = 0;
+                for (int j = 0; j < Configs.ASK_CAPACITY; j++) {
+                    ampIdx += subCarrierAmpData[j] * (1 << Configs.ASK_CAPACITY - j - 1);
+                }
             }
 
-            // Modulate the subcarrier
-            float[] modulatedSubCarrier = phaseShiftKeying(subCarrierData, carrierFreq);
+            // apply amplitude modulation
+            int Nlevels = 1 << Configs.ASK_CAPACITY;
+            for (int j = 0; j < Config.symbolLength; j++) {
+                modulatedSubCarrier[j] *= (float) (ampIdx + 1) / Nlevels;
+            }
 
             // Add the subcarrier to the symbol
             for (int j = 0; j < Config.symbolLength; j++) {
@@ -120,15 +144,6 @@ public class OFDM {
                 symbolData[j] = paddedData[i * Config.symbolCapacity + j] ? 1 : 0;
             }
 
-            // log the first symbol
-            if (i == 0) {
-                String panelInfo = "";
-                for (int j = 0; j < Config.symbolCapacity; j++) {
-                    panelInfo += symbolData[j] + " ";
-                }
-            }
-
-            
             // Generate the symbol
             float[] symbol = symbolGen(symbolData);
 
