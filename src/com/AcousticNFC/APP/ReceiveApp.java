@@ -4,9 +4,10 @@ import com.AcousticNFC.mac.MacFrame;
 import com.AcousticNFC.mac.MacManager;
 import com.AcousticNFC.utils.TypeConvertion;
 import com.AcousticNFC.utils.sync.Permission;
-import com.AcousticNFC.utils.sync.TaskNotify;
+import com.AcousticNFC.utils.sync.Notifier;
 import com.AcousticNFC.Config;
 import com.AcousticNFC.UI.UIHost;
+import com.AcousticNFC.APP.utils.AddressTxtField;
 
 import javax.swing.JPanel;
 // gridbag
@@ -38,22 +39,6 @@ public class ReceiveApp {
     private class ReceiveCtrl extends JPanel {
 
         AddressTxtField hostAddrTxtField;
-
-        private class AddressTxtField extends JTextField {
-            public AddressTxtField() {
-                super();
-                this.setText("00");
-            }
-
-            public int getAddress() {
-                int result =  Integer.parseInt(this.getText(), 16);
-                // print error message if address is out of range
-                if (result < MacFrame.Configs.addrLb || result > MacFrame.Configs.addrUb) {
-                    System.out.println("Address out of range");
-                }
-                return result;
-            }
-        }
 
         private class ReceiveBtn extends JButton {
             public ReceiveBtn() {
@@ -95,7 +80,7 @@ public class ReceiveApp {
 
             // target address
             gbc.gridwidth = 1; gbc.gridy++; gbc.gridx = 0; this.add(new JLabel("Host Address: 0x"), gbc);
-            gbc.gridx++; hostAddrTxtField = new AddressTxtField(); this.add(hostAddrTxtField, gbc);
+            gbc.gridx++; hostAddrTxtField = new AddressTxtField("01"); this.add(hostAddrTxtField, gbc);
 
             // buttons
             gbc.gridx = 0; gbc.gridy++; gbc.gridwidth = 1;
@@ -123,6 +108,14 @@ public class ReceiveApp {
         @Override
         public void frameReceived(MacFrame frame) {
             if (!isReceiving) {
+                return;
+            }
+            // check repeat
+            if (!receivedFrames.isEmpty() &&
+                frame.getHeader().getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM) == 
+                receivedFrames.get(receivedFrames.size() - 1).getHeader()
+                .getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM))
+            {        
                 return;
             }
             // push in this frame

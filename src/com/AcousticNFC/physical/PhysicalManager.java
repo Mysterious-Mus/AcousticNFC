@@ -18,7 +18,7 @@ import com.AcousticNFC.ASIO.ASIOHost;
 import com.AcousticNFC.ASIO.ASIOHost.NewBufferListener;
 import com.AcousticNFC.UI.panels.ChannelSelectPanel;
 import com.AcousticNFC.physical.transmit.SoF;
-import com.AcousticNFC.utils.sync.TaskNotify;
+import com.AcousticNFC.utils.sync.Notifier;
 import com.AcousticNFC.mac.MacManager.physicalCallback;
 import com.AcousticNFC.physical.receive.Demodulator;
 
@@ -29,7 +29,7 @@ public class PhysicalManager {
     private AsioChannel receiveChannel;
     private AsioChannel sendChannel;
 
-    private TaskNotify newSampleNotify = new TaskNotify();
+    private Notifier newSampleNotify = new Notifier();
 
     private physicalCallback macInterface;
 
@@ -45,7 +45,7 @@ public class PhysicalManager {
             }
             else {
                 sampleBuffer.pusharr(TypeConvertion.floatArr2FloatList(buffer));
-                newSampleNotify.notifyTask();
+                newSampleNotify.mNotify();
             }
         }
     };
@@ -89,7 +89,7 @@ public class PhysicalManager {
                 if (permissions.decode.isPermitted()) {
                     System.out.println("Error: detectThread: both detect and decode are permitted");
                 }
-                newSampleNotify.waitTask();
+                newSampleNotify.mWait();
                 detectFrame();
             }
         }
@@ -100,7 +100,7 @@ public class PhysicalManager {
         public void run() {
             while (true) {
                 permissions.decode.waitTillPermitted();
-                newSampleNotify.waitTask();
+                newSampleNotify.mWait();
                 decode();
             }
         }
@@ -265,4 +265,5 @@ public class PhysicalManager {
 
         return samples;
     }
+
 }

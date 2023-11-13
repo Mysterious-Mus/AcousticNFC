@@ -63,7 +63,7 @@ public class Config {
     public static double SofDetectThreshld = 0.003; // The threshold for correlation detection
     public static int SofDetectWindow = 200;
 
-    public static double interPacketGapPeriod = 0.001; 
+    public static double interPacketGapPeriod = 0; 
     public static int interPacketGapNSamples;
 
     // debug shared info

@@ -3,6 +3,7 @@ package com.AcousticNFC.mac;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Random;
 
 import javax.crypto.Mac;
 import javax.sound.sampled.AudioFileFormat.Type;
@@ -13,9 +14,14 @@ import com.AcousticNFC.physical.PhysicalManager;
 import com.AcousticNFC.utils.ANSI;
 import com.AcousticNFC.utils.TypeConvertion;
 import com.AcousticNFC.utils.sync.Permission;
-
+import com.AcousticNFC.utils.sync.Notifier;
 
 public class MacManager {
+
+    public static class Configs {
+        public static int ACK_EXPIRE_TIME = 250;
+        public static int BACKOFF_UNIT = 10;
+    }
 
     byte ADDR;
 
@@ -62,6 +68,7 @@ public class MacManager {
                     physicalManager.permissions.decode.permit();
                     // set the state to receiving
                     state = State.RECEIVING_HEADER;
+                    idleNot.cancelNotify();
                     break;
                 default:
                     // print error
@@ -85,16 +92,29 @@ public class MacManager {
                                 physicalManager.permissions.decode.unpermit();
                                 physicalManager.permissions.detect.permit();
                                 state = State.IDLE;
+                                if (header.getField(MacFrame.Configs.HeaderFields.DEST_ADDR) == ADDR) {
+                                    // print message
+                                    System.out.println("ACK received");
+                                    // notify the sender immediately
+                                    ackReceived = true;
+                                    idleNot.mNotify();
+                                    ACKorExpiredNot.mNotify();
+                                }
+                                else {
+                                    // this ack is not notifying me, so I can quickly get in
+                                    idleNot.mNotify();
+                                }
                                 break;
                             default:
                                 break;
                         }
                     }
                     else {
-                        // receiving is done
+                        // we have a deprecated header
                         physicalManager.permissions.decode.unpermit();
                         physicalManager.permissions.detect.permit();
                         state = State.IDLE;
+                        idleNot.mNotify();
                     }
                     break;
                 default:
@@ -111,23 +131,25 @@ public class MacManager {
             switch (state) {
                 case RECEIVING_PAYLOAD:
                 
-                physicalManager.permissions.detect.permit();
-                state = State.IDLE;
-                
-                if (frame.verify() && frame.getHeader().getField(MacFrame.Configs.HeaderFields.DEST_ADDR) == ADDR) {
+                    if (frame.verify() && frame.getHeader().getField(MacFrame.Configs.HeaderFields.DEST_ADDR) == ADDR) {
                         frameReceivedListener.frameReceived(frame);
                         // send ack
-                        // MacFrame.Header ackHeader = new MacFrame.Header();
-                        // ackHeader.SetField(MacFrame.Configs.HeaderFields.DEST_ADDR, 
-                        //     frame.getHeader().getField(MacFrame.Configs.HeaderFields.SRC_ADDR));
-                        // ackHeader.SetField(MacFrame.Configs.HeaderFields.SRC_ADDR, ADDR);
-                        // ackHeader.SetField(MacFrame.Configs.HeaderFields.TYPE, MacFrame.Configs.Types.ACK.getValue());
-                        // MacFrame ackFrame = new MacFrame(
-                        //     ackHeader,
-                        //     new byte[0]
-                        // );
-                        // physicalManager.send(ackFrame);
+                        state = State.SENDING_ACK;
+                        MacFrame.Header ackHeader = new MacFrame.Header();
+                        ackHeader.SetField(MacFrame.Configs.HeaderFields.DEST_ADDR, 
+                        frame.getHeader().getField(MacFrame.Configs.HeaderFields.SRC_ADDR));
+                        ackHeader.SetField(MacFrame.Configs.HeaderFields.SRC_ADDR, ADDR);
+                        ackHeader.SetField(MacFrame.Configs.HeaderFields.TYPE, MacFrame.Configs.Types.ACK.getValue());
+                        MacFrame ackFrame = new MacFrame(
+                            ackHeader,
+                            new byte[0]
+                            );
+                        physicalManager.send(ackFrame);
                     }
+
+                    physicalManager.permissions.detect.permit();
+                    state = State.IDLE;
+                    idleNot.mNotify();
                     break;
                 default:
                     // print error
@@ -145,6 +167,7 @@ public class MacManager {
             phyInterface);
 
         state = State.IDLE;
+        idleNot.mNotify();
         physicalManager.permissions.detect.permit();
     }
 
@@ -169,17 +192,24 @@ public class MacManager {
                 data = Arrays.copyOf(data, MacFrame.Configs.payloadNumBytes);
             }
             // Add mac header
+            // increment sequence number
+            header.SetField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM, 
+                (byte) ((header.getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM) + 1)&0xFF));
             macFrames[i] = new MacFrame(header, data);
         }
 
         return macFrames;
     }
 
+    Notifier idleNot = new Notifier();
+    Notifier ACKorExpiredNot = new Notifier();
+
     /**
      * Send the data, the thread will work till send complete or send error
      * @param bitString to be sent 
      * @return Void
      */
+    boolean ackReceived = false;
     public void send(byte dstAddr, ArrayList<Boolean> bitString) {
 
         System.out.println("start sending data");
@@ -190,12 +220,52 @@ public class MacManager {
         header.SetField(MacFrame.Configs.HeaderFields.DEST_ADDR, dstAddr);
         header.SetField(MacFrame.Configs.HeaderFields.SRC_ADDR, ADDR);
         header.SetField(MacFrame.Configs.HeaderFields.TYPE, MacFrame.Configs.Types.DATA.getValue());
+        header.SetField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM, (byte) 0);
 
         MacFrame[] frames = distribute(header, bitString);
 
         for (int frameID = 0; frameID < frames.length; frameID++) {
+            ackReceived = false;
+            int backoffTimes = 0;
             // physical Layer
-            physicalManager.send(frames[frameID]);
+            while (!ackReceived) {
+                idleNot.mWait();
+
+                // enter sending state
+                state = State.SENDING;
+                physicalManager.permissions.detect.unpermit();
+
+                physicalManager.send(frames[frameID]);
+
+                // enter idle state
+                state = State.IDLE;
+                idleNot.mNotify();
+                physicalManager.permissions.detect.permit();
+                // print message
+                System.out.println("frame " + frameID + " sent");
+
+                ACKorExpiredNot.delayedNotify(Configs.ACK_EXPIRE_TIME);
+                ACKorExpiredNot.mWait();
+                if (ackReceived) {
+                    // wait a while, others may want to send
+                    try {
+                        Thread.sleep(Configs.BACKOFF_UNIT);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                else {
+                    backoffTimes++;
+                    // print message
+                    System.out.println("frame " + frameID + " not acked, backoff " + backoffTimes + " times");
+                    try {
+                        Random random = new Random();
+                        Thread.sleep(Configs.BACKOFF_UNIT * random.nextInt((int)Math.pow(2, backoffTimes)));
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
         }
         System.out.println(ANSI.ANSI_BLUE + "send successfully" + ANSI.ANSI_RESET);
         // print time consumed

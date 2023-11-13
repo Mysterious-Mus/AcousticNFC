@@ -3,9 +3,10 @@ package com.AcousticNFC.APP;
 import com.AcousticNFC.mac.MacFrame;
 import com.AcousticNFC.mac.MacManager;
 import com.AcousticNFC.utils.sync.Permission;
-import com.AcousticNFC.utils.sync.TaskNotify;
+import com.AcousticNFC.utils.sync.Notifier;
 import com.AcousticNFC.Config;
 import com.AcousticNFC.UI.UIHost;
+import com.AcousticNFC.APP.utils.AddressTxtField;
 
 import javax.swing.JPanel;
 // gridbag
@@ -34,7 +35,7 @@ public class TransmitApp {
 
     MacManager macManager;
 
-    private TaskNotify transmitNotify = new TaskNotify();
+    private Notifier transmitNotify = new Notifier();
     TransmitCtrl transmitCtrl;
     
     // working thread
@@ -42,7 +43,7 @@ public class TransmitApp {
         @Override
         public void run() {
             while (true) {
-                transmitNotify.waitTask();
+                transmitNotify.mWait();
                 // the former Config.transmitbitlen of config.transmitted
                 macManager.syncAddr(transmitCtrl.getSrcAddress());
                 macManager.send(
@@ -58,29 +59,13 @@ public class TransmitApp {
         AddressTxtField tgtAddressTxtField, srcAddressTxtField;
         TransmitBtn transmitBtn;
 
-        private class AddressTxtField extends JTextField {
-            public AddressTxtField() {
-                super();
-                this.setText("00");
-            }
-
-            public int getAddress() {
-                int result =  Integer.parseInt(this.getText(), 16);
-                // print error message if address is out of range
-                if (result < MacFrame.Configs.addrLb || result > MacFrame.Configs.addrUb) {
-                    System.out.println("Address out of range");
-                }
-                return result;
-            }
-        }
-
         private class TransmitBtn extends JButton {
             public TransmitBtn() {
                 super("Transmit");
                 this.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        transmitNotify.notifyTask();
+                        transmitNotify.mNotify();
                     }
                 });
             }
@@ -97,11 +82,11 @@ public class TransmitApp {
 
             // src addr
             gbc.gridwidth = 1; gbc.gridy++; this.add(new JLabel("Source Address: 0x"), gbc);
-            gbc.gridx++; srcAddressTxtField = new AddressTxtField(); this.add(srcAddressTxtField, gbc);
+            gbc.gridx++; srcAddressTxtField = new AddressTxtField("00"); this.add(srcAddressTxtField, gbc);
 
             // target address
             gbc.gridwidth = 1; gbc.gridy++; gbc.gridx = 0; this.add(new JLabel("Target Address: 0x"), gbc);
-            gbc.gridx++; tgtAddressTxtField = new AddressTxtField(); this.add(tgtAddressTxtField, gbc);
+            gbc.gridx++; tgtAddressTxtField = new AddressTxtField("01"); this.add(tgtAddressTxtField, gbc);
 
             // button transmit
             gbc.gridx = 0; gbc.gridy++; gbc.gridwidth = 2;

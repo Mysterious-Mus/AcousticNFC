@@ -32,6 +32,7 @@ public class MacFrame {
             DEST_ADDR,
             SRC_ADDR,
             TYPE,
+            SEQUENCE_NUM, // to prevent the loss of ACK
             CRC8,
             COUNT
         }
