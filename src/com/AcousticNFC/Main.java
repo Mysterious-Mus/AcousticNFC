@@ -9,14 +9,18 @@ import com.AcousticNFC.utils.BitString;
 import com.AcousticNFC.Config;
 import com.AcousticNFC.APP.ReceiveApp;
 import com.AcousticNFC.APP.TransmitApp;
+import com.AcousticNFC.APP.TxRx;
+import com.AcousticNFC.utils.AddrAlloc;
 
 public class Main {
     
     Config config;
 
+    public static AddrAlloc addrAlloc = new AddrAlloc();
+
     ASIOHost asioHost;
     public static UIHost uiHost;
-    public static TransmitApp transmitApp;
+    public static TxRx txrxApp;
 
     public Main() {
         config = new Config();
@@ -24,8 +28,8 @@ public class Main {
         Config.transmitted = bitStr.getBitString();
         asioHost = new ASIOHost();
 
-        transmitApp = new TransmitApp();
-        new ReceiveApp();
+        txrxApp = new TxRx("TxRx 1");
+        txrxApp = new TxRx("TxRx 2");
         // ui should be launched last because it has to collect all the panels,
         // also, it should wait for other threads to be ready
         uiHost = new UIHost();

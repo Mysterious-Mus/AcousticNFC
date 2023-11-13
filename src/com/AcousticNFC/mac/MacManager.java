@@ -20,9 +20,12 @@ public class MacManager {
 
     public static class Configs {
         public static int ACK_EXPIRE_TIME = 250;
-        public static int BACKOFF_UNIT = 10;
+        public static int BACKOFF_UNIT = 100;
+
+        public static int BACKOFF_MAX_TIMES = 4;
     }
 
+    String appName;
     byte ADDR;
 
     public void syncAddr(byte ADDR) {
@@ -94,7 +97,7 @@ public class MacManager {
                                 state = State.IDLE;
                                 if (header.getField(MacFrame.Configs.HeaderFields.DEST_ADDR) == ADDR) {
                                     // print message
-                                    System.out.println("ACK received");
+                                    System.out.println(appName + " ACK received");
                                     // notify the sender immediately
                                     ackReceived = true;
                                     idleNot.mNotify();
@@ -161,6 +164,7 @@ public class MacManager {
 
     public MacManager(byte ADDR, String appName, FrameReceivedListener frameReceivedListener) {
         this.ADDR = ADDR;
+        this.appName = appName;
         this.frameReceivedListener = frameReceivedListener;
         physicalManager = new PhysicalManager(
             appName,
@@ -210,8 +214,9 @@ public class MacManager {
      * @return Void
      */
     boolean ackReceived = false;
+    public boolean interrupted = false;
     public void send(byte dstAddr, ArrayList<Boolean> bitString) {
-
+        interrupted = false;
         System.out.println("start sending data");
         // record time
         long startTime = System.currentTimeMillis();
@@ -231,6 +236,13 @@ public class MacManager {
             while (!ackReceived) {
                 idleNot.mWait();
 
+                if (interrupted) {
+                    // print message, including app name
+                    System.out.println(ANSI.ANSI_BLUE + appName + " transmission interrupted" + ANSI.ANSI_RESET);
+                    idleNot.mNotify();
+                    return;
+                }
+
                 // enter sending state
                 state = State.SENDING;
                 physicalManager.permissions.detect.unpermit();
@@ -242,8 +254,8 @@ public class MacManager {
                 idleNot.mNotify();
                 physicalManager.permissions.detect.permit();
                 // print message
-                System.out.println("frame " + frameID + " sent");
-
+                System.out.println(appName + " frame " + frameID + " sent");
+                ACKorExpiredNot.cancelNotify();
                 ACKorExpiredNot.delayedNotify(Configs.ACK_EXPIRE_TIME);
                 ACKorExpiredNot.mWait();
                 if (ackReceived) {
@@ -257,10 +269,12 @@ public class MacManager {
                 else {
                     backoffTimes++;
                     // print message
-                    System.out.println("frame " + frameID + " not acked, backoff " + backoffTimes + " times");
+                    System.out.println(appName + " frame " + frameID + " not acked, backoff " + backoffTimes + " times");
                     try {
                         Random random = new Random();
-                        Thread.sleep(Configs.BACKOFF_UNIT * random.nextInt((int)Math.pow(2, backoffTimes)));
+                        Thread.sleep(Configs.BACKOFF_UNIT * 
+                            random.nextInt((int)Math.pow(2, 
+                                Math.min(backoffTimes, Configs.BACKOFF_MAX_TIMES))));
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
