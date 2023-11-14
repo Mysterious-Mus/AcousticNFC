@@ -38,7 +38,7 @@ public class MacFrame {
         }
 
         public static ConfigTerm<Integer> payloadNumBytes = 
-            new ConfigTerm<Integer>("payloadNumBytes", 100, false);
+            new ConfigTerm<Integer>("payloadNumBytes", 150, false);
 
         public static enum Types {
             DATA((byte) 0x00),

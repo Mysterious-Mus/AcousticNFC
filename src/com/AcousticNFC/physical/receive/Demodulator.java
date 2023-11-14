@@ -30,11 +30,11 @@ public class Demodulator {
     }
 
     public static Complex[] subCarrCoeffs(float[] samples) {
-        Complex[] result = new Complex[Config.numSubCarriers];
+        Complex[] result = new Complex[OFDM.Configs.numSubCarriers.v()];
         Complex[] fftResult = FFT.fft(samples);
-        for (int i = 0; i < Config.numSubCarriers; i++) {
+        for (int i = 0; i < OFDM.Configs.numSubCarriers.v(); i++) {
             result[i] = fftResult[
-                    (int) Math.round((Config.bandWidthLow + i * OFDM.Configs.subCarrierWidth.v()) / 
+                    (int) Math.round((OFDM.Configs.bandWidthLow.v() + i * OFDM.Configs.subCarrierWidth.v()) / 
                     ASIOHost.Configs.sampleRate.v() * OFDM.Configs.symbolLength.v())];
             // result[i] = fftResult[
             //         (int) Math.round((Config.bandWidthLow + i * OFDM.Configs.subCarrierWidth.v()) / 
@@ -56,7 +56,7 @@ public class Demodulator {
         // // if the frameBuffer is empty
         // if (frameBuffer.size() == 0) {
         //     String panelInfo = "";
-        //     for (int i = 0; i < Config.numSubCarriers; i++) {
+        //     for (int i = 0; i < OFDM.Configs.numSubCarriers.v(); i++) {
         //         panelInfo += String.format("%.2f ", phases[i]);
         //     }
         //     Config.UpdFirstSymbolPhases(panelInfo);
@@ -64,18 +64,18 @@ public class Demodulator {
 
         // calculate the keys of the subcarriers
         double unitAmp = 0;
-        for (int i = 0; i < Config.numSubCarriers; i++) {
+        for (int i = 0; i < OFDM.Configs.numSubCarriers.v(); i++) {
             // see proj1.ipynb for the derivation
             double thisCarrierPhase = coeffs[i].phase();
 
-            int numPhaseKeys = 1 << Config.PSkeyingCapacity;
+            int numPhaseKeys = 1 << OFDM.Configs.PSKeyingCapacity.v();
             double lastPhaseSegment = 2 * Math.PI / numPhaseKeys / 2;
             int thisCarrierPhaseIndex = (int)Math.floor((thisCarrierPhase + 2 * Math.PI + lastPhaseSegment) 
                 % (2 * Math.PI) /  (2 * Math.PI) * numPhaseKeys);
             
             // push the bits into the receiver's buffer
-            for (int j = 0; j < Config.PSkeyingCapacity; j++) {
-                resultBuffer.add((thisCarrierPhaseIndex & (1 << (Config.PSkeyingCapacity - j - 1))) != 0);
+            for (int j = 0; j < OFDM.Configs.PSKeyingCapacity.v(); j++) {
+                resultBuffer.add((thisCarrierPhaseIndex & (1 << (OFDM.Configs.PSKeyingCapacity.v() - j - 1))) != 0);
             }
 
             if (i == 0) {
@@ -84,11 +84,11 @@ public class Demodulator {
             else {
                 int thisCarrierAmpIdx = (int) Math.round(coeffs[i].abs() / unitAmp) - 1;
                 // control with max
-                thisCarrierAmpIdx = thisCarrierAmpIdx > (1 << OFDM.Configs.ASK_CAPACITY) - 1 ? 
-                    (1 << OFDM.Configs.ASK_CAPACITY) - 1 : thisCarrierAmpIdx;
+                thisCarrierAmpIdx = thisCarrierAmpIdx > (1 << OFDM.Configs.ASKeyingCapacity.v()) - 1 ? 
+                    (1 << OFDM.Configs.ASKeyingCapacity.v()) - 1 : thisCarrierAmpIdx;
                 // push bits
-                for (int j = 0; j < OFDM.Configs.ASK_CAPACITY; j++) {
-                    resultBuffer.add((thisCarrierAmpIdx & (1 << (OFDM.Configs.ASK_CAPACITY - j - 1))) != 0);
+                for (int j = 0; j < OFDM.Configs.ASKeyingCapacity.v(); j++) {
+                    resultBuffer.add((thisCarrierAmpIdx & (1 << (OFDM.Configs.ASKeyingCapacity.v() - j - 1))) != 0);
                 }
             }
         }
@@ -97,7 +97,7 @@ public class Demodulator {
 
     // private void scanTest() {
     //     int alignNSample = Config.alignNSymbol * (OFDM.Configs.cyclicPrefixNSamples.v() + Config.symbolLength);
-    //     int alignBitLen = Config.alignNSymbol * Config.PSkeyingCapacity * Config.numSubCarriers;
+    //     int alignBitLen = Config.alignNSymbol * OFDM.Configs.PSkeyingCapacity.v() * OFDM.Configs.numSubCarriers.v();
     //     int lastSampleIdx = receiver.tickDone + Config.scanWindow + alignNSample;
     //     while (lastSampleIdx >= receiver.getLength()) {
     //         // busy waiting
@@ -122,13 +122,13 @@ public class Demodulator {
     //                 testReceiverPtr += Config.symbolLength;
     //                 // calculate average time distortion
     //                 double[] phases = subCarrCoeffs(nxtSymbolSamples);
-    //                 for (int subCId = 0; subCId < Config.numSubCarriers; subCId ++) {
+    //                 for (int subCId = 0; subCId < OFDM.Configs.numSubCarriers.v(); subCId ++) {
     //                     double thisCarrierPhase = phases[subCId];
-    //                     int numKeys = (int) Math.round(Math.pow(2, Config.PSkeyingCapacity));
+    //                     int numKeys = (int) Math.round(Math.pow(2, OFDM.Configs.PSkeyingCapacity.v()));
     //                     int thisCarrierIdx = 0;
-    //                     for (int bitId = 0; bitId < Config.PSkeyingCapacity; bitId ++) {
-    //                         thisCarrierIdx += (Config.alignBitFunc(testSymId * Config.PSkeyingCapacity * Config.numSubCarriers + subCId * Config.PSkeyingCapacity + bitId) ? 1 : 0)
-    //                          << (Config.PSkeyingCapacity - bitId - 1);
+    //                     for (int bitId = 0; bitId < OFDM.Configs.PSkeyingCapacity.v(); bitId ++) {
+    //                         thisCarrierIdx += (Config.alignBitFunc(testSymId * OFDM.Configs.PSkeyingCapacity.v() * OFDM.Configs.numSubCarriers.v() + subCId * OFDM.Configs.PSkeyingCapacity.v() + bitId) ? 1 : 0)
+    //                          << (OFDM.Configs.PSkeyingCapacity.v() - bitId - 1);
     //                     }
     //                     double requiredPhase = 2 * Math.PI / numKeys * thisCarrierIdx;
     //                     double distortion = ((thisCarrierPhase - requiredPhase + 4 * Math.PI) % (2 * Math.PI) < 
@@ -142,8 +142,8 @@ public class Demodulator {
     //                 }
     //                 // add to BER
     //                 ArrayList<Boolean> demodulated = demodulateSymbol(nxtSymbolSamples);
-    //                 for (int symBitId = 0; symBitId < Config.PSkeyingCapacity * Config.numSubCarriers; symBitId ++) {
-    //                     BER += (demodulated.get(symBitId) != Config.alignBitFunc(testSymId * Config.PSkeyingCapacity * Config.numSubCarriers + symBitId) ? 1 : 0);
+    //                 for (int symBitId = 0; symBitId < OFDM.Configs.PSkeyingCapacity.v() * OFDM.Configs.numSubCarriers.v(); symBitId ++) {
+    //                     BER += (demodulated.get(symBitId) != Config.alignBitFunc(testSymId * OFDM.Configs.PSkeyingCapacity.v() * OFDM.Configs.numSubCarriers.v() + symBitId) ? 1 : 0);
     //                 }
     //             }
     //             avgAbsDistortion /= alignBitLen;

@@ -1,9 +1,10 @@
 package com.AcousticNFC;
 
-// Jcomp
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.AcousticNFC.mac.MacFrame;
 import com.AcousticNFC.physical.transmit.OFDM;
@@ -13,13 +14,16 @@ import com.AcousticNFC.ASIO.ASIOHost;
 /*
  * Steps to add one parameter to panel:
  *  1. declare it with ConfigTerm<T> class
- *  2. add it with wanted order in Config()
+ *  2. initialize it at the ctor Config() since some of them won't init properly before used
+ *      also for proper update order
+ *  2. add it with wanted order in panel
  */
 
 
 public class Config {
 
-    public static ArrayList<ConfigTerm> configTerms = new ArrayList<ConfigTerm>();
+    public static ArrayList<ConfigTerm> ConfigTermList = new ArrayList<>();
+    public static Map<String, ConfigTerm> configTermsMap = new HashMap<String, ConfigTerm>();
 
     /**
      * A class to hold the name and value of a config term
@@ -78,6 +82,7 @@ public class Config {
             this.value = value;
             this.passive = passive;
             this.displayer = new TermDisp();
+            configTermsMap.put(name, this);
         }
 
         public boolean isPassive() {
@@ -94,6 +99,9 @@ public class Config {
             else if (value instanceof Double) {
                 return Double.toString((Double) value);
             }
+            else if (value instanceof Boolean) {
+                return Boolean.toString((Boolean) value);
+            }
             else {
                 return "Unsupported Type";
             }
@@ -108,6 +116,9 @@ public class Config {
             }
             else if (value instanceof Double) {
                 return (T) Double.valueOf(x);
+            }
+            else if (value instanceof Boolean) {
+                return (T) Boolean.valueOf(x);
             }
             else {
                 return null;
@@ -135,17 +146,6 @@ public class Config {
      * The calculated ones are not editable, but can be changed by changing the editable ones
      *      Once one of the editable ones is changed, the calculated ones are updated
     */
-
-    public static boolean cyclicPrefixMute = false;      
-
-    public static double bandWidthLowEdit = 4000;
-    public static double bandWidthHighEdit = 14000;
-    public static double bandWidthLow;
-    public static double bandWidthHigh;
-    public static int numSubCarriers;
-    
-    public static int PSkeyingCapacity = 1;
-    public static int symbolCapacity;
 
     public static float SoF_amplitude = 1f;
     public static double SoF_T = 0.0004; // The 'T' parameter of SoF, see DOC
@@ -197,14 +197,6 @@ public class Config {
     public class ConfigPanel extends JPanel {
 
         JTextField transmitLenField;
-        JCheckBox cyclicPrefixMuteField;
-        JTextField bandWidthLowEditField;
-        JLabel bandWidthLowField;
-        JTextField bandWidthHighEditField;
-        JLabel bandWidthHighField;
-        JLabel numSubCarriersField;
-        JTextField keyingCapacityField;
-        JLabel symbolCapacityField;
         JTextField SoF_amplitudeField;
         JTextField SoF_TField;
         JLabel sofNSamplesField;
@@ -222,14 +214,6 @@ public class Config {
         public ConfigPanel() {
             // init the UI elems
             transmitLenField = new JTextField(Integer.toString(Config.transmitBitLen));
-            cyclicPrefixMuteField = new JCheckBox("", Config.cyclicPrefixMute);
-            bandWidthLowEditField = new JTextField(Double.toString(Config.bandWidthLowEdit));
-            bandWidthLowField = new JLabel(Double.toString(Config.bandWidthLow));
-            bandWidthHighEditField = new JTextField(Double.toString(Config.bandWidthHighEdit));
-            bandWidthHighField = new JLabel(Double.toString(Config.bandWidthHigh));
-            numSubCarriersField = new JLabel(Integer.toString(Config.numSubCarriers));
-            keyingCapacityField = new JTextField(Integer.toString(Config.PSkeyingCapacity));
-            symbolCapacityField = new JLabel(Integer.toString(Config.symbolCapacity));
             SoF_amplitudeField = new JTextField(Float.toString(Config.SoF_amplitude));
             SoF_TField = new JTextField(Double.toString(Config.SoF_T));
             sofNSamplesField = new JLabel(Integer.toString(Config.sofNSamples));
@@ -249,10 +233,6 @@ public class Config {
             updateButton.addActionListener(e -> {
                 // update all config
                 Config.transmitBitLen = Integer.parseInt(transmitLenField.getText());
-                Config.cyclicPrefixMute = cyclicPrefixMuteField.isSelected();
-                Config.bandWidthLowEdit = Double.parseDouble(bandWidthLowEditField.getText());
-                Config.bandWidthHighEdit = Double.parseDouble(bandWidthHighEditField.getText());
-                Config.PSkeyingCapacity = Integer.parseInt(keyingCapacityField.getText());
                 Config.SoF_amplitude = Float.parseFloat(SoF_amplitudeField.getText());
                 Config.SoF_T = Double.parseDouble(SoF_TField.getText());
                 Config.SoF_fmin = Double.parseDouble(SoF_fminField.getText());
@@ -287,39 +267,20 @@ public class Config {
 
             this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
+            constructRow("sampleRate", "subCarrierDist");
+            constructRow("symbolLength", "subCarrierWidth");
+            constructRow("cyclicPrefixLenth", "cyclicPrefixNSamples");
+            constructRow("cyclicPrefixMute", null);
+            constructRow("bandWidthLowEdit", "bandWidthLow");
+            constructRow("bandWidthHighEdit", "bandWidthHigh");
+            constructRow("numSubCarriers", null);
+            constructRow("payloadNumBytes", null);
+            constructRow("PSKeyingCapacity", "ASKeyingCapacity");
+            constructRow("symbolCapacity", null);
+
             JPanel grid1 = new JPanel();
 
             grid1.setLayout(new GridLayout(0, 4));
-
-            for (ConfigTerm term : configTerms) {
-                grid1.add(new JLabel(term.name));
-                grid1.add(term.displayer());
-            }
-
-            grid1.add(new JLabel("Cyclic Prefix Mute:"));
-            grid1.add(cyclicPrefixMuteField);
-            grid1.add(new JLabel(""));
-            grid1.add(new JLabel(""));
-            
-            grid1.add(new JLabel("Band Width Low Edit(Hz):"));
-            grid1.add(bandWidthLowEditField);
-            grid1.add(new JLabel("Band Width Low(Hz):"));
-            grid1.add(bandWidthLowField);
-            
-            grid1.add(new JLabel("Band Width High Edit(Hz):"));
-            grid1.add(bandWidthHighEditField);
-            grid1.add(new JLabel("Band Width High(Hz):"));
-            grid1.add(bandWidthHighField);
-            
-            grid1.add(new JLabel(""));
-            grid1.add(new JLabel(""));
-            grid1.add(new JLabel("Number of Sub Carriers:"));
-            grid1.add(numSubCarriersField);
-
-            grid1.add(new JLabel("Keying Capacity:"));
-            grid1.add(keyingCapacityField);
-            grid1.add(new JLabel("Symbol Capacity:"));
-            grid1.add(symbolCapacityField);
 
             grid1.add(new JLabel("SoF Amplitude:"));
             grid1.add(SoF_amplitudeField);
@@ -345,11 +306,6 @@ public class Config {
             grid1.add(transmitLenField);
             grid1.add(new JLabel("Align N Symbol:"));
             grid1.add(alignNSymbolField);
-
-            grid1.add(new JLabel("Pack Byte Len:"));
-            grid1.add(MacFrame.Configs.payloadNumBytes.displayer());
-            grid1.add(new JLabel());
-            grid1.add(new JLabel());
 
             this.add(grid1);
         
@@ -380,17 +336,27 @@ public class Config {
             this.add(statisticsPanel);
         }
 
+        private void constructRow(String paramName1, String paramName2) {
+            JPanel row = new JPanel();
+            row.setLayout(new GridLayout(0, 4));
+            if (paramName1 != null) {
+                row.add(new JLabel(paramName1)); row.add(configTermsMap.get(paramName1).displayer());
+            }
+            else {
+                row.add(new JLabel()); row.add(new JLabel());
+            }
+            if (paramName2 != null) {
+                row.add(new JLabel(paramName2)); row.add(configTermsMap.get(paramName2).displayer());
+            }
+            else {
+                row.add(new JLabel()); row.add(new JLabel());
+            }
+            this.add(row);
+        }
+
         public void updateDisplay() {
             // update all text fields
             transmitLenField.setText(Integer.toString(Config.transmitBitLen));
-            cyclicPrefixMuteField.setSelected(Config.cyclicPrefixMute);
-            bandWidthLowEditField.setText(Double.toString(Config.bandWidthLowEdit));
-            bandWidthLowField.setText(Double.toString(Config.bandWidthLow));
-            bandWidthHighEditField.setText(Double.toString(Config.bandWidthHighEdit));
-            bandWidthHighField.setText(Double.toString(Config.bandWidthHigh));
-            numSubCarriersField.setText(Integer.toString(Config.numSubCarriers));
-            keyingCapacityField.setText(Integer.toString(Config.PSkeyingCapacity));
-            symbolCapacityField.setText(Integer.toString(Config.symbolCapacity));
             SoF_amplitudeField.setText(Float.toString(Config.SoF_amplitude));
             SoF_TField.setText(Double.toString(Config.SoF_T));
             sofNSamplesField.setText(Integer.toString(Config.sofNSamples));
@@ -407,12 +373,23 @@ public class Config {
     public static ConfigPanel panel;
 
     public Config() {
-        configTerms.add(ASIOHost.Configs.sampleRate);
-        configTerms.add(OFDM.Configs.subCarrierDist);
-        configTerms.add(OFDM.Configs.symbolLength);
-        configTerms.add(OFDM.Configs.subCarrierWidth);
-        configTerms.add(OFDM.Configs.cyclicPrefixLenth);
-        configTerms.add(OFDM.Configs.cyclicPrefixNSamples);
+        ConfigTermList.add(ASIOHost.Configs.sampleRate);
+        ConfigTermList.add(MacFrame.Configs.payloadNumBytes);
+        ConfigTermList.add(OFDM.Configs.subCarrierDist);
+        ConfigTermList.add(OFDM.Configs.symbolLength);
+        ConfigTermList.add(OFDM.Configs.subCarrierWidth);
+        ConfigTermList.add(OFDM.Configs.cyclicPrefixLenth);
+        ConfigTermList.add(OFDM.Configs.cyclicPrefixNSamples);
+        ConfigTermList.add(OFDM.Configs.cyclicPrefixMute);
+        ConfigTermList.add(OFDM.Configs.bandWidthLowEdit);
+        ConfigTermList.add(OFDM.Configs.bandWidthLow);
+        ConfigTermList.add(OFDM.Configs.bandWidthHighEdit);
+        ConfigTermList.add(OFDM.Configs.bandWidthHigh);
+        ConfigTermList.add(OFDM.Configs.numSubCarriers);
+        ConfigTermList.add(OFDM.Configs.PSKeyingCapacity);
+        ConfigTermList.add(OFDM.Configs.ASKeyingCapacity);
+        ConfigTermList.add(OFDM.Configs.symbolCapacity);
+
         // Create a panel with text fields for each field in the Config class
         panel = new ConfigPanel();
         ConfigChange();
@@ -420,26 +397,18 @@ public class Config {
     
     public static void ConfigChange() {
         // check all passive configs
-        for (ConfigTerm term : configTerms) {
+        for (ConfigTerm term : ConfigTermList) {
             if (term.isPassive()) {
                 term.PassiveParamUpdVal();
             }
         }
         // update all config
-        bandWidthLow =
-            Math.max(Math.ceil(bandWidthLowEdit / OFDM.Configs.subCarrierWidth.v()), 1) 
-            * OFDM.Configs.subCarrierWidth.v();
-        bandWidthHigh =
-            Math.floor(bandWidthHighEdit / OFDM.Configs.subCarrierWidth.v()) * OFDM.Configs.subCarrierWidth.v();
-        numSubCarriers =
-            (int) Math.round((bandWidthHigh - bandWidthLow) / OFDM.Configs.subCarrierWidth.v()) + 1;
-        symbolCapacity = numSubCarriers * PSkeyingCapacity + (numSubCarriers - 1) * OFDM.Configs.ASK_CAPACITY;
         sofNSamples = (int)(2 * SoF_T * ASIOHost.Configs.sampleRate.v());
         sofSilentNSamples = (int)(SofSilencePeriod * ASIOHost.Configs.sampleRate.v());
 
         interPacketGapNSamples = (int)(interPacketGapPeriod * ASIOHost.Configs.sampleRate.v());
 
-        alignBitLen = alignNSymbol * PSkeyingCapacity * numSubCarriers;
+        alignBitLen = alignNSymbol * OFDM.Configs.PSKeyingCapacity.v() * OFDM.Configs.numSubCarriers.v();
         ECCBitRate = ECCMat.length;
         decodeBitLen = ECCOn? MacFrame.Configs.payloadNumBytes.v() * 8 * ECCBitRate : MacFrame.Configs.payloadNumBytes.v() * 8;
         SofNoSilence = SoF.generateSoFNoSilence();

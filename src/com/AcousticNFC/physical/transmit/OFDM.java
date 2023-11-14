@@ -15,7 +15,6 @@ import com.AcousticNFC.Config.ConfigTerm;
 public class OFDM {
 
     public static class Configs {
-
         /**
          * The distance of subcarriers in (times of spectrum resolution)
          */
@@ -58,7 +57,52 @@ public class OFDM {
                             OFDM.Configs.cyclicPrefixLenth.v()));
             }
         };
-        public static Integer ASK_CAPACITY = 1;
+        public static ConfigTerm<Boolean> cyclicPrefixMute = 
+            new ConfigTerm<Boolean>("cyclicPrefixMute", false, false);
+        public static ConfigTerm<Double> bandWidthLowEdit = 
+            new ConfigTerm<Double>("bandWidthLowEdit", 4000.0, false);
+        public static ConfigTerm<Double> bandWidthLow =
+            new ConfigTerm<Double>("bandWidthLow", null, true) 
+        {
+            @Override
+            public void PassiveParamUpdVal() {
+                set(Math.max(Math.ceil(OFDM.Configs.bandWidthLowEdit.v() / OFDM.Configs.subCarrierWidth.v()), 1) 
+                    * OFDM.Configs.subCarrierWidth.v());
+            }
+        };
+        public static ConfigTerm<Double> bandWidthHighEdit = 
+            new ConfigTerm<Double>("bandWidthHighEdit", 14000.0, false);
+        public static ConfigTerm<Double> bandWidthHigh =
+            new ConfigTerm<Double>("bandWidthHigh", null, true) 
+        {
+            @Override
+            public void PassiveParamUpdVal() {
+                set(Math.floor(OFDM.Configs.bandWidthHighEdit.v() / OFDM.Configs.subCarrierWidth.v()) 
+                    * OFDM.Configs.subCarrierWidth.v());
+            }
+        };
+        public static ConfigTerm<Integer> numSubCarriers = 
+            new ConfigTerm<Integer>("numSubCarriers", null, true) 
+        {
+            @Override
+            public void PassiveParamUpdVal() {
+                set((int) Math.round((OFDM.Configs.bandWidthHigh.v() - OFDM.Configs.bandWidthLow.v()) 
+                    / OFDM.Configs.subCarrierWidth.v()) + 1);
+            }
+        };
+        public static ConfigTerm<Integer> PSKeyingCapacity =
+            new ConfigTerm<Integer>("PSKeyingCapacity", 1, false);
+        public static ConfigTerm<Integer> ASKeyingCapacity =
+            new ConfigTerm<Integer>("ASKeyingCapacity", 1, false);
+        public static ConfigTerm<Integer> symbolCapacity =
+            new ConfigTerm<Integer>("symbolCapacity", null, true) 
+        {
+            @Override
+            public void PassiveParamUpdVal() {
+                set(OFDM.Configs.numSubCarriers.v() * OFDM.Configs.PSKeyingCapacity.v() + 
+                    (OFDM.Configs.numSubCarriers.v() - 1) * OFDM.Configs.ASKeyingCapacity.v());
+            }
+        };
     }
 
     public OFDM() {
@@ -74,15 +118,15 @@ public class OFDM {
     */
     public static float[] phaseShiftKeying(int[] data, double carrierFreq) {
         // sanity: data length should be equal to keyingCapacity
-        assert data.length == Config.PSkeyingCapacity;
+        assert data.length == OFDM.Configs.PSKeyingCapacity.v();
 
         // number of keys
-        int numKeys = (int) Math.pow(2, Config.PSkeyingCapacity);
+        int numKeys = (int) Math.pow(2, OFDM.Configs.PSKeyingCapacity.v());
 
         // Index
         int index = 0;
-        for (int i = 0; i < Config.PSkeyingCapacity; i++) {
-            index += data[i] * Math.pow(2, Config.PSkeyingCapacity - i - 1);
+        for (int i = 0; i < OFDM.Configs.PSKeyingCapacity.v(); i++) {
+            index += data[i] * Math.pow(2, OFDM.Configs.PSKeyingCapacity.v() - i - 1);
         }
 
         // Phase
@@ -107,7 +151,7 @@ public class OFDM {
     */
     public static float[] symbolGen(int[] data) {
         // Sanity: data length should be equal to numSubCarriers * keyingCapacity
-        assert data.length == Config.numSubCarriers * Config.PSkeyingCapacity;
+        assert data.length == OFDM.Configs.numSubCarriers.v() * OFDM.Configs.PSKeyingCapacity.v();
 
         // Determine the number of samples per symbol
         int numSamplesPerWholeSymbol = OFDM.Configs.cyclicPrefixNSamples.v() + OFDM.Configs.symbolLength.v();
@@ -115,13 +159,13 @@ public class OFDM {
         // Generate the symbol
         float[] symbol = new float[numSamplesPerWholeSymbol];
         int usedDataPtr = 0;
-        for (int i = 0; i < Config.numSubCarriers; i++) {
+        for (int i = 0; i < OFDM.Configs.numSubCarriers.v(); i++) {
             // Get the subcarrier frequency
-            double carrierFreq = Config.bandWidthLow + i * OFDM.Configs.subCarrierWidth.v();
+            double carrierFreq = OFDM.Configs.bandWidthLow.v() + i * OFDM.Configs.subCarrierWidth.v();
 
-            int[] subCarrierPhaseData = new int[Config.PSkeyingCapacity];
-            System.arraycopy(data, usedDataPtr, subCarrierPhaseData, 0, Config.PSkeyingCapacity);
-            usedDataPtr += Config.PSkeyingCapacity;
+            int[] subCarrierPhaseData = new int[OFDM.Configs.PSKeyingCapacity.v()];
+            System.arraycopy(data, usedDataPtr, subCarrierPhaseData, 0, OFDM.Configs.PSKeyingCapacity.v());
+            usedDataPtr += OFDM.Configs.PSKeyingCapacity.v();
             // apply PSK modulation to the subcarrier
             float[] modulatedSubCarrier = phaseShiftKeying(subCarrierPhaseData, carrierFreq);
 
@@ -131,31 +175,31 @@ public class OFDM {
                 ampIdx = 0;
             }
             else {
-                int[] subCarrierAmpData = new int[Configs.ASK_CAPACITY];
-                System.arraycopy(data, usedDataPtr, subCarrierAmpData, 0, Configs.ASK_CAPACITY);
-                usedDataPtr += Configs.ASK_CAPACITY;
+                int[] subCarrierAmpData = new int[Configs.ASKeyingCapacity.v()];
+                System.arraycopy(data, usedDataPtr, subCarrierAmpData, 0, Configs.ASKeyingCapacity.v());
+                usedDataPtr += Configs.ASKeyingCapacity.v();
                 // calc ampIdx
                 ampIdx = 0;
-                for (int j = 0; j < Configs.ASK_CAPACITY; j++) {
-                    ampIdx += subCarrierAmpData[j] * (1 << Configs.ASK_CAPACITY - j - 1);
+                for (int j = 0; j < Configs.ASKeyingCapacity.v(); j++) {
+                    ampIdx += subCarrierAmpData[j] * (1 << Configs.ASKeyingCapacity.v() - j - 1);
                 }
             }
 
             // apply amplitude modulation
-            int Nlevels = 1 << Configs.ASK_CAPACITY;
+            int Nlevels = 1 << Configs.ASKeyingCapacity.v();
             for (int j = 0; j < OFDM.Configs.symbolLength.v(); j++) {
                 modulatedSubCarrier[j] *= (float) (ampIdx + 1) / Nlevels;
             }
 
             // Add the subcarrier to the symbol
             for (int j = 0; j < OFDM.Configs.symbolLength.v(); j++) {
-                symbol[OFDM.Configs.cyclicPrefixNSamples.v() + j] += modulatedSubCarrier[j] / Config.numSubCarriers;
+                symbol[OFDM.Configs.cyclicPrefixNSamples.v() + j] += modulatedSubCarrier[j] / OFDM.Configs.numSubCarriers.v();
             }
         }
 
         // Add the cyclic prefix
-        for (int i = OFDM.Configs.cyclicPrefixNSamples.v() / 2; i < OFDM.Configs.cyclicPrefixNSamples.v(); i++) {
-            symbol[i] = Config.cyclicPrefixMute ? 0 :
+        for (int i = OFDM.Configs.cyclicPrefixNSamples.v(); i < OFDM.Configs.cyclicPrefixNSamples.v(); i++) {
+            symbol[i] = OFDM.Configs.cyclicPrefixMute.v() ? 0 :
                 symbol[numSamplesPerWholeSymbol - OFDM.Configs.cyclicPrefixNSamples.v() + i];
         }
 
@@ -171,22 +215,22 @@ public class OFDM {
      */
     public static float[] modulate(ArrayList<Boolean> data) {
         // pad the input with 0s to make the length a multiple of symbolCapacity
-        int numSymbols = (int) Math.ceil((double) data.size() / Config.symbolCapacity);
-        boolean[] paddedData = new boolean[numSymbols * Config.symbolCapacity];
+        int numSymbols = (int) Math.ceil((double) data.size() / OFDM.Configs.symbolCapacity.v());
+        boolean[] paddedData = new boolean[numSymbols * OFDM.Configs.symbolCapacity.v()];
         for (int i = 0; i < data.size(); i++) {
             paddedData[i] = data.get(i);
         }
         // Sanity check
-        assert paddedData.length % Config.symbolCapacity == 0;
+        assert paddedData.length % OFDM.Configs.symbolCapacity.v() == 0;
 
         // modulate
         int resultNSamples = numSymbols * (OFDM.Configs.cyclicPrefixNSamples.v() + OFDM.Configs.symbolLength.v());
         float[] result = new float[resultNSamples];
         for (int i = 0; i < numSymbols; i++) {
             // Get the data for this symbol
-            int[] symbolData = new int[Config.symbolCapacity];
-            for (int j = 0; j < Config.symbolCapacity; j++) {
-                symbolData[j] = paddedData[i * Config.symbolCapacity + j] ? 1 : 0;
+            int[] symbolData = new int[OFDM.Configs.symbolCapacity.v()];
+            for (int j = 0; j < OFDM.Configs.symbolCapacity.v(); j++) {
+                symbolData[j] = paddedData[i * OFDM.Configs.symbolCapacity.v() + j] ? 1 : 0;
             }
 
             // Generate the symbol
