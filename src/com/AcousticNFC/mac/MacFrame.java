@@ -8,7 +8,7 @@ import javax.print.DocFlavor.BYTE_ARRAY;
 
 import java.io.ByteArrayOutputStream;
 
-import com.AcousticNFC.Config;
+import com.AcousticNFC.Config.ConfigTerm;
 import com.AcousticNFC.utils.TypeConvertion;
 import com.AcousticNFC.utils.CRC8;
 
@@ -37,7 +37,8 @@ public class MacFrame {
             COUNT
         }
 
-        public static int payloadNumBytes = 180;
+        public static ConfigTerm<Integer> payloadNumBytes = 
+            new ConfigTerm<Integer>("payloadNumBytes", 100, false);
 
         public static enum Types {
             DATA((byte) 0x00),
@@ -161,7 +162,7 @@ public class MacFrame {
      * The Length of a mac frame
      */
     public static int getFrameBitLen() {
-        return Configs.HeaderFields.COUNT.ordinal() * 8 + Configs.payloadNumBytes * 8 + 32;
+        return Configs.HeaderFields.COUNT.ordinal() * 8 + Configs.payloadNumBytes.v() * 8 + 32;
     }
      
     /** check CRC

@@ -1,6 +1,7 @@
 package com.AcousticNFC.utils;
 
 import com.AcousticNFC.Config;
+import com.AcousticNFC.ASIO.ASIOHost;
 
 public class Music {
     private final double duration = 1.5; // seconds for each chord
@@ -58,12 +59,12 @@ public class Music {
     }
 
     public float[] generateChord(float[] frequencies) {
-        int n = (int) (Config.sampleRate * duration);
+        int n = (int) (ASIOHost.Configs.sampleRate.v() * duration);
         float[] samples = new float[n];
         for (int i = 0; i < frequencies.length; i++) {
             double frequency = frequencies[i];
             for (int j = 0; j < n; j++) {
-                samples[j] += (float) (amplitude * Math.sin(2 * Math.PI * frequency * j / Config.sampleRate));
+                samples[j] += (float) (amplitude * Math.sin(2 * Math.PI * frequency * j / ASIOHost.Configs.sampleRate.v()));
             }
         }
         return samples;
@@ -94,10 +95,10 @@ public class Music {
         // determine the sound function on the continuous domain
 
         // generate the sound samples
-        int n = (int) (Config.sampleRate * duration_pj1pt2);
+        int n = (int) (ASIOHost.Configs.sampleRate.v() * duration_pj1pt2);
         float[] samples = new float[n];
         for (int i = 0; i < n; i++) {
-            samples[i] = soundFunctionPj1Pt2(i / Config.sampleRate);
+            samples[i] = soundFunctionPj1Pt2(i / ASIOHost.Configs.sampleRate.v());
         }
         return samples;
     }

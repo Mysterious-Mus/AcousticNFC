@@ -51,7 +51,7 @@ public class ReceiveApp {
                         isReceiving = true;
                         errPackCnt = 0;
                         errCrcCnt = 0;
-                        receiveLength = Math.ceilDiv(Config.transmitBitLen, 8 * MacFrame.Configs.payloadNumBytes);
+                        receiveLength = Math.ceilDiv(Config.transmitBitLen, 8 * MacFrame.Configs.payloadNumBytes.v());
                     }
                 });
             }
@@ -140,7 +140,7 @@ public class ReceiveApp {
             if (failed) {
                 errPackCnt ++;
                 int groupLen = 40;
-                int packBitLen = MacFrame.Configs.payloadNumBytes * 8;
+                int packBitLen = MacFrame.Configs.payloadNumBytes.v() * 8;
                 System.out.println("GroupDiffs " + packIdx + ":");
                 for (int groupId = 0; groupId < Math.ceilDiv(packBitLen, groupLen); 
                 groupId++) {

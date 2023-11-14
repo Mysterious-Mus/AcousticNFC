@@ -21,6 +21,7 @@ import com.AcousticNFC.physical.transmit.SoF;
 import com.AcousticNFC.utils.sync.Notifier;
 import com.AcousticNFC.mac.MacManager.physicalCallback;
 import com.AcousticNFC.physical.receive.Demodulator;
+import com.AcousticNFC.physical.transmit.OFDM;
 
 public class PhysicalManager {
 
@@ -250,16 +251,16 @@ public class PhysicalManager {
 
     private float[] popNxtSample() {
         // check buffer size
-        if (sampleBuffer.size() < Config.cyclicPrefixNSamples + Config.symbolLength) {
+        if (sampleBuffer.size() < OFDM.Configs.cyclicPrefixNSamples.v() + OFDM.Configs.symbolLength.v()) {
             return null;
         }
 
         // skip the cyclic prefix
-        sampleBuffer.setFIW(sampleBuffer.FIW + Config.cyclicPrefixNSamples);
+        sampleBuffer.setFIW(sampleBuffer.FIW + OFDM.Configs.cyclicPrefixNSamples.v());
 
         // get the samples of the symbol
-        float[] samples = new float[Config.symbolLength];
-        for (int i = 0; i < Config.symbolLength; i++) {
+        float[] samples = new float[OFDM.Configs.symbolLength.v()];
+        for (int i = 0; i < OFDM.Configs.symbolLength.v(); i++) {
             samples[i] = sampleBuffer.popFront();
         }
 

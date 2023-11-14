@@ -21,13 +21,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.AcousticNFC.utils.Player;
-import com.AcousticNFC.utils.TypeConvertion;
+import com.AcousticNFC.Config.ConfigTerm;
 
 import java.util.concurrent.Semaphore;
 
 public class ASIOHost implements AsioDriverListener{
 
     public static class Configs {
+        public static ConfigTerm<Double> sampleRate = new ConfigTerm<Double>("sampleRate", (double)44100, false);
         public static int BUFFER_SIZE = 256;
     }
 
@@ -259,10 +260,9 @@ public class ASIOHost implements AsioDriverListener{
         }
         double sampleRate = asioDriver.getSampleRate();
         // if sample rate is not 44100, throw warning
-        if (Math.abs(sampleRate - 44100) > 1e-6) {
+        if (Math.abs(sampleRate - Configs.sampleRate.v()) > 1e-6) {
           System.out.println("Warning: sample rate is not 44100. System will probably fail.");
         }
-        Config.UpdSampleRate(sampleRate);
         asioDriver.createBuffers(activeChannels);
         asioDriver.start();
     }

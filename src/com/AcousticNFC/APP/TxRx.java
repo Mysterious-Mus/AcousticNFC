@@ -29,6 +29,7 @@ import com.AcousticNFC.Main;
 public class TxRx {
 
     String name;
+    byte srcAddr, dstAddr;
 
     MacManager macManager;
 
@@ -71,7 +72,7 @@ public class TxRx {
                         isReceiving = true;
                         errPackCnt = 0;
                         errCrcCnt = 0;
-                        receiveLength = Math.ceilDiv(Config.transmitBitLen, 8 * MacFrame.Configs.payloadNumBytes);
+                        receiveLength = Math.ceilDiv(Config.transmitBitLen, 8 * MacFrame.Configs.payloadNumBytes.v());
                     }
                 });
             }
@@ -114,18 +115,18 @@ public class TxRx {
             gbc.fill = GridBagConstraints.HORIZONTAL; gbc.gridx = 0; gbc.gridy = 0;
 
             // panel label
-            gbc.gridwidth = 2; this.add(new JLabel("Receive"), gbc);
+            gbc.gridwidth = 2; this.add(new JLabel(name), gbc);
 
             // host addr
             gbc.gridwidth = 1; gbc.gridy++; gbc.gridx = 0; this.add(new JLabel("Host Address: 0x"), gbc);
             gbc.gridx++; hostAddrTxtField = new AddressTxtField(
-                String.format("%02x", Main.addrAlloc.acquireAddr()));
+                String.format("%02x", srcAddr));
             this.add(hostAddrTxtField, gbc);
 
             // target address
             gbc.gridwidth = 1; gbc.gridy++; gbc.gridx = 0; this.add(new JLabel("Dst Address: 0x"), gbc);
             gbc.gridx++; dstAddressTxtField = new AddressTxtField(
-                String.format("%02x", Main.addrAlloc.acquireAddr()));
+                String.format("%02x", dstAddr));
             this.add(dstAddressTxtField, gbc);
 
             // buttons
@@ -148,8 +149,10 @@ public class TxRx {
         }
     }
 
-    public TxRx(String name) {
+    public TxRx(String name, byte srcAddr, byte dstAddr) {
         this.name = name;
+        this.srcAddr = srcAddr;
+        this.dstAddr = dstAddr;
         // claim mac manager
         macManager = new MacManager((byte) 0, name, frameReceivedListener);
         // launch UI
@@ -193,7 +196,7 @@ public class TxRx {
             if (failed) {
                 errPackCnt ++;
                 int groupLen = 40;
-                int packBitLen = MacFrame.Configs.payloadNumBytes * 8;
+                int packBitLen = MacFrame.Configs.payloadNumBytes.v() * 8;
                 System.out.println("GroupDiffs " + packIdx + ":");
                 for (int groupId = 0; groupId < Math.ceilDiv(packBitLen, groupLen); 
                 groupId++) {

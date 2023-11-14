@@ -2,6 +2,7 @@ package com.AcousticNFC.physical.transmit;
 
 import com.AcousticNFC.Config;
 import com.AcousticNFC.utils.CyclicBuffer;
+import com.AcousticNFC.ASIO.ASIOHost;
 
 import java.util.ArrayList;
 
@@ -18,7 +19,7 @@ public class SoF {
 
     //     // the warmUp section should be a sine wave, with lenght Config.sofNSamples
     //     for (int idx = 0; idx < warmUpL; idx ++) {
-    //         withWarmup[idx] = 0.8f * (float) Math.sin(2 * Math.PI * 8000 * idx / Config.sampleRate);
+    //         withWarmup[idx] = 0.8f * (float) Math.sin(2 * Math.PI * 8000 * idx / ASIOHost.Configs.sampleRate.v());
     //     }
 
     //     float[] samplesNoSilence = generateSoFNoSilence();
@@ -46,7 +47,7 @@ public class SoF {
         }
         // stage 2
         for (int i = Config.sofNSamples / 2; i < Config.sofNSamples; i++) {
-            float t = (float) i / (float) Config.sampleRate;
+            float t = (float) i / ASIOHost.Configs.sampleRate.v().floatValue();
             float phase = (float) (phi0 + Config.SoF_fmax*(t-Config.SoF_T) - Math.PI * a * (t-Config.SoF_T) * (t-Config.SoF_T));
             samples[i] = Config.SoF_amplitude * (float) Math.cos(phase);
         }

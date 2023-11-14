@@ -12,6 +12,7 @@ import com.AcousticNFC.Config;
 import com.AcousticNFC.mac.MacFrame;
 import com.AcousticNFC.physical.transmit.OFDM;
 import com.AcousticNFC.utils.FileOp;
+import com.AcousticNFC.ASIO.ASIOHost;
 
 public class Demodulator {
     
@@ -33,12 +34,12 @@ public class Demodulator {
         Complex[] fftResult = FFT.fft(samples);
         for (int i = 0; i < Config.numSubCarriers; i++) {
             result[i] = fftResult[
-                    (int) Math.round((Config.bandWidthLow + i * Config.subCarrierWidth) / 
-                    Config.sampleRate * Config.symbolLength)];
+                    (int) Math.round((Config.bandWidthLow + i * OFDM.Configs.subCarrierWidth.v()) / 
+                    ASIOHost.Configs.sampleRate.v() * OFDM.Configs.symbolLength.v())];
             // result[i] = fftResult[
-            //         (int) Math.round((Config.bandWidthLow + i * Config.subCarrierWidth) / 
-            //         Config.sampleRate * Config.symbolLength)].phase() + 
-            //         timeCompensation * 2 * Math.PI * (Config.bandWidthLow + i * Config.subCarrierWidth);
+            //         (int) Math.round((Config.bandWidthLow + i * OFDM.Configs.subCarrierWidth.v()) / 
+            //         ASIOHost.Configs.sampleRate.v() * Config.symbolLength)].phase() + 
+            //         timeCompensation * 2 * Math.PI * (Config.bandWidthLow + i * OFDM.Configs.subCarrierWidth.v());
         }
         return result;
     }
@@ -95,7 +96,7 @@ public class Demodulator {
     }
 
     // private void scanTest() {
-    //     int alignNSample = Config.alignNSymbol * (Config.cyclicPrefixNSamples + Config.symbolLength);
+    //     int alignNSample = Config.alignNSymbol * (OFDM.Configs.cyclicPrefixNSamples.v() + Config.symbolLength);
     //     int alignBitLen = Config.alignNSymbol * Config.PSkeyingCapacity * Config.numSubCarriers;
     //     int lastSampleIdx = receiver.tickDone + Config.scanWindow + alignNSample;
     //     while (lastSampleIdx >= receiver.getLength()) {
@@ -113,7 +114,7 @@ public class Demodulator {
     //             double avgDistortion = 0;
     //             double BER = 0;
     //             for (int testSymId = 0; testSymId < Config.alignNSymbol; testSymId++) {
-    //                 testReceiverPtr += Config.cyclicPrefixNSamples;
+    //                 testReceiverPtr += OFDM.Configs.cyclicPrefixNSamples.v();
     //                 float nxtSymbolSamples[] = new float[Config.symbolLength];
     //                 for (int i = 0; i < Config.symbolLength; i++) {
     //                     nxtSymbolSamples[i] = receiver.samples.get(testReceiverPtr + i + 1);
@@ -135,9 +136,9 @@ public class Demodulator {
     //                         (thisCarrierPhase - requiredPhase + 4 * Math.PI) % (2 * Math.PI) : 
     //                         (thisCarrierPhase - requiredPhase + 4 * Math.PI) % (2 * Math.PI) - 2 * Math.PI);
     //                     avgAbsDistortion += Math.abs(distortion)
-    //                                         / (2 * Math.PI * (Config.bandWidthLow + subCId * Config.subCarrierWidth));
+    //                                         / (2 * Math.PI * (Config.bandWidthLow + subCId * OFDM.Configs.subCarrierWidth.v()));
     //                     avgDistortion += distortion
-    //                                         / (2 * Math.PI * (Config.bandWidthLow + subCId * Config.subCarrierWidth));
+    //                                         / (2 * Math.PI * (Config.bandWidthLow + subCId * OFDM.Configs.subCarrierWidth.v()));
     //                 }
     //                 // add to BER
     //                 ArrayList<Boolean> demodulated = demodulateSymbol(nxtSymbolSamples);
@@ -159,7 +160,7 @@ public class Demodulator {
     //         System.out.println("Compensation: " + (bestDoneIdx - receiver.tickDone));
     //         // timeCompensation = -bestDistortion;
     //         // print avg distort samples
-    //         System.out.println("Avg Distort: " + bestDistortion * Config.sampleRate);
+    //         System.out.println("Avg Distort: " + bestDistortion * ASIOHost.Configs.sampleRate.v());
     //         // print BER
     //         System.out.println("BER: " + bestBER);
 
