@@ -13,15 +13,20 @@ public class ECC {
   private int symbolLength;
   private int constraintLength;
 
+  public static boolean[][] ECCMat = {
+      { true, true, true, true, false, false, true },
+      { true, false, true, true, false, true, false },
+  };
+
   public ECC() {
     /**
      * Convolutional code constructor
      *  g: generator matrix
      *  L: constraint length
      */
-    this.generatorMatrix = Config.ECCMat;
-    this.symbolLength = Config.ECCMat.length;
-    this.constraintLength = Config.ECCMat[0].length;
+    this.generatorMatrix = ECCMat;
+    this.symbolLength = ECCMat.length;
+    this.constraintLength = ECCMat[0].length;
     // convert boolen array to int 
     this.generatorMatrix_bit = new int[this.symbolLength];
     for (int i = 0; i < this.symbolLength; i++) {

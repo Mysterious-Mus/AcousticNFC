@@ -145,15 +145,6 @@ public class Config {
     // debug shared info
     public static ArrayList<Boolean> transmitted;
 
-    public static int decodeBitLen;
-
-    public static boolean ECCOn = false;
-    public static boolean[][] ECCMat = {
-        { true, true, true, true, false, false, true },
-        { true, false, true, true, false, true, false },
-    };
-    public static int ECCBitRate;
-
     public class ConfigPanel extends JPanel {
 
         public ConfigPanel() {
@@ -236,7 +227,5 @@ public class Config {
         }
         // update all config
 
-        ECCBitRate = ECCMat.length;
-        decodeBitLen = ECCOn? MacFrame.Configs.payloadNumBytes.v() * 8 * ECCBitRate : MacFrame.Configs.payloadNumBytes.v() * 8;   
     }
 }
