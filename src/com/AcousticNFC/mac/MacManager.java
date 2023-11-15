@@ -9,20 +9,25 @@ import javax.crypto.Mac;
 import javax.sound.sampled.AudioFileFormat.Type;
 
 import com.AcousticNFC.Config;
+import com.AcousticNFC.Config.ConfigTerm;
 import com.AcousticNFC.mac.MacFrame.Header;
 import com.AcousticNFC.physical.PhysicalManager;
 import com.AcousticNFC.utils.ANSI;
 import com.AcousticNFC.utils.TypeConvertion;
 import com.AcousticNFC.utils.sync.Permission;
 import com.AcousticNFC.utils.sync.Notifier;
+import com.AcousticNFC.Config.ConfigTerm;
 
 public class MacManager {
 
     public static class Configs {
-        public static int ACK_EXPIRE_TIME = 250;
-        public static int BACKOFF_UNIT = 150;
+        public static ConfigTerm<Integer> ACK_EXPIRE_TIME = 
+            new ConfigTerm<Integer>("ACK_EXPIRE_TIME", 250, false);
+        public static ConfigTerm<Integer> BACKOFF_UNIT = 
+            new ConfigTerm<Integer>("BACKOFF_UNIT", 150, false);
 
-        public static int BACKOFF_MAX_TIMES = 4;
+        public static ConfigTerm<Integer> BACKOFF_MAX_TIMES =
+            new ConfigTerm<Integer>("BACKOFF_MAX_TIMES", 5, false);
     }
 
     String appName;
@@ -256,12 +261,12 @@ public class MacManager {
                 // print message
                 System.out.println(appName + " frame " + frameID + " sent");
                 ACKorExpiredNot.cancelNotify();
-                ACKorExpiredNot.delayedNotify(Configs.ACK_EXPIRE_TIME);
+                ACKorExpiredNot.delayedNotify(Configs.ACK_EXPIRE_TIME.v());
                 ACKorExpiredNot.mWait();
                 if (ackReceived) {
                     // wait a while, others may want to send
                     try {
-                        Thread.sleep(Configs.BACKOFF_UNIT);
+                        Thread.sleep(Configs.BACKOFF_UNIT.v());
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -272,9 +277,9 @@ public class MacManager {
                     System.out.println(appName + " frame " + frameID + " not acked, backoff " + backoffTimes + " times");
                     try {
                         Random random = new Random();
-                        Thread.sleep(Configs.BACKOFF_UNIT * 
+                        Thread.sleep(Configs.BACKOFF_UNIT.v() * 
                             random.nextInt((int)Math.pow(2, 
-                                Math.min(backoffTimes, Configs.BACKOFF_MAX_TIMES))));
+                                Math.min(backoffTimes, Configs.BACKOFF_MAX_TIMES.v()))));
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }

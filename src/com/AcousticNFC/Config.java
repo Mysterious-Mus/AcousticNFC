@@ -2,11 +2,22 @@ package com.AcousticNFC;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.util.Scanner;
 
 import com.AcousticNFC.mac.MacFrame;
+import com.AcousticNFC.mac.MacManager;
 import com.AcousticNFC.physical.transmit.OFDM;
 import com.AcousticNFC.physical.transmit.SoF;
 import com.AcousticNFC.ASIO.ASIOHost;
@@ -32,7 +43,7 @@ public class Config {
      * 
      * NAME is supposed to be the variable name for the sake of maintenance
      */
-    public static class ConfigTerm<T> {
+    public static class ConfigTerm<T> implements Serializable {
     
         T value = null;
         String name;
@@ -40,7 +51,7 @@ public class Config {
 
         TermDisp displayer;
 
-        private class TermDisp {
+        private class TermDisp implements Serializable{
 
             public JComponent displayer;
 
@@ -53,7 +64,7 @@ public class Config {
                         // update the value
                         T newVal = fromString(((JTextField)displayer).getText());
                         if (newValCheck(newVal)) {
-                            value = newVal;
+                            set(newVal);
                         }
                         updDisp();
                         // update the passive ones
@@ -147,9 +158,28 @@ public class Config {
 
     public class ConfigPanel extends JPanel {
 
+        public class DumpButton extends JButton {
+            public DumpButton() {
+                super("Dump");
+                this.addActionListener(e -> {
+                    DumpConfig();
+                });
+            }
+        }
+
+        public class LoadButton extends JButton {
+            public LoadButton() {
+                super("Load");
+                this.addActionListener(e -> {
+                    LoadConfig();
+                });
+            }
+        }
+
         public ConfigPanel() {
             this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
+            constructRow("BUFFER_SIZE", null);
             constructRow("sampleRate", "subCarrierDist");
             constructRow("symbolLength", "subCarrierWidth");
             constructRow("cyclicPrefixLenth", "cyclicPrefixNSamples");
@@ -163,6 +193,13 @@ public class Config {
             constructRow("SoF_T", "sofNSamples");
             constructRow("SoF_fmin", "SoF_fmax");
             constructRow("SofEndMuteT", "sofEndMuteNSamples");
+            constructRow("ACK_EXPIRE_TIME", "BACKOFF_UNIT");
+            constructRow("BACKOFF_MAX_TIMES", null);
+
+            JPanel loadAndDump = new JPanel();
+            loadAndDump.setLayout(new GridLayout(0, 2));
+            loadAndDump.add(new LoadButton()); loadAndDump.add(new DumpButton());
+            this.add(loadAndDump);
         }
 
         private void constructRow(String paramName1, String paramName2) {
@@ -187,6 +224,7 @@ public class Config {
 
     public Config() {
         ConfigTermList.add(ASIOHost.Configs.sampleRate);
+        ConfigTermList.add(ASIOHost.Configs.BUFFER_SIZE);
         ConfigTermList.add(MacFrame.Configs.payloadNumBytes);
         ConfigTermList.add(OFDM.Configs.subCarrierDist);
         ConfigTermList.add(OFDM.Configs.symbolLength);
@@ -212,6 +250,11 @@ public class Config {
         ConfigTermList.add(SoF.Configs.maxSofCorrDetect);
         ConfigTermList.add(SoF.Configs.SofDetectThreshold);
         ConfigTermList.add(SoF.Configs.SofDetectWindow);
+        ConfigTermList.add(MacManager.Configs.ACK_EXPIRE_TIME);
+        ConfigTermList.add(MacManager.Configs.BACKOFF_UNIT);
+        ConfigTermList.add(MacManager.Configs.BACKOFF_MAX_TIMES);
+
+        LoadConfig();
 
         // Create a panel with text fields for each field in the Config class
         panel = new ConfigPanel();
@@ -225,7 +268,30 @@ public class Config {
                 term.PassiveParamUpdVal();
             }
         }
-        // update all config
+    }
 
+    public static void DumpConfig() {
+        try (PrintWriter writer = new PrintWriter(new File("config.txt"))) {
+            for (ConfigTerm term : ConfigTermList) {
+                if (!term.isPassive()) {
+                    writer.println(term.name + " " + term.v());
+                }
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void LoadConfig() {
+        try (Scanner scanner = new Scanner(new File("config.txt"))) {
+            while (scanner.hasNextLine()) {
+                String[] line = scanner.nextLine().split(" ");
+                ConfigTerm term = configTermsMap.get(line[0]);
+                term.set(term.fromString(line[1]));
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        ConfigChange();
     }
 }

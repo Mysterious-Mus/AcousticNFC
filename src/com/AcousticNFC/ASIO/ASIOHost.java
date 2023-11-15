@@ -29,7 +29,18 @@ public class ASIOHost implements AsioDriverListener{
 
     public static class Configs {
         public static ConfigTerm<Double> sampleRate = new ConfigTerm<Double>("sampleRate", (double)44100, false);
-        public static int BUFFER_SIZE = 256;
+        public static ConfigTerm<Integer> BUFFER_SIZE = new ConfigTerm<Integer>("BUFFER_SIZE", 256, false)
+        {
+            @Override
+            public boolean newValCheck(Integer newVal) {
+                // report if the newval is not what we get from asiodriver
+                if (newVal != asioDriver.getBufferPreferredSize()) {
+                    System.out.println("Warning: buffer size is not " + newVal + 
+                        ". System will probably fail. Please reset and reboot");
+                }
+                return true;
+            }
+        };
     }
 
     private static AsioDriver asioDriver;
@@ -254,7 +265,7 @@ public class ASIOHost implements AsioDriverListener{
 
         bufferSize = asioDriver.getBufferPreferredSize();
         // report to the user if the buffer size is not as set
-        if (bufferSize != Configs.BUFFER_SIZE) {
+        if (bufferSize != Configs.BUFFER_SIZE.v()) {
             System.out.println("Warning: buffer size is not " + Configs.BUFFER_SIZE + 
                 ". System will probably fail. Please reset and reboot");
         }
