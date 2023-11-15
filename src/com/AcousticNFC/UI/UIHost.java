@@ -17,8 +17,14 @@ import java.awt.GridBagLayout;
 import com.AcousticNFC.Config;
 import com.AcousticNFC.Main;
 import com.AcousticNFC.ASIO.ASIOHost;
+import com.AcousticNFC.physical.transmit.SoF;
 
 public class UIHost extends JFrame{
+
+    public static class Configs {
+        public static int UIHeight = 600;
+        public static int UIWidth = 1300;
+    }
 
     // panel collectors
     public static ArrayList<JPanel> channelSelectPanels = new ArrayList<JPanel>();
@@ -54,10 +60,11 @@ public class UIHost extends JFrame{
             gbc.gridx++; this.add(panel, gbc);
         }
         gbc.gridy = 0; gbc.gridwidth = gbc.gridx + 1; gbc.gridx = 0; this.add(new ChannelPanel(), gbc);
+        gbc.gridy = 2; this.add(SoF.detectorPanel, gbc);
         // add second row: config
-        gbc.gridheight = 2; gbc.gridy = 0; gbc.gridx = gbc.gridwidth; gbc.gridwidth = 1; this.add(Config.panel, gbc);
+        gbc.gridheight = 3; gbc.gridy = 0; gbc.gridx = gbc.gridwidth; gbc.gridwidth = 1; this.add(Config.panel, gbc);
 
-        this.setSize(Config.UIParams.UIWidth, Config.UIParams.UIHeight);
+        this.setSize(Configs.UIWidth, Configs.UIHeight);
         this.setResizable(false);
         this.setVisible(true);
     }

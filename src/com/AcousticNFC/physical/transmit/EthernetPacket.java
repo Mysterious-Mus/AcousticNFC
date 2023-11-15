@@ -31,23 +31,17 @@ public class EthernetPacket {
         */
 
         ArrayList<Boolean> MacFrameBits = TypeConvertion.byteArray2BooleanList(MacFrame);
-        ArrayList<Boolean> alignBits = SoF.alignBits();
-        ArrayList<Boolean> bitsTransmit =TypeConvertion.concatList(alignBits, MacFrameBits);
 
         // modulate the MacFrame 
-        float[] MacFrameSamples = OFDM.modulate(bitsTransmit);
+        float[] MacFrameSamples = OFDM.modulate(MacFrameBits);
 
         // add preamble and SoF
         float[] SoFSamples = SoF.generateSoF();
 
-        // add interpacket gap
-        float[] interPacketGapSamples = new float[Config.interPacketGapNSamples];
-
         // concatenate all the samples
-        float[] packetSamples = new float[SoFSamples.length + MacFrameSamples.length + interPacketGapSamples.length];
+        float[] packetSamples = new float[SoFSamples.length + MacFrameSamples.length];
         System.arraycopy(SoFSamples, 0, packetSamples, 0, SoFSamples.length);
         System.arraycopy(MacFrameSamples, 0, packetSamples, SoFSamples.length, MacFrameSamples.length);
-        System.arraycopy(interPacketGapSamples, 0, packetSamples, SoFSamples.length + MacFrameSamples.length, interPacketGapSamples.length);
 
         return packetSamples;
 

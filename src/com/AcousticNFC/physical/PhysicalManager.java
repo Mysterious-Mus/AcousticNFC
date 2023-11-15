@@ -7,7 +7,6 @@ import java.util.ArrayList;
 
 import com.AcousticNFC.Config;
 import com.AcousticNFC.mac.MacFrame;
-import com.AcousticNFC.physical.receive.Receiver;
 import com.AcousticNFC.physical.transmit.EthernetPacket;
 import com.AcousticNFC.utils.Player;
 import com.AcousticNFC.utils.TypeConvertion;
@@ -24,9 +23,10 @@ import com.AcousticNFC.physical.receive.Demodulator;
 import com.AcousticNFC.physical.transmit.OFDM;
 
 public class PhysicalManager {
+    public static int PHYSICAL_BUFFER_SIZE = 200000;
 
     private String physMgrName;
-    private CyclicBuffer<Float> sampleBuffer = new CyclicBuffer<Float>(Config.PHYSICAL_BUFFER_SIZE);
+    private CyclicBuffer<Float> sampleBuffer = new CyclicBuffer<Float>(PHYSICAL_BUFFER_SIZE);
     private AsioChannel receiveChannel;
     private AsioChannel sendChannel;
 
@@ -158,14 +158,16 @@ public class PhysicalManager {
         // we say the candidate is the index of the first sample of the SoF
         // where should our candidates be?
         int earlyCandidate = sampleBuffer.FIW;
-        int lateCandidate = sampleBuffer.tailIdx() - Config.sofNSamples;
-        int lateCandidateWindow = lateCandidate - Config.SofDetectWindow;
+        int lateCandidate = sampleBuffer.tailIdx() - SoF.Configs.sofNSamples.v();
+        int lateCandidateWindow = lateCandidate - SoF.Configs.SofDetectWindow.v();
         for (int threshCheckIdx = earlyCandidate; threshCheckIdx <= lateCandidateWindow; threshCheckIdx ++) {
             double corrCheck = SoF.calcCorr(sampleBuffer, threshCheckIdx);
-            if (corrCheck > Config.SofDetectThreshld) {
+            if (corrCheck > SoF.Configs.SofDetectThreshold.v()) {
                 double maxCorr = corrCheck;
                 int maxCorrIdx = threshCheckIdx;
-                for (int windowCheckIdx = threshCheckIdx + 1; windowCheckIdx <= threshCheckIdx + Config.SofDetectWindow; windowCheckIdx ++) {
+                for (int windowCheckIdx = threshCheckIdx + 1; 
+                    windowCheckIdx <= threshCheckIdx + SoF.Configs.SofDetectWindow.v();
+                    windowCheckIdx ++) {
                     double corrWindowCheck = SoF.calcCorr(sampleBuffer, windowCheckIdx);
                     if (corrWindowCheck > maxCorr) {
                         maxCorr = corrWindowCheck;
@@ -187,7 +189,7 @@ public class PhysicalManager {
         // if decoding is permitted
         if (permissions.decode.isPermitted()) {
             // discard SoF samples
-            sampleBuffer.setFIW(maxCorrIdx + Config.sofNSamples + Config.sofSilentNSamples);
+            sampleBuffer.setFIW(maxCorrIdx + SoF.Configs.sofNSamples.v() + SoF.Configs.sofEndMuteNSamples.v());
             // clear frameBuffer
             frameBuffer.clear();
             headerReported = false;

@@ -16,18 +16,10 @@ import com.AcousticNFC.ASIO.ASIOHost;
 
 public class Demodulator {
     
-    Receiver receiver;
-
     public ArrayList<Boolean> frameBuffer;
     // double timeCompensation = 0; // compensate the sampling offset
 
     ECC Ecc;
-
-    public Demodulator(Receiver receiver) {
-        this.receiver = receiver;
-        frameBuffer = new ArrayList<Boolean>();
-        Ecc = new ECC();
-    }
 
     public static Complex[] subCarrCoeffs(float[] samples) {
         Complex[] result = new Complex[OFDM.Configs.numSubCarriers.v()];

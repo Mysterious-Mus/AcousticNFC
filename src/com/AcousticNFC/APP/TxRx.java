@@ -50,7 +50,7 @@ public class TxRx {
                 macManager.syncAddr(Ctrl.getHostAddr());
                 macManager.send(
                     Ctrl.getDstAddress(),
-                    new ArrayList<>(Config.transmitted.subList(0, Config.transmitBitLen))
+                    Config.transmitted
                 );
             }
         }
@@ -72,7 +72,7 @@ public class TxRx {
                         isReceiving = true;
                         errPackCnt = 0;
                         errCrcCnt = 0;
-                        receiveLength = Math.ceilDiv(Config.transmitBitLen, 8 * MacFrame.Configs.payloadNumBytes.v());
+                        receiveLength = Math.ceilDiv(Config.transmitted.size(), 8 * MacFrame.Configs.payloadNumBytes.v());
                     }
                 });
             }
@@ -185,7 +185,7 @@ public class TxRx {
             // check the whole package
             boolean failed = false;
             for (int i = 0; i < data.size(); i++) {
-                if (packIdx * data.size() + i < Config.transmitBitLen) {
+                if (packIdx * data.size() + i < Config.transmitted.size()) {
                     if (Config.transmitted.get(packIdx * data.size() + i) != data.get(i)) {
                         failed = true;
                         break;
@@ -202,7 +202,7 @@ public class TxRx {
                 groupId++) {
                     int groupDiff = 0;
                     for (int i = 0; i < groupLen; i++) {
-                        if (packIdx * packBitLen + groupId * groupLen + i < Config.transmitBitLen) {
+                        if (packIdx * packBitLen + groupId * groupLen + i < Config.transmitted.size()) {
                             groupDiff += Config.transmitted.get(packIdx * packBitLen + groupId * groupLen + i) == 
                                 data.get(groupId * groupLen + i) ? 0 : 1;
                         }

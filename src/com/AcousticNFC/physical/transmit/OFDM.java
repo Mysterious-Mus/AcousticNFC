@@ -3,7 +3,6 @@ package com.AcousticNFC.physical.transmit;
 import java.util.ArrayList;
 
 import com.AcousticNFC.Config;
-import com.AcousticNFC.physical.receive.Receiver;
 import com.AcousticNFC.ASIO.ASIOHost;
 import com.AcousticNFC.Config.ConfigTerm;
 

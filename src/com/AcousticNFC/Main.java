@@ -7,8 +7,6 @@ import com.AcousticNFC.mac.MacManager;
 import com.AcousticNFC.physical.PhysicalManager;
 import com.AcousticNFC.utils.BitString;
 import com.AcousticNFC.Config;
-import com.AcousticNFC.APP.ReceiveApp;
-import com.AcousticNFC.APP.TransmitApp;
 import com.AcousticNFC.APP.TxRx;
 import com.AcousticNFC.utils.AddrAlloc;
 
