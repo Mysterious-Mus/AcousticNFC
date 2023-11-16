@@ -22,7 +22,7 @@ public class Main {
 
     public Main() {
         config = new Config();
-        BitString bitStr = new BitString("bit_string.txt");
+        BitString bitStr = new BitString("INPUT.bin");
         Config.transmitted = bitStr.getBitString();
         asioHost = new ASIOHost();
 

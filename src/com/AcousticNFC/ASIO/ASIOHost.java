@@ -266,7 +266,7 @@ public class ASIOHost implements AsioDriverListener{
         bufferSize = asioDriver.getBufferPreferredSize();
         // report to the user if the buffer size is not as set
         if (bufferSize != Configs.BUFFER_SIZE.v()) {
-            System.out.println("Warning: buffer size is not " + Configs.BUFFER_SIZE + 
+            System.out.println("Warning: buffer size is not " + Configs.BUFFER_SIZE.value2Str() + 
                 ". System will probably fail. Please reset and reboot");
         }
         double sampleRate = asioDriver.getSampleRate();
