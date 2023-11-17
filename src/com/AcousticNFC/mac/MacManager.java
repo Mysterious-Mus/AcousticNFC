@@ -95,6 +95,8 @@ public class MacManager {
                             case DATA:
                                 // set the state to receiving
                                 state = State.RECEIVING_PAYLOAD;
+                                // print message
+                                System.out.println(appName + " header received");
                                 break;
                             case ACK:
                                 // receiving is done
@@ -118,6 +120,8 @@ public class MacManager {
                     }
                     else {
                         // we have a deprecated header
+                        // print message
+                        System.out.println(appName + " deprecated header received");
                         physicalManager.permissions.decode.unpermit();
                         physicalManager.permissions.detect.permit();
                         state = State.IDLE;
@@ -266,7 +270,7 @@ public class MacManager {
                 idleNot.mNotify();
                 physicalManager.permissions.detect.permit();
                 // print message
-              //  System.out.println(appName + " frame " + frameID + " sent");
+                System.out.println(appName + " frame " + frameID + " sent");
                 ACKorExpiredNot.cancelNotify();
                 ACKorExpiredNot.delayedNotify(Configs.ACK_EXPIRE_TIME.v());
                 ACKorExpiredNot.mWait();

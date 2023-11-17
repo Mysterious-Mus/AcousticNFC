@@ -7,6 +7,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 import com.AcousticNFC.Config.ConfigTerm;
@@ -98,6 +101,11 @@ public class FileOp {
      */
     public static void outputBin(byte[] Data, String fileName, boolean clearfile) {
         try {
+            // mkd if not exist
+            Path outputPath = Paths.get(Configs.OUTPUT_DIR.v());
+            if (!Files.exists(outputPath)) {
+                Files.createDirectories(outputPath);
+            }
             FileOutputStream writer = new FileOutputStream(Configs.OUTPUT_DIR.v() + fileName,!clearfile);
             for (Byte d: Data) {
                 writer.write(d);

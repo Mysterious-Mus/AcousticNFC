@@ -1,11 +1,14 @@
 package com.AcousticNFC.physical;
 
 import javax.swing.JPanel;
+import javax.swing.JLabel;
 
+import java.awt.GridLayout;
 import java.sql.Array;
 import java.util.ArrayList;
 
 import com.AcousticNFC.Config;
+import com.AcousticNFC.Config.ConfigTerm;
 import com.AcousticNFC.mac.MacFrame;
 import com.AcousticNFC.physical.transmit.EthernetPacket;
 import com.AcousticNFC.utils.Player;
@@ -23,6 +26,32 @@ import com.AcousticNFC.physical.receive.Demodulator;
 import com.AcousticNFC.physical.transmit.OFDM;
 
 public class PhysicalManager {
+
+    public static class Configs {
+        public static ConfigTerm<Double> channelEnergy = 
+            new ConfigTerm<Double>("channelEnergy", 0.0, true)
+        {
+            @Override
+            public void PassiveParamUpdVal() {
+                return;
+            }
+        };
+    }
+
+    public static class ChannelEnergyPanel extends JPanel {
+    
+        public ChannelEnergyPanel() {
+            this.setLayout(new GridLayout(0, 1));
+
+            JPanel channelEnergyDisp = new JPanel();
+            channelEnergyDisp.setLayout(new GridLayout(0, 2));
+            channelEnergyDisp.add(new JLabel("Channel Energy:"));
+            channelEnergyDisp.add(Configs.channelEnergy.displayer());
+            add(channelEnergyDisp);
+        }
+    }
+    public static ChannelEnergyPanel channelEnergyPanel = new ChannelEnergyPanel();
+
     public static int PHYSICAL_BUFFER_SIZE = 200000;
 
     private String physMgrName;
@@ -34,12 +63,25 @@ public class PhysicalManager {
 
     private physicalCallback macInterface;
 
+    private double calcEnergy(float[] x) {
+        double energy = 0;
+        for (float sample : x) {
+            energy += sample * sample;
+        }
+        return energy / x.length;
+    }
+
     /**
      * Interface for ASIOHost for sample receiving
      */
     private NewBufferListener newBufferListener = new NewBufferListener() {
         @Override
         public void handleNewBuffer(float[] buffer) {
+            // calc channel energy
+            double energy = calcEnergy(buffer);
+            if (energy > Configs.channelEnergy.v()) {
+                Configs.channelEnergy.set(energy);
+            }
             // if both detect and decode are not permitted, discard the samples
             if (!permissions.detect.isPermitted() && !permissions.decode.isPermitted()) {
                 sampleBuffer.setFIW(sampleBuffer.tailIdx() + buffer.length);

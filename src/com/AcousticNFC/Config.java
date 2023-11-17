@@ -18,6 +18,7 @@ import java.util.Scanner;
 
 import com.AcousticNFC.mac.MacFrame;
 import com.AcousticNFC.mac.MacManager;
+import com.AcousticNFC.physical.PhysicalManager;
 import com.AcousticNFC.physical.transmit.OFDM;
 import com.AcousticNFC.physical.transmit.SoF;
 import com.AcousticNFC.utils.FileOp;
@@ -262,6 +263,7 @@ public class Config {
         ConfigTermList.add(MacManager.Configs.BACKOFF_MAX_TIMES);
         ConfigTermList.add(FileOp.Configs.INPUT_DIR);
         ConfigTermList.add(FileOp.Configs.OUTPUT_DIR);
+        ConfigTermList.add(PhysicalManager.Configs.channelEnergy);
 
         LoadConfig();
 
