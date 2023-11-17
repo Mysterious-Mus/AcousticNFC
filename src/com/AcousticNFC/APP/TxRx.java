@@ -81,7 +81,7 @@ public class TxRx {
         isReceiving = true;
         errPackCnt = 0;
         errCrcCnt = 0;
-        receiveLength = Math.ceilDiv(Config.transmitted.size(), 8 * MacFrame.Configs.payloadNumBytes.v());
+        receiveLength = Math.ceilDiv(transmitted.size(), 8 * MacFrame.Configs.payloadNumBytes.v());
     }
 
     public void transmit() {
