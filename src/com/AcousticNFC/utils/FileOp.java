@@ -1,5 +1,6 @@
 package com.AcousticNFC.utils;
 
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -67,6 +68,25 @@ public class FileOp {
             FileWriter writer = new FileWriter(fileName);
             for (Boolean d: Data) {
                 writer.append(d? "1": "0");
+            }
+            writer.flush();
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * append the byte array to the .bin file  
+     * @param Data : Byte[]
+     * @param fileName : String
+     * @param clearfile : whether to clear the file before writing
+     */
+    public static void outputBin(byte[] Data, String fileName, boolean clearfile) {
+        try {
+            FileOutputStream writer = new FileOutputStream(fileName,!clearfile);
+            for (Byte d: Data) {
+                writer.write(d);
             }
             writer.flush();
             writer.close();

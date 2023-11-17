@@ -89,7 +89,8 @@ public class MacManager {
         public synchronized void headerReceived(MacFrame.Header header) {
             switch (state) {
                 case RECEIVING_HEADER:
-                    if (header.check()) {
+                    if (header.check() && header.getType() != null) {
+                        // we have a valid header
                         switch (header.getType()) {
                             case DATA:
                                 // set the state to receiving

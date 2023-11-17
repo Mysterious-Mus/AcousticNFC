@@ -2,6 +2,7 @@ package com.AcousticNFC.APP;
 
 import com.AcousticNFC.mac.MacFrame;
 import com.AcousticNFC.mac.MacManager;
+import com.AcousticNFC.utils.FileOp;
 import com.AcousticNFC.utils.TypeConvertion;
 import com.AcousticNFC.utils.sync.Permission;
 import com.AcousticNFC.utils.sync.Notifier;
@@ -21,9 +22,12 @@ import javax.swing.JLabel;
 import javax.swing.JTextField;
 // action listener
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.awt.event.ActionEvent;
 // array list
 import java.util.ArrayList;
+import java.util.Arrays;
+
 import com.AcousticNFC.Main;
 
 public class TxRx {
@@ -214,14 +218,21 @@ public class TxRx {
 
             errCrcCnt += frame.verify() ? 0 : 1;
 
-            // if done
+            /* File write and log info */
+            byte[] dataWrite = frame.getData();
             if (receivedFrames.size() == receiveLength) {
+                // trim the last package
+                assert(Config.transmitted.size() % 8 == 0); // Transmitted data should be byte aligned
+                dataWrite = Arrays.copyOfRange(dataWrite,0, 
+                                Config.transmitted.size() / 8 - 
+                                (receiveLength - 1) * MacFrame.Configs.payloadNumBytes.v());
                 // stop receiving
                 isReceiving = false;
                 // print errPackCnt and errCrcCnt
                 System.out.println("errPackCnt: " + errPackCnt);
                 System.out.println("errCrcCnt: " + errCrcCnt);
             }
+            FileOp.outputBin(dataWrite, "OUTPUT.bin", receivedFrames.size() == 1);
         }
     };
 }
