@@ -61,8 +61,10 @@ public class UIHost extends JFrame{
         }
         gbc.gridy = 0; gbc.gridwidth = gbc.gridx + 1; gbc.gridx = 0; this.add(new ChannelPanel(), gbc);
         gbc.gridy = 2; this.add(SoF.detectorPanel, gbc);
-        // add second row: config
-        gbc.gridheight = 3; gbc.gridy = 0; gbc.gridx = gbc.gridwidth; gbc.gridwidth = 1; this.add(Config.panel, gbc);
+        gbc.gridy = 3; this.add(Main.allCtrlPanel, gbc);
+        
+        gbc.gridheight = gbc.gridy + 1; 
+        gbc.gridy = 0; gbc.gridx = gbc.gridwidth; gbc.gridwidth = 1; this.add(Config.panel, gbc);
 
         this.setSize(Configs.UIWidth, Configs.UIHeight);
         this.setResizable(false);
