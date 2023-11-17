@@ -61,6 +61,8 @@ public class Config {
                 // set concentration lost callback
                 if (!passive) {
                     ((JTextField)displayer).addActionListener(e -> {
+                        // print message
+                        System.out.println("ConfigTerm: " + name + " changed to " + ((JTextField)displayer).getText());
                         // update the value
                         T newVal = fromString(((JTextField)displayer).getText());
                         if (newValCheck(newVal)) {
