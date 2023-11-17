@@ -20,6 +20,7 @@ import com.AcousticNFC.mac.MacFrame;
 import com.AcousticNFC.mac.MacManager;
 import com.AcousticNFC.physical.transmit.OFDM;
 import com.AcousticNFC.physical.transmit.SoF;
+import com.AcousticNFC.utils.FileOp;
 import com.AcousticNFC.ASIO.ASIOHost;
 
 /*
@@ -155,8 +156,6 @@ public class Config {
         public boolean newValCheck(T newVal) {return true;};
     }
 
-    // debug shared info
-    public static ArrayList<Boolean> transmitted;
 
     public class ConfigPanel extends JPanel {
 
@@ -255,6 +254,8 @@ public class Config {
         ConfigTermList.add(MacManager.Configs.ACK_EXPIRE_TIME);
         ConfigTermList.add(MacManager.Configs.BACKOFF_UNIT);
         ConfigTermList.add(MacManager.Configs.BACKOFF_MAX_TIMES);
+        ConfigTermList.add(FileOp.Configs.INPUT_DIR);
+        ConfigTermList.add(FileOp.Configs.OUTPUT_DIR);
 
         LoadConfig();
 
