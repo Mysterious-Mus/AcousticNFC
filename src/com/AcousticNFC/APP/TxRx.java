@@ -61,6 +61,29 @@ public class TxRx {
     }
     private Thread mTransmitThread = new TransmitThread();
 
+    public void stop() {
+        isReceiving = false;
+        // if the transmit thread is running
+        if (mTransmitThread.isAlive()) {
+            // stop it
+            transmitNotify.cancelNotify();
+            macManager.interrupted = true;
+        }
+    }
+
+    public void receive() {
+        receivedFrames.clear();
+        macManager.syncAddr(Ctrl.getHostAddr());
+        isReceiving = true;
+        errPackCnt = 0;
+        errCrcCnt = 0;
+        receiveLength = Math.ceilDiv(Config.transmitted.size(), 8 * MacFrame.Configs.payloadNumBytes.v());
+    }
+
+    public void transmit() {
+        transmitNotify.mNotify();
+    }
+
     private class ReceiveCtrl extends JPanel {
 
         AddressTxtField hostAddrTxtField, dstAddressTxtField;
@@ -71,12 +94,7 @@ public class TxRx {
                 this.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        receivedFrames.clear();
-                        macManager.syncAddr((byte) hostAddrTxtField.getAddress());
-                        isReceiving = true;
-                        errPackCnt = 0;
-                        errCrcCnt = 0;
-                        receiveLength = Math.ceilDiv(Config.transmitted.size(), 8 * MacFrame.Configs.payloadNumBytes.v());
+                        receive();
                     }
                 });
             }
@@ -88,13 +106,7 @@ public class TxRx {
                 this.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        isReceiving = false;
-                        // if the transmit thread is running
-                        if (mTransmitThread.isAlive()) {
-                            // stop it
-                            transmitNotify.cancelNotify();
-                            macManager.interrupted = true;
-                        }
+                        stop();
                     }
                 });
             }
@@ -106,7 +118,7 @@ public class TxRx {
                 this.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        transmitNotify.mNotify();
+                        transmit();
                     }
                 });
             }
