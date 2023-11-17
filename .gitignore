@@ -6,4 +6,5 @@ bin/
 bit_string.txt
 receiveBuffer.txt
 received.txt
+/output
 *OUTPUT.bin
