@@ -85,6 +85,7 @@ public class TxRx {
                     inputFileName = (String) getSelectedItem();
                 });
             }
+        }
 
         private class ReceiveBtn extends JButton {
             public ReceiveBtn() {
@@ -155,7 +156,7 @@ public class TxRx {
                 String.format("%02x", dstAddr));
             this.add(dstAddressTxtField, gbc);
             
-            // input file select box
+            // file transmit
             gbc.gridx = 0; gbc.gridy++; gbc.gridwidth = 2;
             this.add(fileSelectBox = new FileSelectBox(), gbc);
 
