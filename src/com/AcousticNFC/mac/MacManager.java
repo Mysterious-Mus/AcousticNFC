@@ -102,8 +102,6 @@ public class MacManager {
                                 physicalManager.permissions.detect.permit();
                                 state = State.IDLE;
                                 if (header.getField(MacFrame.Configs.HeaderFields.DEST_ADDR) == ADDR) {
-                                    // print message
-                                    System.out.println(appName + " ACK received");
                                     // notify the sender immediately
                                     ackReceived = true;
                                     idleNot.mNotify();
@@ -126,7 +124,11 @@ public class MacManager {
                         idleNot.mNotify();
                     }
                     break;
-                default:
+                    default:
+                    physicalManager.permissions.decode.unpermit();
+                    physicalManager.permissions.detect.permit();
+                    state = State.IDLE;
+                    idleNot.mNotify();
                     // print error
                     System.out.println("Error: header received in wrong state:" + state);
                     break;
@@ -161,6 +163,10 @@ public class MacManager {
                     idleNot.mNotify();
                     break;
                 default:
+                    physicalManager.permissions.decode.unpermit();
+                    physicalManager.permissions.detect.permit();
+                    state = State.IDLE;
+                    idleNot.mNotify();
                     // print error
                     System.out.println("Error: frame received in wrong state:" + state);
                     break;
@@ -260,11 +266,14 @@ public class MacManager {
                 idleNot.mNotify();
                 physicalManager.permissions.detect.permit();
                 // print message
-                System.out.println(appName + " frame " + frameID + " sent");
+              //  System.out.println(appName + " frame " + frameID + " sent");
                 ACKorExpiredNot.cancelNotify();
                 ACKorExpiredNot.delayedNotify(Configs.ACK_EXPIRE_TIME.v());
                 ACKorExpiredNot.mWait();
                 if (ackReceived) {
+                    
+                    System.out.println(appName + " ACK " + frameID + " received " +
+                                        (System.currentTimeMillis() - startTime) );
                     // wait a while, others may want to send
                     try {
                         Thread.sleep(Configs.BACKOFF_UNIT.v());
@@ -275,7 +284,7 @@ public class MacManager {
                 else {
                     backoffTimes++;
                     // print message
-                    System.out.println(appName + " frame " + frameID + " not acked, backoff " + backoffTimes + " times");
+                   // System.out.println(appName + " frame " + frameID + " not acked, backoff " + backoffTimes + " times");
                     try {
                         Random random = new Random();
                         Thread.sleep(Configs.BACKOFF_UNIT.v() * 
