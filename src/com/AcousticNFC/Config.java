@@ -116,6 +116,9 @@ public class Config {
             else if (value instanceof Boolean) {
                 return Boolean.toString((Boolean) value);
             }
+           else if (value instanceof String) {
+                return (String)value;
+            }
             else {
                 return "Unsupported Type";
             }
@@ -133,6 +136,9 @@ public class Config {
             }
             else if (value instanceof Boolean) {
                 return (T) Boolean.valueOf(x);
+            }
+            else if (value instanceof String) {
+                return (T)x;
             }
             else {
                 return null;
