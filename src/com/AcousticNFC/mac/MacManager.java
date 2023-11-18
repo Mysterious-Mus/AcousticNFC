@@ -165,7 +165,7 @@ public class MacManager {
                         state = State.SENDING_ACK;
                         MacFrame.Header ackHeader = new MacFrame.Header();
                         ackHeader.SetField(MacFrame.Configs.HeaderFields.DEST_ADDR, 
-                        frame.getHeader().getField(MacFrame.Configs.HeaderFields.SRC_ADDR));
+                            frame.getHeader().getField(MacFrame.Configs.HeaderFields.SRC_ADDR));
                         ackHeader.SetField(MacFrame.Configs.HeaderFields.SRC_ADDR, ADDR);
                         ackHeader.SetField(MacFrame.Configs.HeaderFields.TYPE, MacFrame.Configs.Types.ACK.getValue());
                         MacFrame ackFrame = new MacFrame(
