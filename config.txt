@@ -1,6 +1,6 @@
 sampleRate 44100.0
 BUFFER_SIZE 128
-payloadNumBytes 141
+payloadNumBytes 165
 subCarrierDist 1
 symbolLength 128
 cyclicPrefixLenth 0.0
@@ -22,4 +22,4 @@ BACKOFF_MAX_TIMES 2
 INPUT_DIR input/
 OUTPUT_DIR output/
 channelClearThresh 2.8661263058893384E-6
-BACKOFF_AFTER_ACK 70
+BACKOFF_AFTER_ACK 100

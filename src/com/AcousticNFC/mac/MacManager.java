@@ -285,9 +285,9 @@ public class MacManager {
 
                 // print message
                 // System.out.println(appName + " frame " + frameID + " not acked, backoff " + backoffTimes + " times");
-                if (backoffTimes > 0 && lastAckTime + 5000 < System.currentTimeMillis()) {
+                if (backoffTimes > 0 && System.currentTimeMillis() - lastAckTime < 5000 / (frameID + 1) * 30) {
                     while (true) {
-                        boolean judge = (System.currentTimeMillis() - startTime) % 6000 < 3000;
+                        boolean judge = (System.currentTimeMillis() - startTime) % 10000 < 5000;
                         int appId = Integer.parseInt(appName.substring(5));
                         if ((appId == 2 && judge)||(appId == 1 && !judge))
                             try {
