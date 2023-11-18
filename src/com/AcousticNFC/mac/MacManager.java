@@ -274,8 +274,8 @@ public class MacManager {
                     Random random = new Random();
                     Thread.sleep(Configs.BACKOFF_UNIT.v() * 
                         random.nextInt((int)Math.pow(2, 
-                            Math.min(backoffTimes, Configs.BACKOFF_MAX_TIMES.v()))));
-                            // Configs.BACKOFF_MAX_TIMES.v())));
+                            // Math.min(backoffTimes, Configs.BACKOFF_MAX_TIMES.v()))));
+                            Configs.BACKOFF_MAX_TIMES.v())));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
