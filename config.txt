@@ -1,6 +1,6 @@
 sampleRate 44100.0
 BUFFER_SIZE 256
-payloadNumBytes 150
+payloadNumBytes 80
 subCarrierDist 1
 symbolLength 128
 cyclicPrefixLenth 0.0
@@ -14,10 +14,11 @@ SoF_T 0.002
 SoF_fmin 6000.0
 SoF_fmax 16000.0
 SofEndMuteT 0.0
-SofDetectThreshold 0.2140099896164611
+SofDetectThreshold 0.029234216949382906
 SofDetectWindow 100
-ACK_EXPIRE_TIME 250
+ACK_EXPIRE_TIME 100
 BACKOFF_UNIT 20
 BACKOFF_MAX_TIMES 2
 INPUT_DIR input/
 OUTPUT_DIR output/
+channelClearThresh 0.001

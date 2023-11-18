@@ -285,7 +285,7 @@ public class MacManager {
                 ACKorExpiredNot.mWait();
                 if (ackReceived) {
                     
-                    System.out.println(appName + " ACK " + frameID + " received at " +
+                    System.out.println(appName + " ACK " + frameID + "/" + frames.length + " received at " +
                                         (System.currentTimeMillis() - startTime) );
                     // wait a while, others may want to send
                     if(frameID < frames.length - 1) {try {
