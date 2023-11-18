@@ -128,7 +128,13 @@ public class MacManager {
                     else {
                         // we have a deprecated header
                         // print message
-                        // System.out.println(appName + " deprecated header received");
+                        // print fields of the header
+                        for (MacFrame.Configs.HeaderFields field: MacFrame.Configs.HeaderFields.values()) {
+                            if (field != MacFrame.Configs.HeaderFields.COUNT)
+                            System.out.print(field.name() + ": " + header.getField(field) + " ");
+                        }
+                        System.out.println();
+                        System.out.println(appName + " deprecated header received");
                         physicalManager.permissions.decode.unpermit();
                         physicalManager.permissions.detect.permit();
                         state = State.IDLE;
@@ -305,12 +311,12 @@ public class MacManager {
                                         + " time estimated: " + 
                             (System.currentTimeMillis() - startTime) * (frames.length) / (frameID + 1));
                     // wait a while, others may want to send
-                    channelClearNot.waitTillPermitted(); 
-                    if(frameID < frames.length - 1) {try {
-                        Thread.sleep(Configs.BACKOFF_UNIT.v());
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }}
+                    // channelClearNot.waitTillPermitted(); 
+                    // if(frameID < frames.length - 1) {try {
+                    //     Thread.sleep(Configs.BACKOFF_UNIT.v());
+                    // } catch (InterruptedException e) {
+                    //     e.printStackTrace();
+                    // }}
                 }
             }
         }
