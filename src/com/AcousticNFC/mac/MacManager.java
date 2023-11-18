@@ -28,6 +28,8 @@ public class MacManager {
 
         public static ConfigTerm<Integer> BACKOFF_MAX_TIMES =
             new ConfigTerm<Integer>("BACKOFF_MAX_TIMES", 5, false);
+        public static ConfigTerm<Integer> BACKOFF_AFTER_ACK =
+            new ConfigTerm<Integer>("BACKOFF_AFTER_ACK", 200, false);
     }
 
     String appName;
@@ -311,12 +313,11 @@ public class MacManager {
                                         + " time estimated: " + 
                             (System.currentTimeMillis() - startTime) * (frames.length) / (frameID + 1));
                     // wait a while, others may want to send
-                    // channelClearNot.waitTillPermitted(); 
-                    // if(frameID < frames.length - 1) {try {
-                    //     Thread.sleep(Configs.BACKOFF_UNIT.v());
-                    // } catch (InterruptedException e) {
-                    //     e.printStackTrace();
-                    // }}
+                    if(frameID < frames.length - 1) {try {
+                        Thread.sleep(Configs.BACKOFF_AFTER_ACK.v());
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }}
                 }
             }
         }
