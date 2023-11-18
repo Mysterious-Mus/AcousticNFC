@@ -85,6 +85,7 @@ public class TxRx {
     }
 
     public void transmit() {
+        transmitted = FileOp.inputFileRead(inputFileName);
         transmitNotify.mNotify();
     }
 
