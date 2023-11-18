@@ -46,7 +46,7 @@ public class MacFrame {
                 // print how many bytes are padded
                 int symbolNbyte = OFDM.Configs.symbolCapacity.v() / 8;
                 System.out.println("Padding: " + 
-                    ((symbolNbyte - ((value + HeaderFields.COUNT.ordinal()) % symbolNbyte)))
+                    ((symbolNbyte - ((value + HeaderFields.COUNT.ordinal() + 4) % symbolNbyte)))
                     %symbolNbyte + " bytes");
                 return true;
             }

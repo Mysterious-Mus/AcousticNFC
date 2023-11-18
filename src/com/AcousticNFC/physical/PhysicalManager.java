@@ -270,8 +270,12 @@ public class PhysicalManager {
         sampleBuffer.setFIW(lateCandidateWindow + 1);
     }
 
-    private void frameDetAct(int maxCorrIdx) {
+    private synchronized void frameDetAct(int maxCorrIdx) {
         // callback
+        // contension prevension
+        if (!permissions.detect.isPermitted() || permissions.decode.isPermitted()) {
+            return;
+        }
         macInterface.frameDetected();
         // if decoding is permitted
         if (permissions.decode.isPermitted()) {
