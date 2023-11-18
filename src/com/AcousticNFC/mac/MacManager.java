@@ -129,12 +129,12 @@ public class MacManager {
                         // we have a deprecated header
                         // print message
                         // print fields of the header
-                        for (MacFrame.Configs.HeaderFields field: MacFrame.Configs.HeaderFields.values()) {
-                            if (field != MacFrame.Configs.HeaderFields.COUNT)
-                            System.out.print(field.name() + ": " + header.getField(field) + " ");
-                        }
-                        System.out.println();
-                        System.out.println(appName + " deprecated header received");
+                        // for (MacFrame.Configs.HeaderFields field: MacFrame.Configs.HeaderFields.values()) {
+                        //     if (field != MacFrame.Configs.HeaderFields.COUNT)
+                        //     System.out.print(field.name() + ": " + header.getField(field) + " ");
+                        // }
+                        // System.out.println();
+                        // System.out.println(appName + " deprecated header received");
                         physicalManager.permissions.decode.unpermit();
                         physicalManager.permissions.detect.permit();
                         state = State.IDLE;
