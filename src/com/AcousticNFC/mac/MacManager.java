@@ -174,6 +174,7 @@ public class MacManager {
                             ackHeader,
                             new byte[0]
                             );
+                        lastAckTime = System.currentTimeMillis();
                         physicalManager.send(ackFrame);
                     }
 
@@ -239,6 +240,7 @@ public class MacManager {
     Permission idleNot = new Permission(false);
     Notifier ACKorExpiredNot = new Notifier();
     Permission channelClearNot = new Permission(false);
+    long lastAckTime = 0;
 
     /**
      * Send the data, the thread will work till send complete or send error
@@ -283,16 +285,20 @@ public class MacManager {
 
                 // print message
                 // System.out.println(appName + " frame " + frameID + " not acked, backoff " + backoffTimes + " times");
-                try {
-                    if (backoffTimes > 0) {
-                        Random random = new Random();
-                        Thread.sleep(Configs.BACKOFF_UNIT.v() * 
-                        random.nextInt((int)Math.pow(2, 
-                        // Math.min(backoffTimes, Configs.BACKOFF_MAX_TIMES.v()))));
-                        Configs.BACKOFF_MAX_TIMES.v())));
+                if (backoffTimes > 0 && lastAckTime + 5000 < System.currentTimeMillis()) {
+                    while (true) {
+                        boolean judge = (System.currentTimeMillis() - startTime) % 6000 < 3000;
+                        int appId = Integer.parseInt(appName.substring(5));
+                        if ((appId == 2 && judge)||(appId == 1 && !judge))
+                            try {
+
+                                    Thread.sleep(Configs.BACKOFF_AFTER_ACK.v());
+                            }
+                            catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        else break;
                     }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
                 }
                 
                 backoffTimes++;
