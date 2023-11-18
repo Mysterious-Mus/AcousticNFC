@@ -31,6 +31,19 @@ public class Permission {
         }
     }
 
+    public void waitTillUnpremitted() {
+        lock.lock();
+        try {
+            while (permitted) {
+                condition.await();
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            lock.unlock();
+        }
+    }
+
     public void permit() {
         lock.lock();
         try {
