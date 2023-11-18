@@ -283,6 +283,8 @@ public class Config {
     }
 
     public static void DumpConfig() {
+        // print info
+        System.out.println("Dumping config to config.txt");
         try (PrintWriter writer = new PrintWriter(new File("config.txt"))) {
             for (ConfigTerm term : ConfigTermList) {
                 if (!term.isPassive()) {
@@ -295,6 +297,8 @@ public class Config {
     }
 
     public static void LoadConfig() {
+        // print info
+        System.out.println("Loading config from config.txt");
         try (Scanner scanner = new Scanner(new File("config.txt"))) {
             while (scanner.hasNextLine()) {
                 String[] line = scanner.nextLine().split(" ");

@@ -170,11 +170,11 @@ public class PhysicalManager {
         @Override
         public void run() {
             while (true) {
+                newSampleNotify.mWait();
                 permissions.detect.waitTillPermitted();
                 if (permissions.decode.isPermitted()) {
                     System.out.println("Error: detectThread: both detect and decode are permitted");
                 }
-                newSampleNotify.mWait();
                 detectFrame();
             }
         }
@@ -304,6 +304,7 @@ public class PhysicalManager {
             frameBuffer.addAll(bits);
         }
 
+        if (!permissions.decode.isPermitted()) return;
         // if we get enough for a header, report to MAC
         // if the header is already wrong or is ack, don't do full frame got report
         // otherwise this function can go on
@@ -318,6 +319,8 @@ public class PhysicalManager {
             );
             // if now we don't have the permission to decode
             if (!permissions.decode.isPermitted()) {
+                // // print message
+                // System.out.println("Error: decodeThread: header received but decode is not permitted");
                 // clear frameBuffer
                 frameBuffer.clear();
                 headerReported = false;
