@@ -59,12 +59,19 @@ public class MacManager {
         public void frameDetected();
         public void headerReceived(MacFrame.Header header);
         public void frameReceived(MacFrame frame);
+        public void channelClear(boolean clear);
     }
 
     /**
      * Atomic operations for physical callbacks
      */
     private physicalCallback phyInterface = new physicalCallback() {
+        @Override
+        public void channelClear(boolean clear) {
+            if(clear) channelClearNot.permit();
+            else channelClearNot.unpermit();
+        }
+
         @Override
         public synchronized void frameDetected() {
             // first disable detection
@@ -96,7 +103,7 @@ public class MacManager {
                                 // set the state to receiving
                                 state = State.RECEIVING_PAYLOAD;
                                 // print message
-                                System.out.println(appName + " header received");
+                                // System.out.println(appName + " header received");
                                 break;
                             case ACK:
                                 // receiving is done
@@ -121,21 +128,21 @@ public class MacManager {
                     else {
                         // we have a deprecated header
                         // print message
-                        System.out.println(appName + " deprecated header received");
+                        // System.out.println(appName + " deprecated header received");
                         physicalManager.permissions.decode.unpermit();
                         physicalManager.permissions.detect.permit();
                         state = State.IDLE;
                         idleNot.mNotify();
                     }
                     break;
-                    default:
+                default:
                     physicalManager.permissions.decode.unpermit();
                     physicalManager.permissions.detect.permit();
                     state = State.IDLE;
                     idleNot.mNotify();
                     // print error
-                    System.out.println("Error: header received in wrong state:" + state);
-                    break;
+                    System.out.println(appName + "Error: header received in wrong state:" + state);
+                break;
             }
         }
 
@@ -223,6 +230,7 @@ public class MacManager {
 
     Notifier idleNot = new Notifier();
     Notifier ACKorExpiredNot = new Notifier();
+    Permission channelClearNot = new Permission(false);
 
     /**
      * Send the data, the thread will work till send complete or send error
@@ -251,6 +259,7 @@ public class MacManager {
             // physical Layer
             while (!ackReceived) {
                 idleNot.mWait();
+                channelClearNot.waitTillPermitted();
 
                 if (interrupted) {
                     // print message, including app name
@@ -270,20 +279,20 @@ public class MacManager {
                 idleNot.mNotify();
                 physicalManager.permissions.detect.permit();
                 // print message
-                System.out.println(appName + " frame " + frameID + " sent");
+                // System.out.println(appName + " frame " + frameID + " sent");
                 ACKorExpiredNot.cancelNotify();
                 ACKorExpiredNot.delayedNotify(Configs.ACK_EXPIRE_TIME.v());
                 ACKorExpiredNot.mWait();
                 if (ackReceived) {
                     
-                    System.out.println(appName + " ACK " + frameID + " received " +
+                    System.out.println(appName + " ACK " + frameID + " received at " +
                                         (System.currentTimeMillis() - startTime) );
                     // wait a while, others may want to send
-                    try {
+                    if(frameID < frames.length - 1) {try {
                         Thread.sleep(Configs.BACKOFF_UNIT.v());
                     } catch (InterruptedException e) {
                         e.printStackTrace();
-                    }
+                    }}
                 }
                 else {
                     backoffTimes++;

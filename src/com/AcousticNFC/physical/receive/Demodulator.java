@@ -54,6 +54,19 @@ public class Demodulator {
         //     Config.UpdFirstSymbolPhases(panelInfo);
         // }
 
+        // print phases
+        // System.out.print("Phases: ");
+        // for (int i = 0; i < 8; i++) {
+        //     System.out.print(String.format("%.2f ", coeffs[i].phase()));
+        // }
+        // System.out.println();
+        // // print amplitudes
+        // System.out.print("Amplitudes: ");
+        // for (int i = 0; i < 8; i++) {
+        //     System.out.print(String.format("%.2f ", coeffs[i].abs()));
+        // }
+        // System.out.println();
+
         // calculate the keys of the subcarriers
         double unitAmp = 0;
         for (int i = 0; i < OFDM.Configs.numSubCarriers.v(); i++) {

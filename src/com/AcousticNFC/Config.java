@@ -264,6 +264,7 @@ public class Config {
         ConfigTermList.add(FileOp.Configs.INPUT_DIR);
         ConfigTermList.add(FileOp.Configs.OUTPUT_DIR);
         ConfigTermList.add(PhysicalManager.Configs.channelEnergy);
+        ConfigTermList.add(PhysicalManager.Configs.channelClearThresh);
 
         LoadConfig();
 

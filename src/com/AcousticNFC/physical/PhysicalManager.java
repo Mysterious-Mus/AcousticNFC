@@ -2,6 +2,10 @@ package com.AcousticNFC.physical;
 
 import javax.swing.JPanel;
 import javax.swing.JLabel;
+import javax.swing.JButton;
+// action
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import java.awt.GridLayout;
 import java.sql.Array;
@@ -36,18 +40,55 @@ public class PhysicalManager {
                 return;
             }
         };
+
+        public static ConfigTerm<Double> channelClearThresh =
+            new ConfigTerm<Double>("channelClearThresh", 0.001, false);
     }
 
     public static class ChannelEnergyPanel extends JPanel {
+
+        private class set10ptButton extends JButton {
+            public set10ptButton() {
+                this.setText("Set 10% of Channel Energy");
+                this.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        Configs.channelClearThresh.set(Configs.channelEnergy.v() * 0.1);
+                    }
+                });
+            }
+        }
+
+        private class resetMaxObserveBtn extends JButton {
+            public resetMaxObserveBtn() {
+                this.setText("Reset Max Observe");
+                this.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        Configs.channelEnergy.set(0.0);
+                    }
+                });
+            }
+        }
     
         public ChannelEnergyPanel() {
             this.setLayout(new GridLayout(0, 1));
 
             JPanel channelEnergyDisp = new JPanel();
-            channelEnergyDisp.setLayout(new GridLayout(0, 2));
+            channelEnergyDisp.setLayout(new GridLayout(0, 4));
             channelEnergyDisp.add(new JLabel("Channel Energy:"));
             channelEnergyDisp.add(Configs.channelEnergy.displayer());
+            channelEnergyDisp.add(new JLabel("Channel Clear Threshold:"));
+            channelEnergyDisp.add(Configs.channelClearThresh.displayer());
+
             add(channelEnergyDisp);
+
+            JPanel set10ptButtonPanel = new JPanel();
+            set10ptButtonPanel.setLayout(new GridLayout(0, 2));
+            set10ptButtonPanel.add(new resetMaxObserveBtn());
+            set10ptButtonPanel.add(new set10ptButton());
+
+            add(set10ptButtonPanel);
         }
     }
     public static ChannelEnergyPanel channelEnergyPanel = new ChannelEnergyPanel();
@@ -82,6 +123,7 @@ public class PhysicalManager {
             if (energy > Configs.channelEnergy.v()) {
                 Configs.channelEnergy.set(energy);
             }
+            macInterface.channelClear(energy < Configs.channelClearThresh.v());
             // if both detect and decode are not permitted, discard the samples
             if (!permissions.detect.isPermitted() && !permissions.decode.isPermitted()) {
                 sampleBuffer.setFIW(sampleBuffer.tailIdx() + buffer.length);
@@ -182,6 +224,9 @@ public class PhysicalManager {
      */
     public void send(MacFrame macframe) {
         float [] samples = EthernetPacket.getPacket(macframe.getWhole());
+
+        // wait till the samples are played
+        ASIOHost.waitTransmit(sendChannel);
 
         // play the samples
         ASIOHost.play(sendChannel, TypeConvertion.floatArr2FloatList(samples));
