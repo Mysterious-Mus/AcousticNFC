@@ -331,7 +331,10 @@ public class PhysicalManager {
                 return;
             }
         }
-
+        decodeTailAct();
+    }
+    
+    private synchronized void decodeTailAct() {
         // if we gets a frame
         if (frameBuffer.size() >= MacFrame.getFrameBitLen()) {
             // pop padding
@@ -343,6 +346,7 @@ public class PhysicalManager {
             // invoke callback
             macInterface.frameReceived(frame);
         }
+
     }
 
     private float[] popNxtSample() {
