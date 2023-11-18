@@ -240,22 +240,22 @@ public class TxRx {
             }
             
             if (failed) {
-                errPackCnt ++;
-                int groupLen = 40;
-                int packBitLen = MacFrame.Configs.payloadNumBytes.v() * 8;
-                System.out.println("GroupDiffs " + packIdx + ":");
-                for (int groupId = 0; groupId < Math.ceilDiv(packBitLen, groupLen); 
-                groupId++) {
-                    int groupDiff = 0;
-                    for (int i = 0; i < groupLen; i++) {
-                        if (packIdx * packBitLen + groupId * groupLen + i < transmitted.size()) {
-                            groupDiff += transmitted.get(packIdx * packBitLen + groupId * groupLen + i) == 
-                                data.get(groupId * groupLen + i) ? 0 : 1;
-                        }
-                    }
-                    System.out.print(groupDiff + " ");
-                }
-                System.out.println();
+            //     errPackCnt ++;
+            //     int groupLen = 40;
+            //     int packBitLen = MacFrame.Configs.payloadNumBytes.v() * 8;
+            //     System.out.println("GroupDiffs " + packIdx + ":");
+            //     for (int groupId = 0; groupId < Math.ceilDiv(packBitLen, groupLen); 
+            //     groupId++) {
+            //         int groupDiff = 0;
+            //         for (int i = 0; i < groupLen; i++) {
+            //             if (packIdx * packBitLen + groupId * groupLen + i < transmitted.size()) {
+            //                 groupDiff += transmitted.get(packIdx * packBitLen + groupId * groupLen + i) == 
+            //                     data.get(groupId * groupLen + i) ? 0 : 1;
+            //             }
+            //         }
+            //         System.out.print(groupDiff + " ");
+            //     }
+                System.out.println("package" + packIdx + " brute force check failed");
             }
 
             errCrcCnt += frame.verify() ? 0 : 1;
