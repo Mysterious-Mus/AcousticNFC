@@ -75,8 +75,8 @@ public class Main {
         config = new Config();
         asioHost = new ASIOHost();
 
-        txrxApps.add(new TxRx("TxRx 1", (byte) 0x00, (byte) 0x01));
-        txrxApps.add(new TxRx("TxRx 2", (byte) 0x01, (byte) 0x00));
+        txrxApps.add(new TxRx("TxRx_1", (byte) 0x00, (byte) 0x01));
+        txrxApps.add(new TxRx("TxRx_2", (byte) 0x01, (byte) 0x00));
         // ui should be launched last because it has to collect all the panels,
         // also, it should wait for other threads to be ready
         uiHost = new UIHost();

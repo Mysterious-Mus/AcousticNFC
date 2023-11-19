@@ -274,7 +274,7 @@ public class TxRx {
                 System.out.println("errPackCnt: " + errPackCnt);
                 System.out.println("errCrcCnt: " + errCrcCnt);
             }
-            FileOp.outputBin(dataWrite, name + " OUTPUT.bin", receivedFrames.size() == 1);
+            FileOp.outputBin(dataWrite, name + "_OUTPUT.bin", receivedFrames.size() == 1);
         }
     };
 }
