@@ -140,11 +140,13 @@ public class MacManager {
                         //     System.out.print(field.name() + ": " + header.getField(field) + " ");
                         // }
                         // System.out.println();
-                        // System.out.println(appName + " deprecated header received");
-                        physicalManager.permissions.decode.unpermit();
-                        physicalManager.permissions.detect.permit();
-                        state = State.IDLE;
-                        idleNot.permit();
+                        System.out.println(appName + " deprecated header received");
+                        // physicalManager.permissions.decode.unpermit();
+                        // physicalManager.permissions.detect.permit();
+                        // state = State.IDLE;
+                        // idleNot.permit();
+                        // for safety, we still have to treat it as a whole pack to listen and avoid collision
+                        state = State.RECEIVING_PAYLOAD;
                     }
                     break;
                 default:
