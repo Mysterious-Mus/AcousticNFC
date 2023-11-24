@@ -6,7 +6,7 @@ symbolLength 128
 cyclicPrefixLenth 0.0
 cyclicPrefixMute false
 bandWidthLowEdit 4000.0
-bandWidthHighEdit 14000.0
+bandWidthHighEdit 9000.0
 PSKeyingCapacity 2
 ASKeyingCapacity 1
 SoF_amplitude 1.0
@@ -14,9 +14,9 @@ SoF_T 0.002
 SoF_fmin 6000.0
 SoF_fmax 16000.0
 SofEndMuteT 0.0
-SofDetectThreshold 0.011661100193899961
+SofDetectThreshold 0.0026681392178380227
 SofDetectWindow 20
-ACK_EXPIRE_TIME 100
+ACK_EXPIRE_TIME 75
 BACKOFF_UNIT 100
 BACKOFF_MAX_TIMES 3
 INPUT_DIR input/

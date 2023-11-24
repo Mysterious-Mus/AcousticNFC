@@ -110,9 +110,12 @@ public class MacManager {
                                 physicalManager.permissions.decode.unpermit();
                                 physicalManager.permissions.detect.permit();
                                 state = State.IDLE;
-                                if (header.getField(MacFrame.Configs.HeaderFields.DEST_ADDR) == ADDR) {
+                                if (header.getField(MacFrame.Configs.HeaderFields.DEST_ADDR) == ADDR
+                                    && header.getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM) == sentSequenceNum) {
                                     // notify the sender immediately
                                     ackReceived = true;
+                                    // print message
+                                    // System.out.println(appName + " ACK " + header.getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM) + " received");
                                     idleNot.mNotify();
                                     ACKorExpiredNot.mNotify();
                                 }
@@ -129,12 +132,12 @@ public class MacManager {
                         // we have a deprecated header
                         // print message
                         // print fields of the header
-                        for (MacFrame.Configs.HeaderFields field: MacFrame.Configs.HeaderFields.values()) {
-                            if (field != MacFrame.Configs.HeaderFields.COUNT)
-                            System.out.print(field.name() + ": " + header.getField(field) + " ");
-                        }
-                        System.out.println();
-                        System.out.println(appName + " deprecated header received");
+                        // for (MacFrame.Configs.HeaderFields field: MacFrame.Configs.HeaderFields.values()) {
+                        //     if (field != MacFrame.Configs.HeaderFields.COUNT)
+                        //     System.out.print(field.name() + ": " + header.getField(field) + " ");
+                        // }
+                        // System.out.println();
+                        // System.out.println(appName + " deprecated header received");
                         physicalManager.permissions.decode.unpermit();
                         physicalManager.permissions.detect.permit();
                         state = State.IDLE;
@@ -168,10 +171,14 @@ public class MacManager {
                             frame.getHeader().getField(MacFrame.Configs.HeaderFields.SRC_ADDR));
                         ackHeader.SetField(MacFrame.Configs.HeaderFields.SRC_ADDR, ADDR);
                         ackHeader.SetField(MacFrame.Configs.HeaderFields.TYPE, MacFrame.Configs.Types.ACK.getValue());
+                        ackHeader.SetField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM, 
+                            frame.getHeader().getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM));
                         MacFrame ackFrame = new MacFrame(
                             ackHeader,
                             new byte[0]
                             );
+                        // print who ack which packet
+                        System.out.println(appName + " ack " + frame.getHeader().getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM) + " sent");
                         physicalManager.send(ackFrame);
                     }
 
@@ -243,6 +250,7 @@ public class MacManager {
      * @param bitString to be sent 
      * @return Void
      */
+    byte sentSequenceNum;
     boolean ackReceived = false;
     public boolean interrupted = false;
     public void send(byte dstAddr, ArrayList<Boolean> bitString) {
@@ -255,16 +263,17 @@ public class MacManager {
         header.SetField(MacFrame.Configs.HeaderFields.DEST_ADDR, dstAddr);
         header.SetField(MacFrame.Configs.HeaderFields.SRC_ADDR, ADDR);
         header.SetField(MacFrame.Configs.HeaderFields.TYPE, MacFrame.Configs.Types.DATA.getValue());
-        header.SetField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM, (byte) 0);
+        header.SetField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM, (byte) -1);
 
         MacFrame[] frames = distribute(header, bitString);
 
         for (int frameID = 0; frameID < frames.length; frameID++) {
+            sentSequenceNum = frames[frameID].getHeader().getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM);
             ackReceived = false;
             int backoffTimes = 0;
             // physical Layer
             while (!ackReceived) {
-                channelClearNot.waitTillPermitted();
+                // channelClearNot.waitTillPermitted();
                 idleNot.mWait();
 
                 backoffTimes++;

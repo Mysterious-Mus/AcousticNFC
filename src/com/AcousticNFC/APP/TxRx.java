@@ -220,6 +220,15 @@ public class TxRx {
             {        
                 return;
             }
+            // check skip
+            if (!receivedFrames.isEmpty() &&
+                frame.getHeader().getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM) != 
+                receivedFrames.get(receivedFrames.size() - 1).getHeader()
+                .getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM) + 1
+            )
+            {        
+                System.out.println("package" + receivedFrames.size() + " skipped");
+            }
             // push in this frame
             receivedFrames.add(frame);
 

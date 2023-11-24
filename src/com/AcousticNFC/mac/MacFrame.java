@@ -86,6 +86,11 @@ public class MacFrame {
         public Header() {
         }
 
+        // copy ctor
+        public Header(Header header) {
+            this.contents = Arrays.copyOf(header.contents, header.contents.length);
+        }
+
         public Header(byte[] headerBuffer) {
             // sanity: length check
             if (headerBuffer.length != Configs.HeaderFields.COUNT.ordinal()) {
@@ -136,7 +141,7 @@ public class MacFrame {
      * @param data
      */
     public MacFrame (Header header, byte[] data) {
-        this.header = header;
+        this.header = new Header(header);
         ByteArrayOutputStream stream = new ByteArrayOutputStream( );
         try {
             stream.write(header.stream());
