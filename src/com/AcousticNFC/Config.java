@@ -202,7 +202,7 @@ public class Config {
             constructRow("SoF_fmin", "SoF_fmax");
             constructRow("SofEndMuteT", "sofEndMuteNSamples");
             constructRow("ACK_EXPIRE_TIME", "BACKOFF_UNIT");
-            constructRow("BACKOFF_MAX_TIMES", null);
+            constructRow("BACKOFF_MAX_TIMES", "BACKOFF_AFTER_ACKED");
 
             JPanel loadAndDump = new JPanel();
             loadAndDump.setLayout(new GridLayout(0, 2));
@@ -265,6 +265,7 @@ public class Config {
         ConfigTermList.add(FileOp.Configs.OUTPUT_DIR);
         ConfigTermList.add(PhysicalManager.Configs.channelEnergy);
         ConfigTermList.add(PhysicalManager.Configs.channelClearThresh);
+        ConfigTermList.add(MacManager.Configs.BACKOFF_AFTER_ACKED);
 
         LoadConfig();
 
