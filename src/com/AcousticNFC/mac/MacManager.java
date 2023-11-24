@@ -86,7 +86,7 @@ public class MacManager {
                     physicalManager.permissions.decode.permit();
                     // set the state to receiving
                     state = State.RECEIVING_HEADER;
-                    idleNot.cancelNotify();
+                    idleNot.unpermit();
                     break;
                 default:
                     // print error
@@ -119,12 +119,12 @@ public class MacManager {
                                     ackReceived = true;
                                     // print message
                                     // System.out.println(appName + " ACK " + header.getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM) + " received");
-                                    idleNot.mNotify();
+                                    idleNot.permit();
                                     ACKorExpiredNot.mNotify();
                                 }
                                 else {
                                     // this ack is not notifying me, so I can quickly get in
-                                    idleNot.mNotify();
+                                    idleNot.permit();
                                 }
                                 break;
                             default:
@@ -144,14 +144,14 @@ public class MacManager {
                         physicalManager.permissions.decode.unpermit();
                         physicalManager.permissions.detect.permit();
                         state = State.IDLE;
-                        idleNot.mNotify();
+                        idleNot.permit();
                     }
                     break;
                 default:
                     physicalManager.permissions.decode.unpermit();
                     physicalManager.permissions.detect.permit();
                     state = State.IDLE;
-                    idleNot.mNotify();
+                    idleNot.permit();
                     // print error
                     System.out.println(appName + "Error: header received in wrong state:" + state);
                 break;
@@ -187,13 +187,13 @@ public class MacManager {
 
                     physicalManager.permissions.detect.permit();
                     state = State.IDLE;
-                    idleNot.mNotify();
+                    idleNot.permit();
                     break;
                 default:
                     physicalManager.permissions.decode.unpermit();
                     physicalManager.permissions.detect.permit();
                     state = State.IDLE;
-                    idleNot.mNotify();
+                    idleNot.permit();
                     // print error
                     System.out.println(appName + "Error: frame received in wrong state:" + state);
                     break;
@@ -210,7 +210,7 @@ public class MacManager {
             phyInterface);
 
         state = State.IDLE;
-        idleNot.mNotify();
+        idleNot.permit();
         physicalManager.permissions.detect.permit();
     }
 
@@ -244,7 +244,7 @@ public class MacManager {
         return macFrames;
     }
 
-    Notifier idleNot = new Notifier();
+    Permission idleNot = new Permission(false);
     Notifier ACKorExpiredNot = new Notifier();
     Permission channelClearNot = new Permission(false);
 
@@ -277,7 +277,7 @@ public class MacManager {
             // physical Layer
             while (!ackReceived) {
                 // channelClearNot.waitTillPermitted();
-                idleNot.mWait();
+                idleNot.waitTillPermitted();
 
                 backoffTimes++;
                     // print message
@@ -287,7 +287,7 @@ public class MacManager {
                     Thread.sleep(Configs.BACKOFF_UNIT.v() * 
                         random.nextInt((int)Math.pow(2, 
                             // Math.min(backoffTimes, Configs.BACKOFF_MAX_TIMES.v()))));
-                            Configs.BACKOFF_MAX_TIMES.v())));
+                            Configs.BACKOFF_MAX_TIMES.v())) * (frameID + frames.length) / frames.length);
                             // Configs.BACKOFF_MAX_TIMES.v())));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -296,7 +296,6 @@ public class MacManager {
                 if (interrupted) {
                     // print message, including app name
                     System.out.println(ANSI.ANSI_BLUE + appName + " transmission interrupted" + ANSI.ANSI_RESET);
-                    idleNot.mNotify();
                     return;
                 }
                 
@@ -311,7 +310,7 @@ public class MacManager {
                 physicalManager.permissions.decode.unpermit();
                 physicalManager.permissions.detect.permit();
                 state = State.IDLE;
-                idleNot.mNotify();
+                idleNot.permit();
                 // print message
                 // System.out.println(appName + " frame " + frameID + " sent");
                 ACKorExpiredNot.cancelNotify();
@@ -324,7 +323,7 @@ public class MacManager {
                                         + " time estimated: " + 
                             (System.currentTimeMillis() - startTime) * (frames.length) / (frameID + 1));
                     // wait a while, others may want to send
-                    // channelClearNot.waitTillPermitted(); 
+                    idleNot.waitTillPermitted();
                     if(frameID < frames.length - 1) {try {
                         Thread.sleep(Configs.BACKOFF_AFTER_ACKED.v());
                     } catch (InterruptedException e) {

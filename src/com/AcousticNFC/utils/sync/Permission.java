@@ -41,7 +41,7 @@ public class Permission {
         }
     }
 
-    public void unpermit() {
+public void unpermit() {
         lock.lock();
         try {
             permitted = false;
