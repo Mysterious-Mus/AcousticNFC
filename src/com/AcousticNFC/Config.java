@@ -18,8 +18,10 @@ import java.util.Scanner;
 
 import com.AcousticNFC.mac.MacFrame;
 import com.AcousticNFC.mac.MacManager;
+import com.AcousticNFC.physical.PhysicalManager;
 import com.AcousticNFC.physical.transmit.OFDM;
 import com.AcousticNFC.physical.transmit.SoF;
+import com.AcousticNFC.utils.FileOp;
 import com.AcousticNFC.ASIO.ASIOHost;
 
 /*
@@ -115,6 +117,9 @@ public class Config {
             else if (value instanceof Boolean) {
                 return Boolean.toString((Boolean) value);
             }
+           else if (value instanceof String) {
+                return (String)value;
+            }
             else {
                 return "Unsupported Type";
             }
@@ -132,6 +137,9 @@ public class Config {
             }
             else if (value instanceof Boolean) {
                 return (T) Boolean.valueOf(x);
+            }
+            else if (value instanceof String) {
+                return (T)x;
             }
             else {
                 return null;
@@ -155,8 +163,6 @@ public class Config {
         public boolean newValCheck(T newVal) {return true;};
     }
 
-    // debug shared info
-    public static ArrayList<Boolean> transmitted;
 
     public class ConfigPanel extends JPanel {
 
@@ -196,7 +202,7 @@ public class Config {
             constructRow("SoF_fmin", "SoF_fmax");
             constructRow("SofEndMuteT", "sofEndMuteNSamples");
             constructRow("ACK_EXPIRE_TIME", "BACKOFF_UNIT");
-            constructRow("BACKOFF_MAX_TIMES", null);
+            constructRow("BACKOFF_MAX_TIMES", "BACKOFF_AFTER_ACKED");
 
             JPanel loadAndDump = new JPanel();
             loadAndDump.setLayout(new GridLayout(0, 2));
@@ -255,6 +261,11 @@ public class Config {
         ConfigTermList.add(MacManager.Configs.ACK_EXPIRE_TIME);
         ConfigTermList.add(MacManager.Configs.BACKOFF_UNIT);
         ConfigTermList.add(MacManager.Configs.BACKOFF_MAX_TIMES);
+        ConfigTermList.add(FileOp.Configs.INPUT_DIR);
+        ConfigTermList.add(FileOp.Configs.OUTPUT_DIR);
+        ConfigTermList.add(PhysicalManager.Configs.channelEnergy);
+        ConfigTermList.add(PhysicalManager.Configs.channelClearThresh);
+        ConfigTermList.add(MacManager.Configs.BACKOFF_AFTER_ACKED);
 
         LoadConfig();
 
@@ -273,6 +284,8 @@ public class Config {
     }
 
     public static void DumpConfig() {
+        // print info
+        System.out.println("Dumping config to config.txt");
         try (PrintWriter writer = new PrintWriter(new File("config.txt"))) {
             for (ConfigTerm term : ConfigTermList) {
                 if (!term.isPassive()) {
@@ -285,6 +298,8 @@ public class Config {
     }
 
     public static void LoadConfig() {
+        // print info
+        System.out.println("Loading config from config.txt");
         try (Scanner scanner = new Scanner(new File("config.txt"))) {
             while (scanner.hasNextLine()) {
                 String[] line = scanner.nextLine().split(" ");

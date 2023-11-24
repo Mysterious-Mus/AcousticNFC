@@ -73,8 +73,6 @@ public class Main {
 
     public Main() {
         config = new Config();
-        BitString bitStr = new BitString("INPUT.bin");
-        Config.transmitted = bitStr.getBitString();
         asioHost = new ASIOHost();
 
         txrxApps.add(new TxRx("TxRx 1", (byte) 0x00, (byte) 0x01));

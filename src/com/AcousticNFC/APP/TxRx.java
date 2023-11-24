@@ -2,6 +2,7 @@ package com.AcousticNFC.APP;
 
 import com.AcousticNFC.mac.MacFrame;
 import com.AcousticNFC.mac.MacManager;
+import com.AcousticNFC.utils.BitString;
 import com.AcousticNFC.utils.FileOp;
 import com.AcousticNFC.utils.TypeConvertion;
 import com.AcousticNFC.utils.sync.Permission;
@@ -16,6 +17,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 // label
 import javax.swing.JLabel;
 // text field
@@ -35,6 +37,9 @@ public class TxRx {
     String name;
     byte srcAddr, dstAddr;
 
+    String inputFileName;
+    public ArrayList<Boolean> transmitted;
+
     MacManager macManager;
 
     ReceiveCtrl Ctrl;
@@ -50,11 +55,10 @@ public class TxRx {
         public void run() {
             while (true) {
                 transmitNotify.mWait();
-                // the former Config.transmitbitlen of config.transmitted
                 macManager.syncAddr(Ctrl.getHostAddr());
                 macManager.send(
                     Ctrl.getDstAddress(),
-                    Config.transmitted
+                    transmitted
                 );
             }
         }
@@ -77,16 +81,35 @@ public class TxRx {
         isReceiving = true;
         errPackCnt = 0;
         errCrcCnt = 0;
-        receiveLength = Math.ceilDiv(Config.transmitted.size(), 8 * MacFrame.Configs.payloadNumBytes.v());
+        receiveLength = Math.ceilDiv(transmitted.size(), 8 * MacFrame.Configs.payloadNumBytes.v());
     }
 
     public void transmit() {
+        transmitted = FileOp.inputFileRead(inputFileName);
         transmitNotify.mNotify();
     }
 
     private class ReceiveCtrl extends JPanel {
 
         AddressTxtField hostAddrTxtField, dstAddressTxtField;
+        FileSelectBox fileSelectBox;
+        private class FileSelectBox extends JComboBox<String>{
+            public FileSelectBox() {
+                super();
+                // fill in the items
+                File folder = new File(FileOp.Configs.INPUT_DIR.v());
+                File[] listOfFiles = folder.listFiles();
+                for (File file : listOfFiles) {
+                    if (file.isFile()) {
+                        addItem(file.getName());
+                    }
+                }
+                // set select action
+                this.addActionListener(e -> {
+                    inputFileName = (String) getSelectedItem();
+                });
+            }
+        }
 
         private class ReceiveBtn extends JButton {
             public ReceiveBtn() {
@@ -144,6 +167,10 @@ public class TxRx {
             gbc.gridx++; dstAddressTxtField = new AddressTxtField(
                 String.format("%02x", dstAddr));
             this.add(dstAddressTxtField, gbc);
+            
+            // file transmit
+            gbc.gridx = 0; gbc.gridy++; gbc.gridwidth = 2;
+            this.add(fileSelectBox = new FileSelectBox(), gbc);
 
             // buttons
             gbc.gridx = 0; gbc.gridy++; gbc.gridwidth = 2;
@@ -173,6 +200,9 @@ public class TxRx {
         macManager = new MacManager((byte) 0, name, frameReceivedListener);
         // launch UI
         Ctrl = new ReceiveCtrl();
+        // default input file
+        this.inputFileName = (String) Ctrl.fileSelectBox.getSelectedItem();
+        this.transmitted = FileOp.inputFileRead(this.inputFileName);
         mTransmitThread.start();
     }
 
@@ -190,6 +220,15 @@ public class TxRx {
             {        
                 return;
             }
+            // check skip
+            if (!receivedFrames.isEmpty() &&
+                frame.getHeader().getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM) != 
+                receivedFrames.get(receivedFrames.size() - 1).getHeader()
+                .getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM) + 1
+            )
+            {        
+                System.out.println("package" + receivedFrames.size() + " skipped");
+            }
             // push in this frame
             receivedFrames.add(frame);
 
@@ -201,8 +240,8 @@ public class TxRx {
             // check the whole package
             boolean failed = false;
             for (int i = 0; i < data.size(); i++) {
-                if (packIdx * data.size() + i < Config.transmitted.size()) {
-                    if (Config.transmitted.get(packIdx * data.size() + i) != data.get(i)) {
+                if (packIdx * data.size() + i < transmitted.size()) {
+                    if (transmitted.get(packIdx * data.size() + i) != data.get(i)) {
                         failed = true;
                         break;
                     }
@@ -210,22 +249,22 @@ public class TxRx {
             }
             
             if (failed) {
-                errPackCnt ++;
-                int groupLen = 40;
-                int packBitLen = MacFrame.Configs.payloadNumBytes.v() * 8;
-                System.out.println("GroupDiffs " + packIdx + ":");
-                for (int groupId = 0; groupId < Math.ceilDiv(packBitLen, groupLen); 
-                groupId++) {
-                    int groupDiff = 0;
-                    for (int i = 0; i < groupLen; i++) {
-                        if (packIdx * packBitLen + groupId * groupLen + i < Config.transmitted.size()) {
-                            groupDiff += Config.transmitted.get(packIdx * packBitLen + groupId * groupLen + i) == 
-                                data.get(groupId * groupLen + i) ? 0 : 1;
-                        }
-                    }
-                    System.out.print(groupDiff + " ");
-                }
-                System.out.println();
+            //     errPackCnt ++;
+            //     int groupLen = 40;
+            //     int packBitLen = MacFrame.Configs.payloadNumBytes.v() * 8;
+            //     System.out.println("GroupDiffs " + packIdx + ":");
+            //     for (int groupId = 0; groupId < Math.ceilDiv(packBitLen, groupLen); 
+            //     groupId++) {
+            //         int groupDiff = 0;
+            //         for (int i = 0; i < groupLen; i++) {
+            //             if (packIdx * packBitLen + groupId * groupLen + i < transmitted.size()) {
+            //                 groupDiff += transmitted.get(packIdx * packBitLen + groupId * groupLen + i) == 
+            //                     data.get(groupId * groupLen + i) ? 0 : 1;
+            //             }
+            //         }
+            //         System.out.print(groupDiff + " ");
+            //     }
+                System.out.println("package" + packIdx + " brute force check failed");
             }
 
             errCrcCnt += frame.verify() ? 0 : 1;
@@ -234,9 +273,9 @@ public class TxRx {
             byte[] dataWrite = frame.getData();
             if (receivedFrames.size() == receiveLength) {
                 // trim the last package
-                assert(Config.transmitted.size() % 8 == 0); // Transmitted data should be byte aligned
+                assert(transmitted.size() % 8 == 0); // Transmitted data should be byte aligned
                 dataWrite = Arrays.copyOfRange(dataWrite,0, 
-                                Config.transmitted.size() / 8 - 
+                                transmitted.size() / 8 - 
                                 (receiveLength - 1) * MacFrame.Configs.payloadNumBytes.v());
                 // stop receiving
                 isReceiving = false;

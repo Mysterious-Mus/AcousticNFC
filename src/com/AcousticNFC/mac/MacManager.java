@@ -28,6 +28,9 @@ public class MacManager {
 
         public static ConfigTerm<Integer> BACKOFF_MAX_TIMES =
             new ConfigTerm<Integer>("BACKOFF_MAX_TIMES", 5, false);
+
+        public static ConfigTerm<Integer> BACKOFF_AFTER_ACKED = 
+            new ConfigTerm<Integer>("BACKOFF_AFTER_ACKED", 100, false);
     }
 
     String appName;
@@ -59,12 +62,19 @@ public class MacManager {
         public void frameDetected();
         public void headerReceived(MacFrame.Header header);
         public void frameReceived(MacFrame frame);
+        public void channelClear(boolean clear);
     }
 
     /**
      * Atomic operations for physical callbacks
      */
     private physicalCallback phyInterface = new physicalCallback() {
+        @Override
+        public void channelClear(boolean clear) {
+            if(clear) channelClearNot.permit();
+            else channelClearNot.unpermit();
+        }
+
         @Override
         public synchronized void frameDetected() {
             // first disable detection
@@ -76,11 +86,11 @@ public class MacManager {
                     physicalManager.permissions.decode.permit();
                     // set the state to receiving
                     state = State.RECEIVING_HEADER;
-                    idleNot.cancelNotify();
+                    idleNot.unpermit();
                     break;
                 default:
                     // print error
-                    System.out.println("Error: frame detected in wrong state:" + state);
+                    System.out.println(appName + "Error: frame detected in wrong state:" + state);
                     break;
             }
         }
@@ -95,21 +105,26 @@ public class MacManager {
                             case DATA:
                                 // set the state to receiving
                                 state = State.RECEIVING_PAYLOAD;
+                                // print message
+                                // System.out.println(appName + " header received");
                                 break;
                             case ACK:
                                 // receiving is done
                                 physicalManager.permissions.decode.unpermit();
                                 physicalManager.permissions.detect.permit();
                                 state = State.IDLE;
-                                if (header.getField(MacFrame.Configs.HeaderFields.DEST_ADDR) == ADDR) {
+                                if (header.getField(MacFrame.Configs.HeaderFields.DEST_ADDR) == ADDR
+                                    && header.getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM) == sentSequenceNum) {
                                     // notify the sender immediately
                                     ackReceived = true;
-                                    idleNot.mNotify();
+                                    // print message
+                                    // System.out.println(appName + " ACK " + header.getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM) + " received");
+                                    idleNot.permit();
                                     ACKorExpiredNot.mNotify();
                                 }
                                 else {
                                     // this ack is not notifying me, so I can quickly get in
-                                    idleNot.mNotify();
+                                    idleNot.permit();
                                 }
                                 break;
                             default:
@@ -118,20 +133,30 @@ public class MacManager {
                     }
                     else {
                         // we have a deprecated header
-                        physicalManager.permissions.decode.unpermit();
-                        physicalManager.permissions.detect.permit();
-                        state = State.IDLE;
-                        idleNot.mNotify();
+                        // print message
+                        // print fields of the header
+                        // for (MacFrame.Configs.HeaderFields field: MacFrame.Configs.HeaderFields.values()) {
+                        //     if (field != MacFrame.Configs.HeaderFields.COUNT)
+                        //     System.out.print(field.name() + ": " + header.getField(field) + " ");
+                        // }
+                        // System.out.println();
+                        // System.out.println(appName + " deprecated header received");
+                        // physicalManager.permissions.decode.unpermit();
+                        // physicalManager.permissions.detect.permit();
+                        // state = State.IDLE;
+                        // idleNot.permit();
+                        // for safety, we still have to treat it as a whole pack to listen and avoid collision
+                        state = State.RECEIVING_PAYLOAD;
                     }
                     break;
-                    default:
+                default:
                     physicalManager.permissions.decode.unpermit();
                     physicalManager.permissions.detect.permit();
                     state = State.IDLE;
-                    idleNot.mNotify();
+                    idleNot.permit();
                     // print error
-                    System.out.println("Error: header received in wrong state:" + state);
-                    break;
+                    System.out.println(appName + "Error: header received in wrong state:" + state);
+                break;
             }
         }
 
@@ -148,27 +173,82 @@ public class MacManager {
                         state = State.SENDING_ACK;
                         MacFrame.Header ackHeader = new MacFrame.Header();
                         ackHeader.SetField(MacFrame.Configs.HeaderFields.DEST_ADDR, 
-                        frame.getHeader().getField(MacFrame.Configs.HeaderFields.SRC_ADDR));
+                            frame.getHeader().getField(MacFrame.Configs.HeaderFields.SRC_ADDR));
                         ackHeader.SetField(MacFrame.Configs.HeaderFields.SRC_ADDR, ADDR);
                         ackHeader.SetField(MacFrame.Configs.HeaderFields.TYPE, MacFrame.Configs.Types.ACK.getValue());
+                        ackHeader.SetField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM, 
+                            frame.getHeader().getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM));
                         MacFrame ackFrame = new MacFrame(
                             ackHeader,
                             new byte[0]
                             );
+                        // print who ack which packet
+                        System.out.println(appName + " ack " + frame.getHeader().getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM) + " sent");
+                        // start a new thread to send ack when idle
+                        // new Thread(new Runnable() {
+                        //     @Override
+                        //     public void run() {
+                        //         idleNot.waitTillPermitted();
+                        //         physicalManager.permissions.detect.unpermit();
+                        //         physicalManager.permissions.decode.unpermit();
+                        //         idleNot.unpermit();
+                        //         state = State.SENDING;
+
+                        //         physicalManager.send(ackFrame);
+
+                        //         physicalManager.permissions.detect.permit();
+                        //         physicalManager.permissions.decode.unpermit();
+                        //         idleNot.permit();
+                        //         state = State.IDLE;
+                        //     }
+                        // }).start();
                         physicalManager.send(ackFrame);
+
+                        physicalManager.permissions.detect.permit();
+                        physicalManager.permissions.decode.unpermit();
+                        idleNot.permit();
+                        state = State.IDLE;
+                    }
+                    else {
+                        // not my frame or broken frame
+                        // if the frame is good, we should wait to prevent colliding with the ack
+                        // start a thread to do this
+                        if (frame.verify()) {
+                            System.out.println(appName + " frame " + frame.getHeader().getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM) + " received, but not my frame");
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        Thread.sleep(Configs.BACKOFF_AFTER_ACKED.v());
+                                    }
+                                    catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                    physicalManager.permissions.detect.permit();
+                                    physicalManager.permissions.decode.unpermit();
+                                    state = State.IDLE;
+                                    idleNot.permit();
+                                }
+                            }).start();
+                        }
+                        else {
+                            // frame is bad, directly go to idle
+                            System.out.println(appName + " frame " + frame.getHeader().getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM) + " received, but broken");
+                            physicalManager.permissions.detect.permit();
+                            physicalManager.permissions.decode.unpermit();
+                            state = State.IDLE;
+                            idleNot.permit();
+                        }
                     }
 
-                    physicalManager.permissions.detect.permit();
-                    state = State.IDLE;
-                    idleNot.mNotify();
                     break;
                 default:
                     physicalManager.permissions.decode.unpermit();
                     physicalManager.permissions.detect.permit();
                     state = State.IDLE;
-                    idleNot.mNotify();
+                    idleNot.permit();
                     // print error
-                    System.out.println("Error: frame received in wrong state:" + state);
+                    System.out.println(appName + "Error: frame received in wrong state:" + state);
                     break;
             }
         }
@@ -183,7 +263,7 @@ public class MacManager {
             phyInterface);
 
         state = State.IDLE;
-        idleNot.mNotify();
+        idleNot.permit();
         physicalManager.permissions.detect.permit();
     }
 
@@ -217,14 +297,16 @@ public class MacManager {
         return macFrames;
     }
 
-    Notifier idleNot = new Notifier();
+    Permission idleNot = new Permission(false);
     Notifier ACKorExpiredNot = new Notifier();
+    Permission channelClearNot = new Permission(false);
 
     /**
      * Send the data, the thread will work till send complete or send error
      * @param bitString to be sent 
      * @return Void
      */
+    byte sentSequenceNum;
     boolean ackReceived = false;
     public boolean interrupted = false;
     public void send(byte dstAddr, ArrayList<Boolean> bitString) {
@@ -237,63 +319,71 @@ public class MacManager {
         header.SetField(MacFrame.Configs.HeaderFields.DEST_ADDR, dstAddr);
         header.SetField(MacFrame.Configs.HeaderFields.SRC_ADDR, ADDR);
         header.SetField(MacFrame.Configs.HeaderFields.TYPE, MacFrame.Configs.Types.DATA.getValue());
-        header.SetField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM, (byte) 0);
+        header.SetField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM, (byte) -1);
 
         MacFrame[] frames = distribute(header, bitString);
 
         for (int frameID = 0; frameID < frames.length; frameID++) {
+            sentSequenceNum = frames[frameID].getHeader().getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM);
             ackReceived = false;
             int backoffTimes = 0;
             // physical Layer
             while (!ackReceived) {
-                idleNot.mWait();
+                // channelClearNot.waitTillPermitted();
+                idleNot.waitTillPermitted();
+
+                backoffTimes++;
+                    // print message
+                   // System.out.println(appName + " frame " + frameID + " not acked, backoff " + backoffTimes + " times");
+                try {
+                    Random random = new Random();
+                    Thread.sleep(Configs.BACKOFF_UNIT.v() * 
+                        random.nextInt((int)Math.pow(2, 
+                            // Math.min(backoffTimes, Configs.BACKOFF_MAX_TIMES.v()))));
+                            Configs.BACKOFF_MAX_TIMES.v())) * (frameID + frames.length) / frames.length);
+                            // Configs.BACKOFF_MAX_TIMES.v())));
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
 
                 if (interrupted) {
                     // print message, including app name
                     System.out.println(ANSI.ANSI_BLUE + appName + " transmission interrupted" + ANSI.ANSI_RESET);
-                    idleNot.mNotify();
                     return;
                 }
-
+                
                 // enter sending state
+                idleNot.waitTillPermitted();
+                physicalManager.permissions.decode.unpermit();
                 physicalManager.permissions.detect.unpermit();
                 state = State.SENDING;
 
                 physicalManager.send(frames[frameID]);
 
                 // enter idle state
-                state = State.IDLE;
-                idleNot.mNotify();
+                physicalManager.permissions.decode.unpermit();
                 physicalManager.permissions.detect.permit();
+                state = State.IDLE;
+                idleNot.permit();
                 // print message
-              //  System.out.println(appName + " frame " + frameID + " sent");
+                // System.out.println(appName + " frame " + frameID + " sent");
                 ACKorExpiredNot.cancelNotify();
                 ACKorExpiredNot.delayedNotify(Configs.ACK_EXPIRE_TIME.v());
                 ACKorExpiredNot.mWait();
                 if (ackReceived) {
                     
-                    System.out.println(appName + " ACK " + frameID + " received " +
-                                        (System.currentTimeMillis() - startTime) );
+                    System.out.println(appName + " ACK " + frameID + "/" + frames.length + " received at " +
+                                        (System.currentTimeMillis() - startTime) 
+                                        + " time estimated: " + 
+                            (System.currentTimeMillis() - startTime) * (frames.length) / (frameID + 1) + 
+                            " Resend times: " + backoffTimes);
                     // wait a while, others may want to send
-                    try {
-                        Thread.sleep(Configs.BACKOFF_UNIT.v());
+                    idleNot.waitTillPermitted();
+                    if(frameID < frames.length - 1) {try {
+                        Thread.sleep(Configs.BACKOFF_AFTER_ACKED.v());
                     } catch (InterruptedException e) {
                         e.printStackTrace();
-                    }
-                }
-                else {
-                    backoffTimes++;
-                    // print message
-                   // System.out.println(appName + " frame " + frameID + " not acked, backoff " + backoffTimes + " times");
-                    try {
-                        Random random = new Random();
-                        Thread.sleep(Configs.BACKOFF_UNIT.v() * 
-                            random.nextInt((int)Math.pow(2, 
-                                // Math.min(backoffTimes, Configs.BACKOFF_MAX_TIMES.v()))));
-                                Math.max(0, Configs.BACKOFF_MAX_TIMES.v() + 1 - backoffTimes))));
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                    }}
                 }
             }
         }

@@ -9,6 +9,7 @@ import javax.print.DocFlavor.BYTE_ARRAY;
 import java.io.ByteArrayOutputStream;
 
 import com.AcousticNFC.Config.ConfigTerm;
+import com.AcousticNFC.physical.transmit.OFDM;
 import com.AcousticNFC.utils.TypeConvertion;
 import com.AcousticNFC.utils.CRC8;
 
@@ -38,7 +39,18 @@ public class MacFrame {
         }
 
         public static ConfigTerm<Integer> payloadNumBytes = 
-            new ConfigTerm<Integer>("payloadNumBytes", 150, false);
+            new ConfigTerm<Integer>("payloadNumBytes", 150, false)
+        {
+            @Override
+            public boolean newValCheck(Integer value) {
+                // print how many bytes are padded
+                int symbolNbyte = OFDM.Configs.symbolCapacity.v() / 8;
+                System.out.println("Padding: " + 
+                    ((symbolNbyte - ((value + HeaderFields.COUNT.ordinal() + 4) % symbolNbyte)))
+                    %symbolNbyte + " bytes");
+                return true;
+            }
+        };
 
         public static enum Types {
             DATA((byte) 0x00),
@@ -72,6 +84,11 @@ public class MacFrame {
         private byte[] contents = new byte[Configs.HeaderFields.COUNT.ordinal()];
 
         public Header() {
+        }
+
+        // copy ctor
+        public Header(Header header) {
+            this.contents = Arrays.copyOf(header.contents, header.contents.length);
         }
 
         public Header(byte[] headerBuffer) {
@@ -124,7 +141,7 @@ public class MacFrame {
      * @param data
      */
     public MacFrame (Header header, byte[] data) {
-        this.header = header;
+        this.header = new Header(header);
         ByteArrayOutputStream stream = new ByteArrayOutputStream( );
         try {
             stream.write(header.stream());
