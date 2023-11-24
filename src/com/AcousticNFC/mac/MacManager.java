@@ -140,7 +140,7 @@ public class MacManager {
                         //     System.out.print(field.name() + ": " + header.getField(field) + " ");
                         // }
                         // System.out.println();
-                        System.out.println(appName + " deprecated header received");
+                        // System.out.println(appName + " deprecated header received");
                         // physicalManager.permissions.decode.unpermit();
                         // physicalManager.permissions.detect.permit();
                         // state = State.IDLE;
@@ -184,12 +184,63 @@ public class MacManager {
                             );
                         // print who ack which packet
                         System.out.println(appName + " ack " + frame.getHeader().getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM) + " sent");
+                        // start a new thread to send ack when idle
+                        // new Thread(new Runnable() {
+                        //     @Override
+                        //     public void run() {
+                        //         idleNot.waitTillPermitted();
+                        //         physicalManager.permissions.detect.unpermit();
+                        //         physicalManager.permissions.decode.unpermit();
+                        //         idleNot.unpermit();
+                        //         state = State.SENDING;
+
+                        //         physicalManager.send(ackFrame);
+
+                        //         physicalManager.permissions.detect.permit();
+                        //         physicalManager.permissions.decode.unpermit();
+                        //         idleNot.permit();
+                        //         state = State.IDLE;
+                        //     }
+                        // }).start();
                         physicalManager.send(ackFrame);
+
+                        physicalManager.permissions.detect.permit();
+                        physicalManager.permissions.decode.unpermit();
+                        idleNot.permit();
+                        state = State.IDLE;
+                    }
+                    else {
+                        // not my frame or broken frame
+                        // if the frame is good, we should wait to prevent colliding with the ack
+                        // start a thread to do this
+                        if (frame.verify()) {
+                            System.out.println(appName + " frame " + frame.getHeader().getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM) + " received, but not my frame");
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        Thread.sleep(Configs.BACKOFF_AFTER_ACKED.v());
+                                    }
+                                    catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                    physicalManager.permissions.detect.permit();
+                                    physicalManager.permissions.decode.unpermit();
+                                    state = State.IDLE;
+                                    idleNot.permit();
+                                }
+                            }).start();
+                        }
+                        else {
+                            // frame is bad, directly go to idle
+                            System.out.println(appName + " frame " + frame.getHeader().getField(MacFrame.Configs.HeaderFields.SEQUENCE_NUM) + " received, but broken");
+                            physicalManager.permissions.detect.permit();
+                            physicalManager.permissions.decode.unpermit();
+                            state = State.IDLE;
+                            idleNot.permit();
+                        }
                     }
 
-                    physicalManager.permissions.detect.permit();
-                    state = State.IDLE;
-                    idleNot.permit();
                     break;
                 default:
                     physicalManager.permissions.decode.unpermit();
@@ -302,6 +353,7 @@ public class MacManager {
                 }
                 
                 // enter sending state
+                idleNot.waitTillPermitted();
                 physicalManager.permissions.decode.unpermit();
                 physicalManager.permissions.detect.unpermit();
                 state = State.SENDING;
@@ -323,7 +375,8 @@ public class MacManager {
                     System.out.println(appName + " ACK " + frameID + "/" + frames.length + " received at " +
                                         (System.currentTimeMillis() - startTime) 
                                         + " time estimated: " + 
-                            (System.currentTimeMillis() - startTime) * (frames.length) / (frameID + 1));
+                            (System.currentTimeMillis() - startTime) * (frames.length) / (frameID + 1) + 
+                            " Resend times: " + backoffTimes);
                     // wait a while, others may want to send
                     idleNot.waitTillPermitted();
                     if(frameID < frames.length - 1) {try {
